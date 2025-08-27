@@ -53,7 +53,7 @@ function TreeEditor() {
             treeManager.setData(cachedData);
           } else {
             setTreeData(data);
-            DataCacheManager.clearCache();
+            handleReset();
           }
         } else {
           setTreeData(data);
