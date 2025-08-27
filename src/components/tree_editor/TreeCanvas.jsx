@@ -227,7 +227,7 @@ function TreeCanvas({
                 layoutNodes();
                 eventHandler.closeContextMenu();
               }}>
-                刷新
+                一键布局
               </div>
             </>
           )}
