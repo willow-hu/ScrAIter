@@ -43,19 +43,12 @@ function TreeEditor() {
         treeManager.setData(data);
         updateUndoRedoState();
         
-        // setTreeData(data);
         // 检查是否有缓存的数据
         if (DataCacheManager.hasCache()) {
-          // 如果有缓存数据，询问用户是否恢复
-          const useCache = window.confirm('检测到未保存的修改，是否恢复？点击"确定"恢复修改，点击"取消"从原始文件开始。');
-          if (useCache) {
-            const cachedData = DataCacheManager.loadFromCache();
-            setTreeData(cachedData);
-            treeManager.setData(cachedData);
-          } else {
-            setTreeData(data);
-            handleReset();
-          }
+          // 如果有缓存数据则恢复
+          const cachedData = DataCacheManager.loadFromCache();
+          setTreeData(cachedData);
+          treeManager.setData(cachedData);
         } else {
           setTreeData(data);
         }
