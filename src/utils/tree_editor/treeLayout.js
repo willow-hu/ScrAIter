@@ -5,7 +5,6 @@
 
 import { TREE_EDITOR_CONFIG } from './config.js';
 
-// 导出节点尺寸常量供其他模块使用
 export const NODE_WIDTH = TREE_EDITOR_CONFIG.node.width;
 export const NODE_HEIGHT = TREE_EDITOR_CONFIG.node.height;
 
@@ -14,8 +13,8 @@ export const NODE_HEIGHT = TREE_EDITOR_CONFIG.node.height;
  */
 export class TreeLayoutManager {
   constructor() {
-    this.levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight; // 层级间距
-    this.nodeSpacing = TREE_EDITOR_CONFIG.layout.nodeSpacing;  // 节点间最小间距
+    this.levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight;
+    this.nodeSpacing = TREE_EDITOR_CONFIG.layout.nodeSpacing;
   }
 
   /**
