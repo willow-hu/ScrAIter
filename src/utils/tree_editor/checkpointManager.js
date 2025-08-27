@@ -1,0 +1,330 @@
+/**
+ * Checkpoint 管理工具
+ * 用于管理树结构的版本控制、撤销/重做功能
+ */
+
+/**
+ * 本地存储的键名
+ */
+const STORAGE_KEYS = {
+  CACHE: 'treeData_cache',
+  CHECKPOINTS: 'checkpoints',
+  SAVED_DATA: 'treeData'
+};
+
+/**
+ * Checkpoint 管理器类
+ */
+export class CheckpointManager {
+  constructor() {
+    this.checkpoints = [];
+    this.currentIndex = -1;
+    this.initialData = null;
+  }
+
+  /**
+   * 初始化管理器
+   * @param {Object} initialData - 初始数据
+   */
+  initialize(initialData) {
+    this.initialData = this.deepClone(initialData);
+    this.checkpoints = [];
+    this.currentIndex = -1;
+    
+    // 尝试从本地存储恢复 checkpoints
+    this.loadCheckpointsFromStorage();
+  }
+
+  /**
+   * 深拷贝对象
+   * @param {Object} obj - 要拷贝的对象
+   * @returns {Object} 深拷贝后的对象
+   */
+  deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  /**
+   * 创建新的 checkpoint
+   * @param {Object} data - 当前数据
+   * @returns {Object} 操作结果
+   */
+  createCheckpoint(data) {
+    if (!data) {
+      return { success: false, message: '数据不能为空' };
+    }
+
+    // 创建当前数据的深拷贝
+    const newCheckpoint = this.deepClone(data);
+    
+    // 如果当前不在最新的checkpoint，需要移除后面的checkpoint
+    if (this.currentIndex >= 0 && this.currentIndex < this.checkpoints.length - 1) {
+      this.checkpoints = this.checkpoints.slice(0, this.currentIndex + 1);
+    }
+    
+    // 添加新的 checkpoint
+    this.checkpoints.push(newCheckpoint);
+    this.currentIndex = this.checkpoints.length - 1;
+    
+    // 保存到本地存储
+    this.saveCheckpointsToStorage();
+    
+    return { 
+      success: true, 
+      message: '保存点已创建',
+      checkpointIndex: this.currentIndex,
+      totalCheckpoints: this.checkpoints.length
+    };
+  }
+
+  /**
+   * 撤销到前一个 checkpoint
+   * @returns {Object} 操作结果，包含数据或错误信息
+   */
+  undo() {
+    if (this.currentIndex > 0) {
+      // 撤销到前一个 checkpoint
+      this.currentIndex--;
+      const data = this.deepClone(this.checkpoints[this.currentIndex]);
+      return {
+        success: true,
+        data,
+        message: '已撤销到前一个保存点',
+        checkpointIndex: this.currentIndex
+      };
+    } else if (this.currentIndex === 0) {
+      // 如果是第一个 checkpoint，回到初始状态
+      this.currentIndex = -1;
+      const data = this.deepClone(this.initialData);
+      return {
+        success: true,
+        data,
+        message: '已撤销到初始状态',
+        checkpointIndex: this.currentIndex
+      };
+    } else {
+      return {
+        success: false,
+        message: '无法撤销，已经是最初状态'
+      };
+    }
+  }
+
+  /**
+   * 重做到下一个 checkpoint
+   * @returns {Object} 操作结果，包含数据或错误信息
+   */
+  redo() {
+    if (this.currentIndex < this.checkpoints.length - 1) {
+      // 重做到下一个 checkpoint
+      this.currentIndex++;
+      const data = this.deepClone(this.checkpoints[this.currentIndex]);
+      return {
+        success: true,
+        data,
+        message: '已恢复到下一个保存点',
+        checkpointIndex: this.currentIndex
+      };
+    } else {
+      return {
+        success: false,
+        message: '无法重做，已经是最新状态'
+      };
+    }
+  }
+
+  /**
+   * 重置到初始状态
+   * @returns {Object} 操作结果
+   */
+  reset() {
+    if (!this.initialData) {
+      return {
+        success: false,
+        message: '初始数据不存在'
+      };
+    }
+
+    this.checkpoints = [];
+    this.currentIndex = -1;
+    
+    // 清除所有本地存储
+    this.clearStorage();
+    
+    return {
+      success: true,
+      data: this.deepClone(this.initialData),
+      message: '已重置到初始状态'
+    };
+  }
+
+  /**
+   * 检查是否可以撤销
+   * @returns {boolean} 是否可以撤销
+   */
+  canUndo() {
+    return this.currentIndex >= 0;
+  }
+
+  /**
+   * 检查是否可以重做
+   * @returns {boolean} 是否可以重做
+   */
+  canRedo() {
+    return this.currentIndex < this.checkpoints.length - 1;
+  }
+
+  /**
+   * 获取当前状态信息
+   * @returns {Object} 状态信息
+   */
+  getStatus() {
+    return {
+      totalCheckpoints: this.checkpoints.length,
+      currentIndex: this.currentIndex,
+      canUndo: this.canUndo(),
+      canRedo: this.canRedo(),
+      hasInitialData: !!this.initialData
+    };
+  }
+
+  /**
+   * 保存 checkpoints 到本地存储
+   */
+  saveCheckpointsToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CHECKPOINTS, JSON.stringify(this.checkpoints));
+    } catch (error) {
+      console.error('保存 checkpoints 到本地存储失败:', error);
+    }
+  }
+
+  /**
+   * 从本地存储加载 checkpoints
+   */
+  loadCheckpointsFromStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.CHECKPOINTS);
+      if (stored) {
+        this.checkpoints = JSON.parse(stored);
+        this.currentIndex = this.checkpoints.length - 1;
+      }
+    } catch (error) {
+      console.error('从本地存储加载 checkpoints 失败:', error);
+      this.checkpoints = [];
+      this.currentIndex = -1;
+    }
+  }
+
+  /**
+   * 清除所有本地存储
+   */
+  clearStorage() {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.CACHE);
+      localStorage.removeItem(STORAGE_KEYS.CHECKPOINTS);
+      localStorage.removeItem(STORAGE_KEYS.SAVED_DATA);
+    } catch (error) {
+      console.error('清除本地存储失败:', error);
+    }
+  }
+
+  /**
+   * 获取所有 checkpoint 的摘要信息
+   * @returns {Array} checkpoint 摘要列表
+   */
+  getCheckpointSummaries() {
+    return this.checkpoints.map((checkpoint, index) => ({
+      index,
+      timestamp: checkpoint.timestamp || new Date().toISOString(),
+      nodeCount: checkpoint.structure ? checkpoint.structure.length : 0,
+      isCurrent: index === this.currentIndex
+    }));
+  }
+}
+
+/**
+ * 数据缓存管理器
+ */
+export class DataCacheManager {
+  /**
+   * 保存数据到缓存
+   * @param {Object} data - 要缓存的数据
+   */
+  static saveToCache(data) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CACHE, JSON.stringify(data));
+    } catch (error) {
+      console.error('保存到缓存失败:', error);
+    }
+  }
+
+  /**
+   * 从缓存加载数据
+   * @returns {Object|null} 缓存的数据或 null
+   */
+  static loadFromCache() {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEYS.CACHE);
+      return cached ? JSON.parse(cached) : null;
+    } catch (error) {
+      console.error('从缓存加载数据失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 检查是否有缓存数据
+   * @returns {boolean} 是否有缓存
+   */
+  static hasCache() {
+    return !!localStorage.getItem(STORAGE_KEYS.CACHE);
+  }
+
+  /**
+   * 清除缓存
+   */
+  static clearCache() {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.CACHE);
+    } catch (error) {
+      console.error('清除缓存失败:', error);
+    }
+  }
+
+  /**
+   * 获取缓存信息
+   * @returns {Object} 缓存信息
+   */
+  static getCacheInfo() {
+    const cached = this.loadFromCache();
+    if (!cached) {
+      return { hasCache: false };
+    }
+
+    return {
+      hasCache: true,
+      nodeCount: cached.structure ? cached.structure.length : 0,
+      lastModified: cached.lastModified || '未知'
+    };
+  }
+}
+
+/**
+ * 便捷的工厂函数，创建一个新的 checkpoint 管理器实例
+ * @param {Object} initialData - 初始数据
+ * @returns {CheckpointManager} checkpoint 管理器实例
+ */
+export function createCheckpointManager(initialData) {
+  const manager = new CheckpointManager();
+  if (initialData) {
+    manager.initialize(initialData);
+  }
+  return manager;
+}
+
+/**
+ * 默认导出一个单例实例（可选）
+ */
+const defaultManager = new CheckpointManager();
+export default defaultManager;

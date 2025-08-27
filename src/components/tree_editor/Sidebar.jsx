@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Button, Space, Card, Typography, Input, Divider, message } from 'antd';
-import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Space, Card, Typography, Input, Divider, message, Modal } from 'antd';
+import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UndoOutlined, RedoOutlined, ReloadOutlined } from '@ant-design/icons';
+import { isValidTree } from '../../utils/tree_editor/treeValidator';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -15,7 +16,12 @@ function Sidebar({
   onUpdateGlobalContext, 
   onUpdateNode, 
   onCloseEdit,
-  onStartEdit
+  onStartEdit,
+  onUndo,
+  onRedo,
+  onReset,
+  canUndo = false,
+  canRedo = false
 }) {
   const [editingGlobal, setEditingGlobal] = useState(false);
   const [globalForm, setGlobalForm] = useState({});
@@ -66,44 +72,48 @@ function Sidebar({
     setNodeForm({});
   };
 
-  const isValidTree = () => {
-    if (!treeData || !treeData.structure) return false;
-    
-    const nodes = treeData.structure;
-    const nodeIds = new Set(nodes.map(n => n.id));
-    
-    // 检查所有child_ids是否都存在
-    for (const node of nodes) {
-      for (const childId of node.child_ids || []) {
-        if (!nodeIds.has(childId)) return false;
-      }
+  // 处理重置脚本
+  const handleReset = () => {
+    Modal.confirm({
+      title: '重置脚本',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要重置脚本吗？这将放弃所有未保存的更改，回到初始状态。',
+      okText: '确定重置',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk() {
+        onReset();
+        message.success('脚本已重置到初始状态');
+      },
+    });
+  };
+
+  // 处理导出点击
+  const handleExport = () => {
+    if (isValidTree(treeData)) {
+      // 如果是有效树结构，直接导出
+      onExport();
+    } else {
+      // 如果不是有效树结构，显示警告对话框
+      Modal.warning({
+        title: '无法导出',
+        icon: <ExclamationCircleOutlined />,
+        content: (
+          <div>
+            <p>当前图结构不是有效的有向树结构，无法导出。</p>
+            <p>请检查以下问题：</p>
+            <ul style={{ paddingLeft: '20px', margin: '8px 0' }}>
+              <li>是否有且仅有一个根节点（没有父节点的节点）</li>
+              <li>除根节点外，每个节点是否都有且仅有一个父节点</li>
+              <li>是否存在环形引用</li>
+              <li>是否所有节点都连通</li>
+            </ul>
+          </div>
+        ),
+        okText: '知道了',
+        width: 480,
+      });
     }
-    
-    // 检查是否有环
-    const visited = new Set();
-    const visiting = new Set();
-    
-    const hasCircle = (nodeId) => {
-      if (visiting.has(nodeId)) return true;
-      if (visited.has(nodeId)) return false;
-      
-      visiting.add(nodeId);
-      const node = nodes.find(n => n.id === nodeId);
-      if (node) {
-        for (const childId of node.child_ids || []) {
-          if (hasCircle(childId)) return true;
-        }
-      }
-      visiting.delete(nodeId);
-      visited.add(nodeId);
-      return false;
-    };
-    
-    for (const node of nodes) {
-      if (hasCircle(node.id)) return false;
-    }
-    
-    return true;
   };
 
   return (
@@ -112,7 +122,6 @@ function Sidebar({
       
       <Space direction="vertical" style={{ width: '100%' }}>
         {/* 操作按钮 */}
-        {/* <Card size="small" title="🛠️ 操作面板"> */}
         <Space direction="vertical" style={{ width: '100%' }}>
         <Button 
             type="primary" 
@@ -122,20 +131,42 @@ function Sidebar({
         >
             保存修改
         </Button>
+        
+        {/* 撤销和回做按钮并排 */}
+        <Space.Compact style={{ width: '100%' }}>
+          <Button 
+              icon={<UndoOutlined />} 
+              onClick={onUndo}
+              disabled={!canUndo}
+              style={{ width: '50%' }}
+          >
+              撤销
+          </Button>
+          <Button 
+              icon={<RedoOutlined />} 
+              onClick={onRedo}
+              disabled={!canRedo}
+              style={{ width: '50%' }}
+          >
+              回做
+          </Button>
+        </Space.Compact>
+        
+        <Button 
+            icon={<ReloadOutlined />} 
+            onClick={handleReset}
+            block
+        >
+            重置脚本
+        </Button>
+        
         <Button 
             icon={<DownloadOutlined />} 
-            onClick={onExport}
-            disabled={!isValidTree()}
-            title={!isValidTree() ? "当前图结构不是有效的树结构" : ""}
+            onClick={handleExport}
             block
         >
             导出脚本
         </Button>
-        {!isValidTree() && (
-            <Text type="danger" style={{ fontSize: '12px' }}>
-            当前图结构不是有效的树结构，存在环或未连通的节点
-            </Text>
-        )}
         </Space>
         {/* </Card> */}
 

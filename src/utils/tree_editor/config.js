@@ -57,18 +57,18 @@ export const TREE_EDITOR_CONFIG = {
       // ID文本
       id: {
         color: '#666',        // ID文本颜色
-        fontSize: '10px',     // 字体大小
+        fontSize: '12px',     // 字体大小
         fontFamily: 'Arial',  // 字体族
         fontWeight: 'normal', // 字体粗细
         textAlign: 'left',    // 文本对齐方式
         verticalAlign: 'top', // 垂直对齐方式
-        offsetY: 15,          // ID文本Y偏移
+        offsetY: 10,          // ID文本Y偏移
       },
       
       // 名称文本
       name: {
         color: '#333',        // 名称文本颜色
-        fontSize: '14px',     // 字体大小
+        fontSize: '16px',     // 字体大小
         fontFamily: 'Arial',  // 字体族
         fontWeight: 'bold',   // 字体粗细
         textAlign: 'center',  // 文本对齐方式
