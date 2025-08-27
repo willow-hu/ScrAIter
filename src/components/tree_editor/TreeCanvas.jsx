@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TreeLayoutManager } from '../../utils/treeLayout.js';
-import { CoordinateTransformer } from '../../utils/coordinateTransform.js';
-import { CanvasRenderer } from '../../utils/canvasRenderer.js';
-import { EventHandler } from '../../utils/eventHandler.js';
-import { CollisionDetector } from '../../utils/collisionDetector.js';
+import { 
+  TreeLayoutManager, 
+  CoordinateTransformer, 
+  CanvasRenderer, 
+  EventHandler, 
+  CollisionDetector 
+} from '../../utils/tree_editor/index.js';
 
 function TreeCanvas({ 
   treeData, 

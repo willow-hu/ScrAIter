@@ -1,10 +1,11 @@
 /**
- * 工具类索引文件
+ * 工具类总索引文件
  * 统一导出所有工具类，方便使用
  */
 
-export { TreeLayoutManager, NODE_WIDTH, NODE_HEIGHT } from './treeLayout.js';
-export { CoordinateTransformer } from './coordinateTransform.js';
-export { CanvasRenderer } from './canvasRenderer.js';
-export { EventHandler } from './eventHandler.js';
-export { CollisionDetector } from './collisionDetector.js';
+// Tree Editor 相关工具类（通过子目录的index.js导出）
+export * from './tree_editor/index.js';
+
+// 未来可以在这里添加其他功能模块的导出
+// export * from './structure_generator/index.js';
+// export * from './data_validator/index.js';

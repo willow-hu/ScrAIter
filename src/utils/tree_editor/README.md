@@ -1,8 +1,21 @@
-# TreeCanvas 工具类说明
+# TreeEditor 工具类说明
 
 ## 概述
 
 为了提高代码的可维护性和可扩展性，我们将原本集中在 `TreeCanvas.jsx` 中的各种功能拆分成了多个专门的工具类。每个工具类负责特定的功能领域，具有清晰的职责边界。
+
+## 目录结构
+
+```
+src/utils/tree_editor/
+├── index.js                    # 工具类统一导出文件
+├── treeLayout.js              # 树结构自动布局算法
+├── coordinateTransform.js     # 坐标转换工具
+├── canvasRenderer.js          # Canvas渲染器
+├── eventHandler.js            # 事件处理器
+├── collisionDetector.js       # 碰撞检测工具
+└── README.md                  # 说明文档
+```
 
 ## 工具类结构
 
@@ -80,7 +93,7 @@ import {
   CanvasRenderer, 
   EventHandler, 
   CollisionDetector 
-} from '../../utils/index.js';
+} from '../../utils/tree_editor/index.js';
 
 // 创建工具类实例
 const layoutManager = new TreeLayoutManager();
