@@ -4,7 +4,8 @@ import {
   CoordinateTransformer, 
   CanvasRenderer, 
   EventHandler, 
-  CollisionDetector 
+  CollisionDetector,
+  TREE_EDITOR_CONFIG
 } from '../../utils/tree_editor/index.js';
 
 function TreeCanvas({ 
@@ -15,7 +16,8 @@ function TreeCanvas({
   onAddNode, 
   onDeleteNode, 
   onAddEdge, 
-  onUpdateNodePosition 
+  onUpdateNodePosition,
+  config = TREE_EDITOR_CONFIG  // 接受配置参数，默认使用全局配置
 }) {
   
   const canvasRef = useRef(null);
@@ -29,12 +31,20 @@ function TreeCanvas({
   const renderer = useRef(null);
   const eventHandler = useRef(new EventHandler()).current;
 
-  // 初始化渲染器
+  // 初始化渲染器并设置配置
   useEffect(() => {
     if (canvasRef.current && !renderer.current) {
       renderer.current = new CanvasRenderer(canvasRef.current);
+      renderer.current.setConfig(config); // 设置配置
     }
   }, []);
+
+  // 当配置变化时更新渲染器配置
+  useEffect(() => {
+    if (renderer.current) {
+      renderer.current.setConfig(config);
+    }
+  }, [config]);
 
   // 更新坐标转换器
   useEffect(() => {
@@ -142,7 +152,8 @@ function TreeCanvas({
       treeData?.structure || [], 
       selectedNode, 
       scale, 
-      translate
+      translate,
+      config
     );
   }, [treeData, selectedNode, scale, translate]);
 
