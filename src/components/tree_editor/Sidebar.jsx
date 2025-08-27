@@ -11,7 +11,6 @@ function Sidebar({
   treeData, 
   selectedNode, 
   isEditing, 
-  showNodeInfo = false,
   onSave, 
   onExport, 
   onUpdateGlobalContext, 
@@ -169,10 +168,9 @@ function Sidebar({
             导出脚本
         </Button>
         </Space>
-        {/* </Card> */}
 
         {/* 节点信息 */}
-        {showNodeInfo && selectedNode && !isEditing && (
+        {selectedNode && !isEditing && (
           <Card size="small" title={`📄 #${selectedNode.id} 节点信息`}>
             <Space direction="vertical" style={{ width: '100%' }}>
               <div>
@@ -194,7 +192,7 @@ function Sidebar({
               <Button 
                 type="primary"
                 icon={<EditOutlined />}
-                onClick={onStartEdit}
+                onClick={() => onStartEdit(selectedNode)}
                 block
               >
                 编辑节点内容
@@ -204,7 +202,7 @@ function Sidebar({
         )}
 
         {/* 节点编辑 */}
-        {isEditing && selectedNode && (
+        {selectedNode && isEditing && (
           <Card size="small" title={`✏️ #${selectedNode.id} 编辑节点`}>
             <Space direction="vertical" style={{ width: '100%' }}>
               <div>
@@ -244,7 +242,7 @@ function Sidebar({
             </Space>
           </Card>
         )}
-
+        
         {/* 项目信息 */}
         <Card size="small" title="📊 项目信息">
           {editingGlobal ? (
@@ -311,12 +309,13 @@ function Sidebar({
                 <Text strong>成就：</Text>
                 <Text>{treeData.global_context?.achievement || '未设置'}</Text>
               </div>
-              <Button 
-                size="small" 
-                onClick={editingGlobal ? cancelEditingGlobal : startEditingGlobal}
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={startEditingGlobal}
                 block
               >
-                {editingGlobal ? '取消' : '编辑项目信息'}
+                编辑项目信息
               </Button>
             </Space>
           )}
@@ -325,7 +324,7 @@ function Sidebar({
         {(
           <Card size="small" title="使用说明">
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              1. 单击节点查看信息，双击节点编辑内容；
+              1. 双击节点以编辑内容；
               2. 空白处右击以添加节点；
               3. 右击节点以获取更多操作选项；
             </Text>
