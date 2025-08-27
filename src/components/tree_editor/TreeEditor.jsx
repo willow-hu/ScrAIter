@@ -43,6 +43,7 @@ function TreeEditor() {
         treeManager.setData(data);
         updateUndoRedoState();
         
+        // setTreeData(data);
         // 检查是否有缓存的数据
         if (DataCacheManager.hasCache()) {
           // 如果有缓存数据，询问用户是否恢复
