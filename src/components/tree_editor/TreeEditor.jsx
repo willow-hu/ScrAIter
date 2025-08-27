@@ -10,6 +10,7 @@ function TreeEditor() {
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showNodeInfo, setShowNodeInfo] = useState(false); // 新增：是否显示节点信息
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const [isResizing, setIsResizing] = useState(false);
   
@@ -146,6 +147,7 @@ function TreeEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
+      setShowNodeInfo(false);
       setIsEditing(false);
       // message.success(result.message);
     } else {
@@ -161,6 +163,7 @@ function TreeEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
+      setShowNodeInfo(false);
       setIsEditing(false);
       // message.success(result.message);
     } else {
@@ -176,6 +179,7 @@ function TreeEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
+      setShowNodeInfo(false);
       setIsEditing(false);
       message.success(result.message);
     } else {
@@ -269,6 +273,40 @@ function TreeEditor() {
     }
   };
 
+  // 处理节点选择（单击）
+  const handleNodeSelect = (node) => {
+    setSelectedNode(node);
+    setShowNodeInfo(true); // 显示节点信息
+    setIsEditing(false); // 确保不是编辑模式
+  };
+
+  // 处理节点编辑（双击）
+  const handleNodeEdit = (node) => {
+    setSelectedNode(node);
+    setShowNodeInfo(true);
+    setIsEditing(true);
+  };
+
+  // 开始编辑选中的节点
+  const handleStartEdit = () => {
+    if (selectedNode) {
+      setIsEditing(true);
+    }
+  };
+
+  // 关闭编辑模式
+  const handleCloseEdit = () => {
+    setIsEditing(false);
+    // 保持节点信息显示，不清除选中状态
+  };
+
+  // 处理画布空白处点击
+  const handleCanvasClick = () => {
+    // 不清除选中节点，保持节点信息显示
+    // 只是退出编辑模式
+    setIsEditing(false);
+  };
+
   if (!treeData) {
     return <div>加载中...</div>;
   }
@@ -278,11 +316,9 @@ function TreeEditor() {
       <TreeCanvas
         treeData={treeData}
         selectedNode={selectedNode}
-        onNodeSelect={setSelectedNode}
-        onNodeEdit={(node) => {
-          setSelectedNode(node);
-          setIsEditing(true);
-        }}
+        onNodeSelect={handleNodeSelect}
+        onNodeEdit={handleNodeEdit}
+        onCanvasClick={handleCanvasClick}
         onAddNode={addNode}
         onDeleteNode={deleteNode}
         onAddEdge={addEdge}
@@ -301,18 +337,13 @@ function TreeEditor() {
         treeData={treeData}
         selectedNode={selectedNode}
         isEditing={isEditing}
+        showNodeInfo={showNodeInfo}
         onSave={handleSave}
         onExport={handleExport}
         onUpdateGlobalContext={updateGlobalContext}
         onUpdateNode={updateNode}
-        onStartEdit={(node) => {
-          setSelectedNode(node);
-          setIsEditing(true);
-        }}
-        onCloseEdit={() => {
-          setIsEditing(false);
-          setSelectedNode(null);
-        }}
+        onStartEdit={handleStartEdit}
+        onCloseEdit={handleCloseEdit}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onReset={handleReset}

@@ -11,6 +11,7 @@ function Sidebar({
   treeData, 
   selectedNode, 
   isEditing, 
+  showNodeInfo = false,
   onSave, 
   onExport, 
   onUpdateGlobalContext, 
@@ -170,6 +171,80 @@ function Sidebar({
         </Space>
         {/* </Card> */}
 
+        {/* 节点信息 */}
+        {showNodeInfo && selectedNode && !isEditing && (
+          <Card size="small" title={`📄 #${selectedNode.id} 节点信息`}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div>
+                <Text strong>关键词：</Text>
+                <Text>{selectedNode.name || '未设置'}</Text>
+              </div>
+              <div>
+                <Text strong>用户选项：</Text>
+                <Text style={{ fontSize: '14px', color: '#666' }}>
+                  {selectedNode.user || '未设置'}
+                </Text>
+              </div>
+              <div>
+                <Text strong>摘要：</Text>
+                <Text style={{ fontSize: '14px', color: '#666' }}>
+                  {selectedNode.abstract || '未设置'}
+                </Text>
+              </div>
+              <Button 
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={onStartEdit}
+                block
+              >
+                编辑节点内容
+              </Button>
+            </Space>
+          </Card>
+        )}
+
+        {/* 节点编辑 */}
+        {isEditing && selectedNode && (
+          <Card size="small" title={`✏️ #${selectedNode.id} 编辑节点`}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div>
+                <Text strong>关键词</Text>
+                <Input
+                  value={nodeForm.name || ''}
+                  onChange={(e) => setNodeForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="输入节点关键词"
+                />
+              </div>
+              <div>
+                <Text strong>用户选项</Text>
+                <TextArea
+                  value={nodeForm.user || ''}
+                  onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
+                  placeholder="输入用户选项"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <Text strong>摘要</Text>
+                <TextArea
+                  value={nodeForm.abstract || ''}
+                  onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
+                  placeholder="输入节点摘要"
+                  rows={3}
+                />
+              </div>
+              <Space>
+                <Button type="primary" onClick={saveNode}>
+                  保存
+                </Button>
+                <Button onClick={cancelEditingNode}>
+                  取消
+                </Button>
+              </Space>
+            </Space>
+          </Card>
+        )}
+
         {/* 项目信息 */}
         <Card size="small" title="📊 项目信息">
           {editingGlobal ? (
@@ -247,56 +322,10 @@ function Sidebar({
           )}
         </Card>
 
-        {/* 节点编辑 */}
-        {isEditing && selectedNode && (
-          <Card size="small" title={`✏️ 编辑节点 ${selectedNode.id}`}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Text strong>节点ID</Text>
-                <Text>#{selectedNode.id}</Text>
-              </div>
-              <div>
-                <Text strong>关键词</Text>
-                <Input
-                  value={nodeForm.name || ''}
-                  onChange={(e) => setNodeForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="输入节点关键词"
-                />
-              </div>
-              <div>
-                <Text strong>用户选项</Text>
-                <TextArea
-                  value={nodeForm.user || ''}
-                  onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
-                  placeholder="输入用户选项"
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Text strong>摘要</Text>
-                <TextArea
-                  value={nodeForm.abstract || ''}
-                  onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
-                  placeholder="输入节点摘要"
-                  rows={3}
-                />
-              </div>
-              <Space>
-                <Button type="primary" onClick={saveNode}>
-                  保存
-                </Button>
-                <Button onClick={cancelEditingNode}>
-                  取消
-                </Button>
-              </Space>
-            </Space>
-          </Card>
-        )}
-
         {(
           <Card size="small" title="使用说明">
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              1. 双击节点以编辑内容；
+              1. 单击节点查看信息，双击节点编辑内容；
               2. 空白处右击以添加节点；
               3. 右击节点以获取更多操作选项；
             </Text>
