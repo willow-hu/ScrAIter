@@ -4,6 +4,7 @@
  */
 
 import { NODE_WIDTH, NODE_HEIGHT } from './treeLayout.js';
+import { TREE_EDITOR_CONFIG } from './config.js';
 
 export class CanvasRenderer {
   constructor(canvas) {
@@ -51,15 +52,15 @@ export class CanvasRenderer {
    * @param {Array} nodes - 节点数组
    */
   renderEdges(nodes) {
-    this.ctx.strokeStyle = '#666';
-    this.ctx.lineWidth = 2;
+    this.ctx.strokeStyle = TREE_EDITOR_CONFIG.rendering.edge.color;
+    this.ctx.lineWidth = TREE_EDITOR_CONFIG.rendering.edge.width;
     
     nodes.forEach(node => {
-      const parentPos = node.position || { x: 100, y: 100 };
+      const parentPos = node.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
       (node.child_ids || []).forEach(childId => {
         const childNode = nodes.find(n => n.id === childId);
         if (childNode) {
-          const childPos = childNode.position || { x: 100, y: 100 };
+          const childPos = childNode.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
           this.renderEdge(parentPos, childPos);
         }
       });
@@ -92,7 +93,7 @@ export class CanvasRenderer {
    */
   renderArrow(from, to) {
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
-    const arrowLength = 10;
+    const arrowLength = TREE_EDITOR_CONFIG.rendering.edge.arrowLength;
     
     this.ctx.beginPath();
     this.ctx.moveTo(to.x, to.y);
@@ -126,12 +127,13 @@ export class CanvasRenderer {
    * @param {boolean} isSelected - 是否选中
    */
   renderNode(node, isSelected = false) {
-    const pos = node.position || { x: 100, y: 100 };
+    const pos = node.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
+    const config = TREE_EDITOR_CONFIG.rendering.node;
     
     // 绘制节点背景
-    this.ctx.fillStyle = isSelected ? '#f0f8ff' : 'white';
-    this.ctx.strokeStyle = isSelected ? '#007acc' : '#ddd';
-    this.ctx.lineWidth = isSelected ? 3 : 2;
+    this.ctx.fillStyle = isSelected ? config.backgroundColor.selected : config.backgroundColor.normal;
+    this.ctx.strokeStyle = isSelected ? config.border.color.selected : config.border.color.normal;
+    this.ctx.lineWidth = isSelected ? config.border.width.selected : config.border.width.normal;
     
     this.ctx.fillRect(pos.x, pos.y, NODE_WIDTH, NODE_HEIGHT);
     this.ctx.strokeRect(pos.x, pos.y, NODE_WIDTH, NODE_HEIGHT);
@@ -146,24 +148,25 @@ export class CanvasRenderer {
    * @param {Object} pos - 节点位置
    */
   renderNodeText(node, pos) {
+    const textConfig = TREE_EDITOR_CONFIG.rendering.text;
     this.ctx.textAlign = 'left';
     
     // 节点ID
-    this.ctx.fillStyle = '#666';
-    this.ctx.font = '10px Arial';
-    this.ctx.fillText(`#${node.id}`, pos.x + 8, pos.y + 15);
+    this.ctx.fillStyle = textConfig.id.color;
+    this.ctx.font = textConfig.id.font;
+    this.ctx.fillText(`#${node.id}`, pos.x + textConfig.padding, pos.y + textConfig.id.offsetY);
     
     // 节点名称
-    this.ctx.fillStyle = '#333';
-    this.ctx.font = '14px Arial';
+    this.ctx.fillStyle = textConfig.name.color;
+    this.ctx.font = textConfig.name.font;
     const name = node.name || '未命名';
-    const maxWidth = NODE_WIDTH - 16;
+    const maxWidth = NODE_WIDTH - textConfig.padding * 2;
     
     if (this.ctx.measureText(name).width > maxWidth) {
-      const truncated = name.substring(0, 15) + '...';
-      this.ctx.fillText(truncated, pos.x + 8, pos.y + 35);
+      const truncated = name.substring(0, textConfig.name.truncateLength) + '...';
+      this.ctx.fillText(truncated, pos.x + textConfig.padding, pos.y + textConfig.name.offsetY);
     } else {
-      this.ctx.fillText(name, pos.x + 8, pos.y + 35);
+      this.ctx.fillText(name, pos.x + textConfig.padding, pos.y + textConfig.name.offsetY);
     }
   }
 

@@ -3,17 +3,19 @@
  * 负责计算节点的最优位置，避免重叠，保持层级清晰
  */
 
-// 节点尺寸常量
-export const NODE_WIDTH = 160;
-export const NODE_HEIGHT = 60;
+import { TREE_EDITOR_CONFIG } from './config.js';
+
+// 导出节点尺寸常量供其他模块使用
+export const NODE_WIDTH = TREE_EDITOR_CONFIG.node.width;
+export const NODE_HEIGHT = TREE_EDITOR_CONFIG.node.height;
 
 /**
  * 树结构自动布局类
  */
 export class TreeLayoutManager {
   constructor() {
-    this.levelHeight = 150; // 层级间距
-    this.nodeSpacing = 20;  // 节点间最小间距
+    this.levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight; // 层级间距
+    this.nodeSpacing = TREE_EDITOR_CONFIG.layout.nodeSpacing;  // 节点间最小间距
   }
 
   /**
@@ -36,11 +38,11 @@ export class TreeLayoutManager {
     const roots = nodes.filter(node => !hasParent.has(node.id));
 
     // 布局每个根节点
-    let rootStartX = 200;
+    let rootStartX = TREE_EDITOR_CONFIG.layout.rootStartX;
     roots.forEach((root, rootIndex) => {
       const rootWidth = this.calculateSubtreeWidth(root.id, nodeMap);
       this.layoutTree(root.id, 0, rootStartX + rootWidth / 2, rootWidth, nodeMap, positions, usedPositions);
-      rootStartX += rootWidth + this.nodeSpacing * 3; // 根节点之间留更大间距
+      rootStartX += rootWidth + this.nodeSpacing * TREE_EDITOR_CONFIG.layout.rootSpacingMultiplier; // 根节点之间留更大间距
     });
 
     return positions;
@@ -84,7 +86,7 @@ export class TreeLayoutManager {
     
     if (children.length === 0) {
       // 叶子节点，直接放置在centerX位置
-      positions.set(nodeId, { x: centerX - NODE_WIDTH / 2, y: level * this.levelHeight + 100 });
+      positions.set(nodeId, { x: centerX - NODE_WIDTH / 2, y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset });
       return;
     }
 
@@ -104,7 +106,7 @@ export class TreeLayoutManager {
     // 放置当前节点
     positions.set(nodeId, { 
       x: adjustedCenterX - NODE_WIDTH / 2, 
-      y: level * this.levelHeight + 100 
+      y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset 
     });
 
     // 布局子节点

@@ -4,6 +4,7 @@
  */
 
 import { NODE_WIDTH, NODE_HEIGHT } from './treeLayout.js';
+import { TREE_EDITOR_CONFIG } from './config.js';
 
 export class CollisionDetector {
   /**
@@ -86,7 +87,7 @@ export class CollisionDetector {
    * @param {number} tolerance - 容错距离（像素）
    * @returns {Object|null} 碰撞的边信息 {parentId, childId}，没有则返回null
    */
-  static getEdgeAtPosition(x, y, nodes, getNodeScreenPosition, scale, tolerance = 5) {
+  static getEdgeAtPosition(x, y, nodes, getNodeScreenPosition, scale, tolerance = TREE_EDITOR_CONFIG.interaction.collision.edgeTolerance) {
     if (!nodes || nodes.length === 0) return null;
     
     for (const node of nodes) {
@@ -170,8 +171,8 @@ export class CollisionDetector {
    * @returns {boolean} 是否重叠
    */
   static nodesOverlap(node1, node2, margin = 0) {
-    const pos1 = node1.position || { x: 0, y: 0 };
-    const pos2 = node2.position || { x: 0, y: 0 };
+    const pos1 = node1.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
+    const pos2 = node2.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
     
     return this.rectIntersects(
       { x: pos1.x - margin, y: pos1.y - margin, width: NODE_WIDTH + margin * 2, height: NODE_HEIGHT + margin * 2 },

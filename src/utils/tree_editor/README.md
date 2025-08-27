@@ -9,6 +9,7 @@
 ```
 src/utils/tree_editor/
 ├── index.js                    # 工具类统一导出文件
+├── config.js                   # 配置文件 - 统一管理所有数值设置
 ├── treeLayout.js              # 树结构自动布局算法
 ├── coordinateTransform.js     # 坐标转换工具
 ├── canvasRenderer.js          # Canvas渲染器
@@ -18,6 +19,21 @@ src/utils/tree_editor/
 ```
 
 ## 工具类结构
+
+### 0. 配置管理 (`config.js`)
+**职责**: 统一管理所有数值配置
+- 节点尺寸配置 (宽度、高度)
+- 布局配置 (层级间距、节点间距、起始位置等)
+- 渲染配置 (颜色、线宽、字体等)
+- 交互配置 (缩放参数、碰撞检测参数等)
+
+**使用方式**:
+```javascript
+import { TREE_EDITOR_CONFIG } from './config.js';
+// 使用配置
+const nodeWidth = TREE_EDITOR_CONFIG.node.width;
+const levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight;
+```
 
 ### 1. TreeLayoutManager (`treeLayout.js`)
 **职责**: 树结构自动布局算法
@@ -92,8 +108,13 @@ import {
   CoordinateTransformer, 
   CanvasRenderer, 
   EventHandler, 
-  CollisionDetector 
+  CollisionDetector,
+  TREE_EDITOR_CONFIG
 } from '../../utils/tree_editor/index.js';
+
+// 使用配置
+console.log('节点宽度:', TREE_EDITOR_CONFIG.node.width);
+console.log('层级间距:', TREE_EDITOR_CONFIG.layout.levelHeight);
 
 // 创建工具类实例
 const layoutManager = new TreeLayoutManager();
@@ -116,6 +137,31 @@ renderer.renderTree(nodes, selectedNode, scale, translate);
 // 碰撞检测
 const node = CollisionDetector.getNodeAtPosition(x, y, nodes, getScreenPos, scale);
 ```
+
+## 配置系统
+
+新增的配置系统通过 `config.js` 文件统一管理所有数值设置，包括：
+
+### 📐 节点配置
+- 节点宽度和高度
+- 默认节点位置
+
+### 🏗️ 布局配置  
+- 层级间距
+- 节点间最小间距
+- 根节点起始位置和间距倍数
+- 初始Y偏移量
+
+### 🎨 渲染配置
+- 边的颜色、宽度、箭头长度
+- 节点的背景色、边框色、边框宽度
+- 文本的颜色、字体、偏移量
+
+### 🖱️ 交互配置
+- 缩放的最大/最小值、缩放因子
+- 碰撞检测的容错距离
+
+这样的设计让调整视觉效果变得非常简单，只需要修改 `config.js` 文件中的数值即可。
 
 ## 设计原则
 

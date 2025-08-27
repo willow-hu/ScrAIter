@@ -8,3 +8,4 @@ export { CoordinateTransformer } from './coordinateTransform.js';
 export { CanvasRenderer } from './canvasRenderer.js';
 export { EventHandler } from './eventHandler.js';
 export { CollisionDetector } from './collisionDetector.js';
+export { TREE_EDITOR_CONFIG } from './config.js';
