@@ -45,6 +45,26 @@ export class CheckpointManager {
   }
 
   /**
+   * 比较两个数据对象是否相同
+   * @param {Object} data1 - 第一个数据对象
+   * @param {Object} data2 - 第二个数据对象
+   * @returns {boolean} 是否相同
+   */
+  isDataEqual(data1, data2) {
+    if (!data1 || !data2) return false;
+    
+    try {
+      // 使用 JSON 字符串比较来检查深度相等性
+      const str1 = JSON.stringify(data1);
+      const str2 = JSON.stringify(data2);
+      return str1 === str2;
+    } catch (error) {
+      console.error('比较数据时出错:', error);
+      return false;
+    }
+  }
+
+  /**
    * 创建新的 checkpoint
    * @param {Object} data - 当前数据
    * @returns {Object} 操作结果
@@ -52,6 +72,31 @@ export class CheckpointManager {
   createCheckpoint(data) {
     if (!data) {
       return { success: false, message: '数据不能为空' };
+    }
+
+    // 检查当前数据是否与最新的 checkpoint 相同
+    if (this.currentIndex >= 0 && this.currentIndex < this.checkpoints.length) {
+      const lastCheckpoint = this.checkpoints[this.currentIndex];
+      if (this.isDataEqual(data, lastCheckpoint)) {
+        return { 
+          success: false, 
+          message: '已是最新！',
+          checkpointIndex: this.currentIndex,
+          totalCheckpoints: this.checkpoints.length
+        };
+      }
+    }
+
+    // 如果有初始数据且当前没有 checkpoint，检查是否与初始数据相同
+    if (this.checkpoints.length === 0 && this.initialData) {
+      if (this.isDataEqual(data, this.initialData)) {
+        return { 
+          success: false, 
+          message: '已是最新！',
+          checkpointIndex: this.currentIndex,
+          totalCheckpoints: this.checkpoints.length
+        };
+      }
     }
 
     // 创建当前数据的深拷贝
@@ -71,7 +116,7 @@ export class CheckpointManager {
     
     return { 
       success: true, 
-      message: '保存点已创建',
+      message: '保存成功！',
       checkpointIndex: this.currentIndex,
       totalCheckpoints: this.checkpoints.length
     };
@@ -89,7 +134,7 @@ export class CheckpointManager {
       return {
         success: true,
         data,
-        message: '已撤销到前一个保存点',
+        // message: '已撤销到前一个保存点',
         checkpointIndex: this.currentIndex
       };
     } else if (this.currentIndex === 0) {
@@ -99,13 +144,13 @@ export class CheckpointManager {
       return {
         success: true,
         data,
-        message: '已撤销到初始状态',
+        // message: '已撤销到初始状态',
         checkpointIndex: this.currentIndex
       };
     } else {
       return {
         success: false,
-        message: '无法撤销，已经是最初状态'
+        // message: '无法撤销，已经是最初状态'
       };
     }
   }
@@ -122,13 +167,13 @@ export class CheckpointManager {
       return {
         success: true,
         data,
-        message: '已恢复到下一个保存点',
+        // message: '已恢复到下一个保存点',
         checkpointIndex: this.currentIndex
       };
     } else {
       return {
         success: false,
-        message: '无法重做，已经是最新状态'
+        // message: '无法重做，已经是最新状态'
       };
     }
   }

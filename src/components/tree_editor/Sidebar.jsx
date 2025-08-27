@@ -148,7 +148,7 @@ function Sidebar({
               disabled={!canRedo}
               style={{ width: '50%' }}
           >
-              回做
+              重做
           </Button>
         </Space.Compact>
         

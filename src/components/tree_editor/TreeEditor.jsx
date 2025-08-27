@@ -127,9 +127,14 @@ function TreeEditor() {
       // 保存到localStorage（可选）
       localStorage.setItem('treeData', JSON.stringify(treeData));
       
-      message.success(`${result.message}（第 ${result.checkpointIndex + 1} 个保存点）`);
+      message.success(`${result.message}`);
     } else {
-      message.error(result.message);
+      // 如果是"已是最新！"的情况，显示信息提示而不是错误提示
+      if (result.message === '已是最新！') {
+        message.info(result.message);
+      } else {
+        message.error(result.message);
+      }
     }
   };
 
@@ -142,7 +147,7 @@ function TreeEditor() {
       updateUndoRedoState();
       setSelectedNode(null);
       setIsEditing(false);
-      message.success(result.message);
+      // message.success(result.message);
     } else {
       message.warning(result.message);
     }
@@ -157,7 +162,7 @@ function TreeEditor() {
       updateUndoRedoState();
       setSelectedNode(null);
       setIsEditing(false);
-      message.success(result.message);
+      // message.success(result.message);
     } else {
       message.warning(result.message);
     }
