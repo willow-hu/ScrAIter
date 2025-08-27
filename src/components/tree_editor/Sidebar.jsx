@@ -83,7 +83,6 @@ function Sidebar({
       okType: 'danger',
       onOk() {
         onReset();
-        message.success('脚本已重置到初始状态');
       },
     });
   };
