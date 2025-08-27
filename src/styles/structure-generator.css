@@ -1,0 +1,13 @@
+/* 结构生成器样式 */
+
+/* 为未来的结构生成器预留样式文件 */
+.generator-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #666;
+}
+
+/* 这里可以添加结构生成器相关的样式 */

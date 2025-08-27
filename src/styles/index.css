@@ -1,0 +1,13 @@
+/* 主样式文件 - 导入所有模块样式 */
+
+/* 全局基础样式 */
+@import './global.css';
+
+/* 应用主框架样式 */
+@import './app.css';
+
+/* 树结构编辑器样式 */
+@import './tree-editor.css';
+
+/* 结构生成器样式 */
+@import './structure-generator.css';

@@ -1,0 +1,112 @@
+/* 树结构编辑器样式 */
+
+/* 画布区域 */
+.canvas-area {
+  flex: 1;
+  background-color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 侧边栏 */
+.sidebar {
+  width: 350px;
+  background-color: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* 调整器 */
+.resizer {
+  width: 5px;
+  background-color: #e0e0e0;
+  cursor: col-resize;
+  transition: background-color 0.2s;
+}
+
+.resizer:hover {
+  background-color: #007acc;
+}
+
+/* 右键菜单 */
+.context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.context-menu-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.context-menu-item:last-child {
+  border-bottom: none;
+}
+
+.context-menu-item:hover {
+  background-color: #f0f0f0;
+}
+
+/* 树节点样式 */
+.tree-node {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 120px;
+  max-width: 200px;
+  cursor: move;
+  transition: all 0.2s;
+  word-break: break-word;
+}
+
+.tree-node:hover {
+  border-color: #007acc;
+  box-shadow: 0 2px 8px rgba(0,122,204,0.3);
+}
+
+.tree-node.selected {
+  border-color: #007acc;
+  background-color: #f0f8ff;
+  box-shadow: 0 2px 8px rgba(0,122,204,0.3);
+}
+
+.node-id {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.node-name {
+  font-weight: 600;
+  color: #333;
+}
+
+/* 消息提示 */
+.error-message {
+  color: #dc3545;
+  font-size: 14px;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+.success-message {
+  color: #155724;
+  font-size: 14px;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+}
