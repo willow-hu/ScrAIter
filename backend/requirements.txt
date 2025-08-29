@@ -4,6 +4,9 @@ uvicorn==0.30.6
 pydantic==2.10.6
 python-multipart==0.0.9
 
+# HTTP客户端
+requests>=2.31.0
+
 # 文件处理
 openpyxl==3.1.5
 pandas>=2.0.0
