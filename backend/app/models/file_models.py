@@ -14,10 +14,12 @@ class FileStatus(str, Enum):
 
 class FileInfo(BaseModel):
     filename: str
+    relative_path: str  # 用于删除文件时的路径引用
     size: int
     upload_time: datetime
     status: FileStatus
     category: Optional[str] = None
+    file_type: Optional[str] = None  # structured 或 unstructured
 
 class FileListResponse(BaseModel):
     files: List[FileInfo]

@@ -11,3 +11,6 @@
 
 /* 结构生成器样式 */
 @import './structure-generator.css';
+
+/* 内容生成器样式 */
+@import './content-generator.css';

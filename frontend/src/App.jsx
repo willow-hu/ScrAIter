@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import TreeEditor from './components/tree_editor/TreeEditor';
+import ContentGenerator from './components/content_generator/ContentGenerator';
 
 function App() {
   const [activeTab, setActiveTab] = useState('editor');
@@ -43,12 +44,7 @@ function App() {
           </div>
         )}
         {activeTab === 'editor' && <TreeEditor />}
-        {activeTab === 'content' && (
-          <div className="placeholder">
-            <h2>内容生成</h2>
-            <p>这里将显示内容生成功能</p>
-          </div>
-        )}
+        {activeTab === 'content' && <ContentGenerator />}
         {activeTab === 'review' && (
           <div className="placeholder">
             <h2>内容校对</h2>

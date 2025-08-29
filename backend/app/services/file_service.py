@@ -53,11 +53,13 @@ class FileService:
         """获取文件信息"""
         stat = os.stat(file_path)
         return FileInfo(
-            filename=f"{category}/{filename}",
+            filename=filename,
+            relative_path=f"{category}/{filename}",
             size=stat.st_size,
             upload_time=datetime.fromtimestamp(stat.st_mtime),
             status=FileStatus.COMPLETED,
-            category=f"{file_type}:{category}"
+            category=category,
+            file_type=file_type
         )
     
     async def upload_files(self, files: List[UploadFile], category: str, file_type: str = "unstructured") -> Dict[str, Any]:
@@ -76,6 +78,11 @@ class FileService:
         
         for file in files:
             try:
+                # 检查文件名
+                if not file.filename:
+                    failed_files.append("文件名为空")
+                    continue
+                
                 # 检查文件扩展名
                 file_ext = os.path.splitext(file.filename)[1].lower()
                 if file_ext not in settings.ALLOWED_EXTENSIONS:
@@ -100,7 +107,7 @@ class FileService:
                 uploaded_files.append(file.filename)
                 
             except Exception as e:
-                failed_files.append(f"{file.filename}: {str(e)}")
+                failed_files.append(f"{file.filename or '未知文件'}: {str(e)}")
         
         return {
             "message": f"上传完成，成功 {len(uploaded_files)} 个，失败 {len(failed_files)} 个",
