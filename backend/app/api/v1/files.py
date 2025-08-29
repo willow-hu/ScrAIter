@@ -1,0 +1,86 @@
+"""
+文件管理API端点
+"""
+from typing import List, Optional
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
+from fastapi.responses import JSONResponse
+
+from app.models.file_models import FileListResponse, UploadResponse, DeleteResponse
+from app.services.file_service import file_service
+
+router = APIRouter()
+
+@router.get("/files", response_model=FileListResponse)
+async def get_files():
+    """
+    获取文件列表
+    返回：文件名、大小、上传时间、处理状态
+    """
+    try:
+        return file_service.get_file_list()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
+
+@router.post("/files/upload")
+async def upload_files(
+    files: List[UploadFile] = File(...),
+    category: str = Form(..., description="文件分类名称"),
+    file_type: str = Form(default="unstructured", description="文件类型: structured 或 unstructured")
+):
+    """
+    上传文件
+    支持：单个/批量文件上传
+    """
+    try:
+        if not files:
+            raise HTTPException(status_code=400, detail="没有上传文件")
+        
+        if not category:
+            raise HTTPException(status_code=400, detail="请提供文件分类名称")
+        
+        if file_type not in ["structured", "unstructured"]:
+            raise HTTPException(status_code=400, detail="文件类型必须是 'structured' 或 'unstructured'")
+        
+        result = await file_service.upload_files(files, category, file_type)
+        
+        # 如果有失败的文件，返回部分成功状态
+        if result["failed_files"]:
+            return JSONResponse(
+                status_code=207,  # Multi-Status
+                content=result
+            )
+        
+        return JSONResponse(
+            status_code=200,
+            content=result
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"上传文件失败: {str(e)}")
+
+@router.delete("/files/{filename:path}")
+async def delete_file(filename: str):
+    """
+    删除文件
+    filename格式: category/filename
+    """
+    try:
+        if not filename:
+            raise HTTPException(status_code=400, detail="文件名不能为空")
+        
+        result = file_service.delete_file(filename)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=404, detail=result["message"])
+        
+        return JSONResponse(
+            status_code=200,
+            content=result
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"删除文件失败: {str(e)}")

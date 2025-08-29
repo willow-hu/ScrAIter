@@ -1,0 +1,23 @@
+# FastAPI 后端依赖
+fastapi==0.112.0
+uvicorn==0.30.6
+pydantic==2.10.6
+python-multipart==0.0.9
+
+# 文件处理
+openpyxl==3.1.5
+pandas>=2.0.0
+docx2txt==0.8
+
+# 原有RAG依赖（保留以便后续集成）
+faiss-cpu==1.8.0.post1
+dashscope==1.20.4
+openai==1.55.3
+httpx==0.27.0
+llama-index-vector-stores-faiss==0.1.2
+llama-index-embeddings-dashscope==0.1.4
+llama-index-readers-file==0.1.33
+matplotlib==3.9.3
+llama-index-core==0.10.67
+llama-index-postprocessor-dashscope-rerank-custom==0.1.0
+simplejson==3.19.3
