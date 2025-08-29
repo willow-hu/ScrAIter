@@ -65,7 +65,7 @@ function ContentGenerator() {
         setCurrentNodeIndex(0);
       }
       
-      message.success('数据加载成功');
+    //   message.success('数据加载成功');
     } catch (error) {
       console.error('加载数据失败:', error);
       message.error('加载数据失败');
@@ -283,10 +283,9 @@ function ContentGenerator() {
   return (
     <Layout className="content-generator" style={{ minHeight: '100vh' }}>
       <Content style={{ padding: '24px' }}>
-        <Title level={2}>内容生成</Title>
         
         {/* 顶部工具栏 */}
-        <Card className="toolbar-card" style={{ marginBottom: '16px' }}>
+        {/* <Card className="toolbar-card" style={{ marginBottom: '16px' }}>
           <Space>
             <Button 
               icon={<DatabaseOutlined />}
@@ -305,7 +304,7 @@ function ContentGenerator() {
               当前进度: {currentNodeIndex + 1} / {flatNodes.length}
             </Text>
           </Space>
-        </Card>
+        </Card> */}
 
         {/* 主要内容区域 */}
         {currentNode && (
@@ -447,7 +446,7 @@ function ContentGenerator() {
                 </Space>
               </Card>
 
-              <Card title="遍历进度" size="small" className="progress-card" style={{ marginTop: '16px' }}>
+              <Card title="完成进度" size="small" className="progress-card" style={{ marginTop: '16px' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div className="progress-number">
                     {Math.round(((currentNodeIndex + 1) / flatNodes.length) * 100)}%
