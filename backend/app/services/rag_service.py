@@ -6,7 +6,7 @@ import os
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from openai import OpenAI
 from llama_index.core import StorageContext, load_index_from_storage, Settings
 from llama_index.embeddings.dashscope import (
@@ -87,7 +87,7 @@ class RAGService:
         query: str, 
         similarity_threshold: float = 0.5, 
         chunk_cnt: int = 3
-    ) -> tuple[str, List[RAGSource]]:
+    ) -> Tuple[str, List[RAGSource]]:
         """检索相关知识片段"""
         try:
             # 默认使用twin_pagoda知识库
@@ -113,11 +113,13 @@ class RAGService:
             rag_sources = []
             
             for node in ranked_nodes:
-                if node.score >= similarity_threshold:
+                # 确保score不为None
+                node_score = getattr(node, 'score', 0.0) or 0.0
+                if node_score >= similarity_threshold:
                     context_str += node.text + "\n\n"
                     rag_sources.append(RAGSource(
                         text=node.text,
-                        score=node.score,
+                        score=node_score,
                         source_file=node.metadata.get('file_name', 'unknown')
                     ))
             
@@ -192,16 +194,20 @@ class RAGService:
                 )
             except KeyError as e:
                 # 如果模板格式不匹配，使用简化版本
-                filled_prompt = f\"\"\"全局设定：
-{json.dumps(global_context, ensure_ascii=False, indent=2)}
+                filled_prompt = """全局设定：
+{}
 
 节点信息：
-{json.dumps(node_info, ensure_ascii=False, indent=2)}
+{}
 
 参考知识：
-{context_knowledge}
+{}
 
-请根据上述信息，以指定角色的口吻，生成一段150-200字的对话脚本。\"\"\"
+请根据上述信息，以指定角色的口吻，生成一段150-200字的对话脚本。""".format(
+                    json.dumps(global_context, ensure_ascii=False, indent=2),
+                    json.dumps(node_info, ensure_ascii=False, indent=2),
+                    context_knowledge
+                )
             
             # 调用大模型
             completion = self.client.chat.completions.create(
@@ -218,7 +224,11 @@ class RAGService:
                 stream=False
             )
             
-            content = completion.choices[0].message.content.strip()
+            content = completion.choices[0].message.content
+            if content is None:
+                content = "[内容生成失败]"
+            else:
+                content = content.strip()
             
             # 记录成功历史
             history_record = GenerationHistory(
