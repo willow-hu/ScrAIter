@@ -8,15 +8,27 @@
   background-color: #f0f2f5;
 }
 
-.content-generator .ant-layout-sider {
-  background-color: #fff;
-  border-radius: 8px;
+/* 新布局样式 */
+.content-generator .ant-row {
+  margin-bottom: 16px;
+}
+
+.content-generator .ant-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.content-generator .ant-col .ant-card {
+  flex: 1;
+  height: 100%;
 }
 
 /* 节点信息卡片样式 */
 .node-info-card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  height: auto;
+  min-height: 600px;
 }
 
 .node-info-card .ant-card-head {
@@ -27,6 +39,34 @@
 .node-info-card .ant-card-head-title {
   color: #fff;
   font-weight: 600;
+}
+
+/* 参考资料面板样式 */
+.reference-panel {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.reference-panel .ant-card-head {
+  background: linear-gradient(90deg, #52c41a, #73d13d);
+  border-radius: 8px 8px 0 0;
+}
+
+.reference-panel .ant-card-head-title {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 底部信息卡片样式 */
+.bottom-info-cards .ant-card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.bottom-info-cards .ant-card-head {
+  background: #fafafa;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 /* 工具栏样式 */

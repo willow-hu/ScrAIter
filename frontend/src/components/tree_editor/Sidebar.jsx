@@ -323,9 +323,9 @@ function Sidebar({
         {(
           <Card size="small" title="使用说明">
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              1. 双击节点以编辑内容；
-              2. 空白处右击以添加节点；
-              3. 右击节点以获取更多操作选项；
+              1. 双击节点以编辑内容<br/>
+              2. 空白处右击以添加节点<br/>
+              3. 右击节点以获取更多操作选项<br/>
             </Text>
           </Card>
         )}
