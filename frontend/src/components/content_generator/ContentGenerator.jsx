@@ -235,7 +235,7 @@ function ContentGenerator() {
 
   return (
     <Layout className="content-generator" style={{ minHeight: '100vh' }}>
-      <Content style={{ padding: '24px' }}>
+      <Content style={{ padding: '24px', overflow: 'auto' }}>
         {/* 主要内容区域 */}
         {currentNode && (
           <Space direction="vertical" style={{ width: '100%' }} size="large">
