@@ -3,6 +3,7 @@ import { Layout, Card, Button, Input, Typography, Space, Spin, message, Modal, D
 import { SaveOutlined, ThunderboltOutlined, LeftOutlined, RightOutlined, DownloadOutlined, DatabaseOutlined, FileTextOutlined } from '@ant-design/icons';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
 import ReferenceViewer from './ReferenceViewer';
+import { flattenTreeDFS } from '../../utils/content_generator/treeTraversal';
 
 const { Content, Sider } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -71,54 +72,6 @@ function ContentGenerator() {
       message.error('加载数据失败');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // DFS遍历将树结构转换为平铺数组
-  const flattenTreeDFS = (structure) => {
-    const result = [];
-    const visited = new Set();
-    
-    // 如果是数组，找到根节点（没有被其他节点引用作为子节点的节点）
-    if (Array.isArray(structure)) {
-      const allChildIds = new Set();
-      structure.forEach(node => {
-        if (node.child_ids) {
-          node.child_ids.forEach(id => allChildIds.add(id));
-        }
-      });
-      
-      const rootNodes = structure.filter(node => !allChildIds.has(node.id));
-      
-      // 对每个根节点进行DFS
-      rootNodes.forEach(root => {
-        dfsTraversal(root, structure, result, visited);
-      });
-    } else {
-      // 单个根节点
-      dfsTraversal(structure, [], result, visited);
-    }
-    
-    return result;
-  };
-
-  // DFS遍历辅助函数
-  const dfsTraversal = (node, allNodes, result, visited) => {
-    if (visited.has(node.id)) {
-      return;
-    }
-    
-    visited.add(node.id);
-    result.push(node);
-    
-    // 递归处理子节点
-    if (node.child_ids && Array.isArray(allNodes)) {
-      node.child_ids.forEach(childId => {
-        const childNode = allNodes.find(n => n.id === childId);
-        if (childNode && !visited.has(childId)) {
-          dfsTraversal(childNode, allNodes, result, visited);
-        }
-      });
     }
   };
 
