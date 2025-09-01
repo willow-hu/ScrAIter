@@ -227,18 +227,18 @@ function ContentGenerator() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div className="content-loading-container">
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <Layout className="content-generator" style={{ minHeight: '100vh' }}>
-      <Content style={{ padding: '24px', overflow: 'auto' }}>
+    <Layout className="content-generator content-layout">
+      <Content className="content-main">
         {/* 主要内容区域 */}
         {currentNode && (
-          <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <Space direction="vertical" className="content-space-vertical" size="large">
             {/* 上方：节点编辑和参考资料 */}
             <Row gutter={16}>
               {/* 左侧：节点编辑卡片 */}
@@ -246,7 +246,7 @@ function ContentGenerator() {
                 <Card 
                   className="node-info-card"
                   title={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="card-title-container">
                       <span>节点 #{currentNode.id}: {currentNode.name || '未命名'}</span>
                       <Text type="secondary">
                         {currentNodeIndex + 1} / {flatNodes.length}
@@ -254,7 +254,7 @@ function ContentGenerator() {
                     </div>
                   }
                 >
-                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                  <Space direction="vertical" className="content-space-vertical" size="large">
                     {/* 节点信息编辑 */}
                     <div>
                       <Text strong>关键词</Text>
@@ -262,7 +262,7 @@ function ContentGenerator() {
                         value={nodeForm.name}
                         onChange={(e) => setNodeForm(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="输入节点关键词"
-                        style={{ marginTop: '8px' }}
+                        className="form-input-margin"
                       />
                     </div>
 
@@ -273,7 +273,7 @@ function ContentGenerator() {
                         onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
                         placeholder="输入用户选项/问题"
                         rows={2}
-                        style={{ marginTop: '8px' }}
+                        className="form-input-margin"
                       />
                     </div>
 
@@ -284,7 +284,7 @@ function ContentGenerator() {
                         onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
                         placeholder="输入节点摘要"
                         rows={3}
-                        style={{ marginTop: '8px' }}
+                        className="form-input-margin"
                       />
                     </div>
 
@@ -295,7 +295,7 @@ function ContentGenerator() {
                         onChange={(e) => setNodeForm(prev => ({ ...prev, content: e.target.value }))}
                         placeholder="生成的内容将显示在这里，您也可以手动编辑"
                         rows={6}
-                        style={{ marginTop: '8px' }}
+                        className="form-input-margin"
                       />
                     </div>
 
@@ -368,7 +368,7 @@ function ContentGenerator() {
             <Row gutter={16} className="bottom-info-cards">
               <Col span={12}>
                 <Card title="项目信息" size="small">
-                  <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space direction="vertical" className="project-info-space">
                     <div>
                       <Text strong>景点名称：</Text>
                       <Text>{treeData?.global_context?.site_name || '未设置'}</Text>
@@ -380,7 +380,7 @@ function ContentGenerator() {
                     <div>
                       <Text strong>角色设定：</Text>
                       <Paragraph 
-                        style={{ fontSize: '12px', color: '#666', margin: 0 }}
+                        className="project-info-description"
                         ellipsis={{ rows: 3, expandable: true }}
                       >
                         {treeData?.global_context?.character_setting || '未设置'}
@@ -396,7 +396,7 @@ function ContentGenerator() {
 
               <Col span={12}>
                 <Card title="使用说明" size="small">
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                  <Text type="secondary" className="usage-instructions">
                     1. 可以编辑节点的关键词、问题和摘要<br/>
                     2. 点击"生成内容"调用RAG生成内容（二次点击会覆盖先前内容）<br/>
                     3. 可以手动编辑生成的内容<br/>

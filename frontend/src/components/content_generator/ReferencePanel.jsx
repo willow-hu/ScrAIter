@@ -15,11 +15,11 @@ function ReferencePanel({ sources = [], loading = false }) {
   // 如果没有数据，显示空状态
   if (!sources || sources.length === 0) {
     return (
-      <Card title="参考资料" size="small" className="reference-panel" style={{ minHeight: '400px' }}>
+      <Card title="参考资料" size="small" className="reference-panel reference-panel-empty">
         <Empty 
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="暂无参考资料"
-          style={{ paddingTop: '60px' }}
+          className="reference-panel-empty-content"
         />
       </Card>
     );
@@ -45,34 +45,25 @@ function ReferencePanel({ sources = [], loading = false }) {
       title="参考资料" 
       size="small" 
       className="reference-panel"
-      style={{ minHeight: '400px', display: 'flex', flexDirection: 'column' }}
       bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
     >
       {/* 内容区域 */}
-      <div style={{ flex: 1, overflow: 'hidden', marginBottom: '16px' }}>
-        <Space direction="vertical" style={{ width: '100%' }} size="small">
+      <div className="reference-panel-content">
+        <Space direction="vertical" className="reference-panel-space" size="small">
           {/* 来源信息 */}
-          <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+          <div className="reference-panel-source">
+            <Text type="secondary" className="reference-panel-source-text">
               来源：{currentSource.source_file || '未知文件'}
             </Text>
             <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+            <Text type="secondary" className="reference-panel-source-text">
               相关度：{(currentSource.score * 100).toFixed(1)}%
             </Text>
           </div>
           
           {/* 内容文本 */}
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            <Paragraph 
-              style={{ 
-                fontSize: '13px', 
-                lineHeight: '1.6',
-                margin: 0,
-                maxHeight: '280px',
-                overflow: 'auto'
-              }}
-            >
+          <div className="reference-panel-text-container">
+            <Paragraph className="reference-panel-text">
               {currentSource.text}
             </Paragraph>
           </div>
@@ -80,13 +71,7 @@ function ReferencePanel({ sources = [], loading = false }) {
       </div>
 
       {/* 分页控制器 */}
-      <div style={{ 
-        borderTop: '1px solid #f0f0f0', 
-        paddingTop: '12px',
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center' 
-      }}>
+      <div className="reference-panel-pagination">
         <Button 
           type="text" 
           icon={<LeftOutlined />} 
@@ -95,7 +80,7 @@ function ReferencePanel({ sources = [], loading = false }) {
           disabled={currentIndex === 0}
         />
         
-        <Text style={{ fontSize: '13px', color: '#666' }}>
+        <Text className="reference-panel-pagination-text">
           {currentIndex + 1} / {totalSources}
         </Text>
         

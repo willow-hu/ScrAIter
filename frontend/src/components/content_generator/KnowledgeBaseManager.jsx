@@ -239,23 +239,23 @@ function KnowledgeBaseManager({ onClose }) {
   };
 
   return (
-    <div className="kb-manager" style={{ padding: '16px' }}>
-      <Space direction="vertical" style={{ width: '100%' }} size="large">
+    <div className="kb-manager">
+      <Space direction="vertical" className="kb-main-space" size="large">
         {/* 知识库状态 */}
         <Card title="知识库状态" size="small">
           {kbStatus ? (
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Space direction="vertical" className="kb-status-space">
+              <div className="kb-status-item">
                 <Text strong>构建状态：</Text>
                 <Tag color={kbStatus.is_built ? 'green' : 'red'}>
                   {kbStatus.is_built ? '已构建' : '未构建'}
                 </Tag>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="kb-status-item">
                 <Text strong>文件数量：</Text>
                 <Text>{kbStatus.file_count || 0}</Text>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div className="kb-status-item">
                 <Text strong>最后更新：</Text>
                 <Text>{formatTime(kbStatus.last_updated)}</Text>
               </div>
@@ -268,7 +268,7 @@ function KnowledgeBaseManager({ onClose }) {
         {/* 构建进度 */}
         {building && buildProgress && (
           <Card title="构建进度" size="small">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" className="kb-progress-space">
               <Progress 
                 percent={buildProgress.progress || 0} 
                 status={buildProgress.status === 'failed' ? 'exception' : 'active'}
@@ -295,14 +295,14 @@ function KnowledgeBaseManager({ onClose }) {
             </Button>
           }
         >
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" className="kb-upload-space">
             {/* 文件配置 */}
             <Space>
               <Text strong>分类：</Text>
               <Select
                 value={category}
                 onChange={setCategory}
-                style={{ width: 120 }}
+                className="kb-config-select"
               >
                 <Select.Option value="twin_pagoda">双塔</Select.Option>
                 <Select.Option value="other">其他</Select.Option>
@@ -312,7 +312,7 @@ function KnowledgeBaseManager({ onClose }) {
               <Select
                 value={fileType}
                 onChange={setFileType}
-                style={{ width: 120 }}
+                className="kb-config-select"
               >
                 <Select.Option value="unstructured">非结构化</Select.Option>
                 <Select.Option value="structured">结构化</Select.Option>
@@ -353,7 +353,7 @@ function KnowledgeBaseManager({ onClose }) {
                   ]}
                 >
                   <List.Item.Meta
-                    avatar={<FileTextOutlined style={{ fontSize: '16px' }} />}
+                    avatar={<FileTextOutlined className="kb-file-icon" />}
                     title={
                       <Space>
                         <Text>{file.filename}</Text>
@@ -392,7 +392,7 @@ function KnowledgeBaseManager({ onClose }) {
         />
 
         {/* 底部按钮 */}
-        <div style={{ textAlign: 'right' }}>
+        <div className="kb-close-button">
           <Button onClick={onClose}>
             关闭
           </Button>

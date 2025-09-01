@@ -158,38 +158,8 @@
   box-shadow: 0 4px 8px rgba(250, 140, 22, 0.4) !important;
 }
 
-/* 进度显示样式 */
-.progress-card {
-  text-align: center;
-  background: linear-gradient(135deg, #f0f9ff, #e6f7ff);
-  border: 1px solid #91d5ff;
-}
-
-.progress-number {
-  font-size: 32px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #1890ff, #36cfc9);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1;
-}
-
-/* 信息面板样式 */
-.info-panel .ant-card {
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-.info-panel .ant-card-head {
-  background: #fafafa;
-  border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.info-panel .ant-typography {
-  margin-bottom: 4px;
-}
+/* 进度显示样式 - 已移除，但保留以备后用 */
+/* 信息面板样式 - 已移除Sider布局 */
 
 /* 知识库管理抽屉样式 */
 .kb-manager .ant-upload-drag {
@@ -237,23 +207,14 @@
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
-  .content-generator .ant-layout-sider {
-    width: 250px !important;
-    min-width: 250px !important;
+  .content-generator .ant-col {
+    margin-bottom: 16px;
   }
 }
 
 @media (max-width: 768px) {
-  .content-generator .ant-layout {
+  .content-generator .ant-row {
     flex-direction: column;
-  }
-  
-  .content-generator .ant-layout-sider {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    margin-left: 0 !important;
-    margin-top: 16px;
   }
   
   .action-buttons .ant-space {
@@ -311,4 +272,251 @@
 
 .content-generator ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 新增的内联样式类 */
+/* 加载容器样式 */
+.content-loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* 内容区域样式 */
+.content-layout {
+  min-height: 100vh;
+}
+
+.content-main {
+  padding: 24px;
+  overflow: auto;
+}
+
+.content-space-vertical {
+  width: 100%;
+}
+
+/* 卡片标题样式 */
+.card-title-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 表单元素样式 */
+.form-input-margin {
+  margin-top: 8px;
+}
+
+/* 项目信息样式 */
+.project-info-space {
+  width: 100%;
+}
+
+.project-info-description {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+.usage-instructions {
+  font-size: 12px;
+}
+
+/* 参考资料面板样式 */
+.reference-panel-empty {
+  min-height: 400px;
+}
+
+.reference-panel-empty-content {
+  padding-top: 60px;
+}
+
+.reference-panel-main {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.reference-panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.reference-content-area {
+  flex: 1;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.reference-content-space {
+  width: 100%;
+}
+
+.reference-source-info {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.reference-source-text {
+  font-size: 12px;
+}
+
+.reference-text-area {
+  flex: 1;
+  overflow: auto;
+}
+
+.reference-text-content {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.reference-pagination {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reference-pagination-text {
+  font-size: 13px;
+  color: #666;
+}
+
+/* 知识库管理样式 */
+.kb-manager {
+  padding: 16px;
+}
+
+.kb-main-space {
+  width: 100%;
+}
+
+.kb-manager-container {
+  padding: 16px;
+}
+
+.kb-manager-space {
+  width: 100%;
+}
+
+.kb-status-space {
+  width: 100%;
+}
+
+.kb-status-item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.kb-progress-space {
+  width: 100%;
+}
+
+.kb-upload-space {
+  width: 100%;
+}
+
+.kb-config-select {
+  width: 120px;
+}
+
+.kb-file-icon {
+  font-size: 16px;
+}
+
+.kb-close-button {
+  text-align: right;
+}
+
+/* ReferenceViewer样式 */
+.reference-viewer-space {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.reference-viewer-item {
+  border: none;
+  padding: 0 0 16px 0;
+}
+
+.reference-viewer-card {
+  width: 100%;
+}
+
+.reference-viewer-content {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid #1890ff;
+}
+
+/* ReferencePanel Component Styles */
+.reference-panel {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.reference-panel-empty {
+  min-height: 400px;
+}
+
+.reference-panel-empty-content {
+  padding-top: 60px;
+}
+
+.reference-panel-content {
+  flex: 1;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.reference-panel-space {
+  width: 100%;
+}
+
+.reference-panel-source {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.reference-panel-source-text {
+  font-size: 12px;
+}
+
+.reference-panel-text-container {
+  flex: 1;
+  overflow: auto;
+}
+
+.reference-panel-text {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.reference-panel-pagination {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reference-panel-pagination-text {
+  font-size: 13px;
+  color: #666;
 }
