@@ -40,7 +40,7 @@ class RAGService:
         # 路径设置
         self.kb_path = settings.KNOWLEDGE_BASES_DIR
         self.configs_path = settings.CONFIGS_DIR
-        self.prompts_path = os.path.join(os.path.dirname(settings.BASE_DIR), "qwen-local-rag", "prompts")
+        self.prompts_path = os.path.join(settings.BASE_DIR, "app", "prompts")
         
         # 生成历史存储
         self.generation_history: List[GenerationHistory] = []
@@ -48,25 +48,8 @@ class RAGService:
     
     def load_prompt_template(self, prompt_file: str = "generate_script.txt") -> str:
         """加载提示词模板"""
+        assert os.path.exists(self.prompts_path), "提示词文件不存在！"
         prompt_path = os.path.join(self.prompts_path, prompt_file)
-        if not os.path.exists(prompt_path):
-            # 返回默认模板
-            return """角色：
-你是一位经验丰富的交互剧情游戏设计师与叙事制作人。
-
-目标：
-根据提供的全局设定和当前节点信息，生成一段对话脚本。
-
-全局创作指导：
-{global_context}
-
-当前节点数据：
-{node_info}
-
-参考知识：
-{context}
-
-请生成150-200字的对话脚本内容。"""
         
         with open(prompt_path, 'r', encoding='utf-8') as f:
             return f.read().strip()
@@ -193,22 +176,8 @@ class RAGService:
                     context=context_knowledge
                 )
             except KeyError as e:
-                # 如果模板格式不匹配，使用简化版本
-                filled_prompt = """全局设定：
-{}
+                print(f"❌ 提示词模板有误，请检查: {e}")
 
-节点信息：
-{}
-
-参考知识：
-{}
-
-请根据上述信息，以指定角色的口吻，生成一段150-200字的对话脚本。""".format(
-                    json.dumps(global_context, ensure_ascii=False, indent=2),
-                    json.dumps(node_info, ensure_ascii=False, indent=2),
-                    context_knowledge
-                )
-            
             # 调用大模型
             completion = self.client.chat.completions.create(
                 model="qwen-max",
