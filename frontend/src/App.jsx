@@ -3,7 +3,7 @@ import TreeEditor from './components/tree_editor/TreeEditor';
 import ContentGenerator from './components/content_generator/ContentGenerator';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('editor');
+  const [activeTab, setActiveTab] = useState('content');
 
   return (
     <div className="app">
@@ -40,7 +40,7 @@ function App() {
         {activeTab === 'generator' && (
           <div className="placeholder">
             <h2>结构生成</h2>
-            <p>这里将显示结构生成功能</p>
+            <p>结构生成功能待开发</p>
           </div>
         )}
         {activeTab === 'editor' && <TreeEditor />}
@@ -48,7 +48,7 @@ function App() {
         {activeTab === 'review' && (
           <div className="placeholder">
             <h2>内容校对</h2>
-            <p>这里将显示内容校对功能</p>
+            <p>内容校对功能待开发</p>
           </div>
         )}
       </div>
