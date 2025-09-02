@@ -134,7 +134,7 @@ class KnowledgeBaseService:
         
         return count
     
-    async def build_knowledge_base(self, name: str, categories: List[str], file_type: str = "mixed") -> Dict[str, str]:
+    async def build_knowledge_base(self, name: str, categories: List[str], file_type: str = "mixed", **build_params) -> Dict[str, Any]:
         """构建知识库"""
         task_id = str(uuid.uuid4())
         
@@ -144,6 +144,26 @@ class KnowledgeBaseService:
         
         if not categories:
             raise ValueError("请选择至少一个类目")
+        
+        # 检查知识库是否已存在
+        metadata = self._load_kb_metadata()
+        if name in metadata.get("knowledge_bases", {}):
+            raise ValueError(f"知识库 '{name}' 已存在，请使用其他名称")
+        
+        # 提取构建参数并设置默认值
+        build_config = {
+            "chunk_size": build_params.get("chunk_size", 1000),
+            "chunk_overlap": build_params.get("chunk_overlap", 200),
+            "chunking_method": build_params.get("chunking_method", "recursive"),
+            "embedding_model": build_params.get("embedding_model", "dashscope"),
+            "vector_dimension": build_params.get("vector_dimension"),
+            "index_type": build_params.get("index_type", "faiss"),
+            "similarity_metric": build_params.get("similarity_metric", "cosine"),
+            "description": build_params.get("description"),
+            "tags": build_params.get("tags", []),
+            "batch_size": build_params.get("batch_size", 32),
+            "max_workers": build_params.get("max_workers", 4)
+        }
         
         # 检查是否有文件可用
         available_files = 0
@@ -178,22 +198,23 @@ class KnowledgeBaseService:
         )
         self.build_tasks[task_id] = build_status
         
-        # 异步执行构建任务
-        asyncio.create_task(self._build_knowledge_base_task(task_id, name, categories, file_type))
+        # 异步执行构建任务，传递构建配置
+        asyncio.create_task(self._build_knowledge_base_task(task_id, name, categories, file_type, build_config))
         
         return {
             "task_id": task_id,
-            "message": f"知识库 '{name}' 构建任务已启动，预计处理 {available_files} 个文件"
+            "message": f"知识库 '{name}' 构建任务已启动，预计处理 {available_files} 个文件",
+            "build_config": build_config
         }
     
-    async def _build_knowledge_base_task(self, task_id: str, name: str, categories: List[str], file_type: str):
+    async def _build_knowledge_base_task(self, task_id: str, name: str, categories: List[str], file_type: str, build_config: Dict[str, Any]):
         """执行知识库构建任务"""
         try:
             if not LLAMA_INDEX_AVAILABLE:
                 raise Exception("llama_index 模块不可用，无法构建知识库")
             
             build_status = self.build_tasks[task_id]
-            build_status.current_file = "初始化构建环境..."
+            build_status.current_file = f"初始化构建环境... (chunk_size: {build_config['chunk_size']})"
             build_status.progress = 5.0
             
             # 创建知识库目录
@@ -299,7 +320,8 @@ class KnowledgeBaseService:
                 "file_count": self._count_files_in_categories(categories),
                 "task_id": task_id,
                 "vector_path": kb_vector_path,
-                "document_count": len(documents) + len(nodes)
+                "document_count": len(documents) + len(nodes),
+                "build_config": build_config  # 保存构建配置
             }
             self._save_kb_metadata(metadata)
             
@@ -355,6 +377,7 @@ class KnowledgeBaseService:
                     "created_time": kb_info.get("created_time"),
                     "file_count": kb_info.get("file_count", 0),
                     "document_count": kb_info.get("document_count", 0),
+                    "build_config": kb_info.get("build_config", {}),
                     "exists": exists
                 })
             

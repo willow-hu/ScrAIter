@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button, Select, Space, Progress, Alert, Divider, message, Modal, List, Tag } from 'antd';
 import { DatabaseOutlined, PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
+import { MUSEUM_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig';
 
 const { Option } = Select;
 
@@ -12,6 +13,42 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   const [buildMessage, setBuildMessage] = useState('');
   const [existingKBs, setExistingKBs] = useState([]);
   const [showKBListModal, setShowKBListModal] = useState(false);
+  const [loadingKBs, setLoadingKBs] = useState(false);
+
+  // 构建参数配置 - 使用博物馆优化配置
+  const buildConfig = getFlattenedConfig(MUSEUM_CONFIG);
+
+  // 加载知识库列表
+  const loadKnowledgeBases = async () => {
+    setLoadingKBs(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/knowledge-base/list');
+      if (response.ok) {
+        const result = await response.json();
+        setExistingKBs(result.knowledge_bases || []);
+      } else {
+        console.error('获取知识库列表失败');
+        setExistingKBs([]);
+      }
+    } catch (error) {
+      console.error('获取知识库列表失败:', error);
+      setExistingKBs([]);
+    } finally {
+      setLoadingKBs(false);
+    }
+  };
+
+  // 组件挂载时加载知识库列表
+  useEffect(() => {
+    loadKnowledgeBases();
+  }, []);
+
+  // 当模态框打开时刷新知识库列表
+  useEffect(() => {
+    if (showKBListModal) {
+      loadKnowledgeBases();
+    }
+  }, [showKBListModal]);
 
   // 计算选中类目的文件统计
   const selectedStats = useMemo(() => {
@@ -37,6 +74,9 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
       return;
     }
 
+    // 首先获取已有知识库列表来检查名称冲突
+    await loadKnowledgeBases();
+
     // 让用户输入知识库名称
     Modal.confirm({
       title: '构建知识库',
@@ -54,6 +94,17 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
             placeholder="例如：twin_pagoda_kb" 
             style={{ width: '100%', padding: '8px' }}
           />
+          {existingKBs.length > 0 && (
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              已存在的知识库：{existingKBs.map(kb => kb.name).join(', ')}
+            </div>
+          )}
+          <div style={{ marginTop: 12, padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px', fontSize: '12px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>构建配置：</div>
+            <div>分块大小: {buildConfig.chunk_size} | 重叠: {buildConfig.chunk_overlap}</div>
+            <div>嵌入模型: {buildConfig.embedding_model} | 索引类型: {buildConfig.index_type}</div>
+            <div>相似度算法: {buildConfig.similarity_metric} | 批次大小: {buildConfig.batch_size}</div>
+          </div>
         </div>
       ),
       okText: '开始构建',
@@ -62,6 +113,13 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
         const kbName = document.getElementById('kb-name-input')?.value?.trim();
         if (!kbName) {
           message.error('请输入知识库名称');
+          return Promise.reject();
+        }
+        
+        // 检查知识库名称是否已存在
+        const nameExists = existingKBs.some(kb => kb.name === kbName);
+        if (nameExists) {
+          message.error(`知识库 "${kbName}" 已存在，请使用其他名称`);
           return Promise.reject();
         }
         
@@ -86,7 +144,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
         body: JSON.stringify({
           name: kbName,
           categories: selectedCategories,
-          file_type: 'mixed' // 混合类型
+          ...buildConfig  // 展开所有构建参数
         })
       });
 
@@ -126,6 +184,8 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
             setBuilding(false);
             message.success('知识库构建完成');
             onRefresh();
+            // 刷新知识库列表
+            loadKnowledgeBases();
           } else if (status.status === 'error') {
             clearInterval(pollInterval);
             setBuildStatus('error');
@@ -147,6 +207,46 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
         setBuilding(false);
       }
     }, 2000); // 每2秒检查一次
+  };
+
+  // 删除知识库
+  const handleDeleteKB = async (kbName) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除知识库 "${kbName}" 吗？此操作不可恢复。`,
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kbName}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            message.success(`知识库 "${kbName}" 删除成功`);
+            // 刷新知识库列表
+            loadKnowledgeBases();
+          } else {
+            const error = await response.json();
+            throw new Error(error.detail || '删除失败');
+          }
+        } catch (error) {
+          console.error('删除知识库失败:', error);
+          message.error(`删除失败: ${error.message}`);
+        }
+      }
+    });
+  };
+
+  // 格式化日期
+  const formatDate = (dateString) => {
+    if (!dateString) return '未知';
+    try {
+      return new Date(dateString).toLocaleString('zh-CN');
+    } catch (e) {
+      return '未知';
+    }
   };
 
   // 停止构建
@@ -288,8 +388,9 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
             <Button
               icon={<DatabaseOutlined />}
               onClick={() => setShowKBListModal(true)}
+              loading={loadingKBs}
             >
-              管理知识库
+              管理知识库 {existingKBs.length > 0 && `(${existingKBs.length})`}
             </Button>
           </Space>
         </div>
@@ -301,23 +402,52 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
         open={showKBListModal}
         onCancel={() => setShowKBListModal(false)}
         footer={null}
-        width={600}
+        width={700}
       >
         <div>
-          <p>已构建的知识库：</p>
-          {/* 这里后续会显示已有的知识库列表 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span>已构建的知识库：</span>
+            <Button 
+              size="small" 
+              onClick={loadKnowledgeBases}
+              loading={loadingKBs}
+            >
+              刷新
+            </Button>
+          </div>
+          
           <List
             dataSource={existingKBs}
+            loading={loadingKBs}
             locale={{ emptyText: '暂无知识库' }}
             renderItem={item => (
               <List.Item
                 actions={[
-                  <Button size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                  <Button 
+                    size="small" 
+                    danger 
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleDeleteKB(item.name)}
+                  >
+                    删除
+                  </Button>
                 ]}
               >
                 <List.Item.Meta
-                  title={item.name}
-                  description={`创建时间: ${item.created_time} | 文件数: ${item.file_count}`}
+                  title={
+                    <Space>
+                      <span style={{ fontWeight: 'bold' }}>{item.name}</span>
+                      {!item.exists && <Tag color="red">文件缺失</Tag>}
+                    </Space>
+                  }
+                  description={
+                    <div>
+                      <div>创建时间: {formatDate(item.created_time)}</div>
+                      <div>文件数量: {item.file_count || 0} 个</div>
+                      <div>切片数量: {item.document_count || 0} 个</div>
+                      <div>类目: {(item.categories || []).join(', ')}</div>
+                    </div>
+                  }
                 />
               </List.Item>
             )}

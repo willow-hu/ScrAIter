@@ -63,6 +63,27 @@ class BuildKnowledgeBaseRequest(BaseModel):
     name: str
     categories: List[str]
     file_type: str = "mixed"  # "structured", "unstructured", "mixed"
+    
+    # 文本处理参数
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    chunking_method: str = "recursive"  # "recursive", "sentence", "paragraph"
+    
+    # 嵌入参数
+    embedding_model: str = "dashscope"  # "dashscope", "local"
+    vector_dimension: Optional[int] = None  # 自动推断
+    
+    # 索引参数
+    index_type: str = "faiss"
+    similarity_metric: str = "cosine"  # "cosine", "euclidean", "dot_product"
+    
+    # 元数据
+    description: Optional[str] = None
+    tags: List[str] = []
+    
+    # 性能参数
+    batch_size: int = 32
+    max_workers: int = 4
 
 class BuildTaskResponse(BaseModel):
     task_id: str

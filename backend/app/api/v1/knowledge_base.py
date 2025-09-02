@@ -37,7 +37,23 @@ async def build_knowledge_base(request: BuildKnowledgeBaseRequest):
         result = await knowledge_base_service.build_knowledge_base(
             name=request.name.strip(),
             categories=request.categories,
-            file_type=request.file_type
+            file_type=request.file_type,
+            # 文本处理参数
+            chunk_size=request.chunk_size,
+            chunk_overlap=request.chunk_overlap,
+            chunking_method=request.chunking_method,
+            # 嵌入参数
+            embedding_model=request.embedding_model,
+            vector_dimension=request.vector_dimension,
+            # 索引参数
+            index_type=request.index_type,
+            similarity_metric=request.similarity_metric,
+            # 元数据
+            description=request.description,
+            tags=request.tags,
+            # 性能参数
+            batch_size=request.batch_size,
+            max_workers=request.max_workers
         )
         
         return BuildTaskResponse(
