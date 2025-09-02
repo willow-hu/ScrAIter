@@ -85,20 +85,36 @@ function ArchiveManager() {
     <Layout className="archive-manager">
       <Content className="archive-content">
         <div className="archive-container">
-          {/* 上传文件区域 */}
-          <Card 
-            title="上传文件" 
-            className="upload-section"
-            style={{ marginBottom: 24 }}
-          >
-            <FileUploader
-              categories={categories}
-              onUploadSuccess={handleUploadSuccess}
-              onRefresh={handleRefresh}
-            />
-          </Card>
+          {/* 上方区域：上传文件和知识库构建并排 */}
+          <Row gutter={24} style={{ marginBottom: 24 }}>
+            <Col span={16}>
+              <Card 
+                title="上传文件" 
+                className="upload-section"
+              >
+                <FileUploader
+                  categories={categories}
+                  onUploadSuccess={handleUploadSuccess}
+                  onRefresh={handleRefresh}
+                />
+              </Card>
+            </Col>
+            
+            <Col span={8}>
+              <Card 
+                title="知识库构建" 
+                className="kb-section"
+              >
+                <KnowledgeBaseBuilder
+                  categories={categories}
+                  files={files}
+                  onRefresh={handleRefresh}
+                />
+              </Card>
+            </Col>
+          </Row>
 
-          {/* 文件列表区域 */}
+          {/* 下方区域：文件列表和使用说明 */}
           <Row gutter={24}>
             <Col span={16}>
               <Card 
@@ -120,17 +136,29 @@ function ArchiveManager() {
               </Card>
             </Col>
 
-            {/* 知识库构建区域 */}
+            {/* 使用说明区域 */}
             <Col span={8}>
               <Card 
-                title="知识库构建" 
-                className="kb-section"
+                title="使用说明" 
+                className="instruction-section"
               >
-                <KnowledgeBaseBuilder
-                  categories={categories}
-                  files={files}
-                  onRefresh={handleRefresh}
-                />
+                <div className="instruction-content">
+                  <h4>文件管理流程</h4>
+                  <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                    <li>选择文件类型（结构化/非结构化）</li>
+                    <li>选择或创建类目</li>
+                    <li>上传文件到指定类目</li>
+                    <li>为每个文件设置来源标签</li>
+                  </ol>
+
+                  <h4 style={{ marginTop: '24px' }}>知识库构建</h4>
+                  <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                    <li>确保所有文件已设置来源标签</li>
+                    <li>选择要构建知识库的类目</li>
+                    <li>输入知识库名称并开始构建</li>
+                    <li>等待构建完成</li>
+                  </ol>
+                </div>
               </Card>
             </Col>
           </Row>

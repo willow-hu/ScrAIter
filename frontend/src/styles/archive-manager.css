@@ -15,11 +15,56 @@
   margin: 0 auto;
 }
 
-/* 上传区域样式 */
-.upload-section .ant-card-body {
-  padding: 24px;
+/* 上传区域和知识库构建区域样式 */
+.upload-section,
+.kb-section {
+  height: 100%;
 }
 
+.upload-section .ant-card-body,
+.kb-section .ant-card-body {
+  height: calc(100% - 57px); /* 减去卡片头部高度 */
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-builder {
+  width: 100%;
+  flex: 1;
+}
+
+/* 使用说明区域样式 */
+.instruction-section {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+.instruction-content {
+  color: #666;
+  font-size: 14px;
+}
+
+.instruction-content h4 {
+  color: #262626;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.instruction-content ol,
+.instruction-content ul {
+  margin-bottom: 0;
+}
+
+.instruction-content li {
+  margin-bottom: 4px;
+  color: #595959;
+}
+
+/* 上传文件组件样式 */
 .file-uploader {
   width: 100%;
 }
@@ -42,10 +87,6 @@
 }
 
 /* 文件列表样式 */
-.files-section {
-  min-height: 600px;
-}
-
 .files-list {
   width: 100%;
 }
@@ -74,17 +115,6 @@
   background: #f5f8ff;
 }
 
-/* 知识库构建区域样式 */
-.kb-section {
-  position: sticky;
-  top: 24px;
-  height: fit-content;
-}
-
-.kb-builder {
-  width: 100%;
-}
-
 .kb-builder .ant-select-multiple .ant-select-selection-item {
   background: #f0f8ff;
   border: 1px solid #d4edda;
@@ -110,8 +140,19 @@
     padding: 0 16px;
   }
   
-  .kb-section {
+  .kb-section,
+  .instruction-section {
     position: static;
+  }
+  
+  .upload-section,
+  .kb-section {
+    height: auto;
+  }
+  
+  .upload-section .ant-card-body,
+  .kb-section .ant-card-body {
+    height: auto;
   }
 }
 
@@ -126,12 +167,21 @@
   
   .upload-section,
   .files-section,
-  .kb-section {
+  .kb-section,
+  .instruction-section {
     margin-bottom: 16px;
   }
   
   .files-list .ant-table {
     font-size: 12px;
+  }
+  
+  .instruction-content {
+    font-size: 13px;
+  }
+  
+  .instruction-content h4 {
+    font-size: 14px;
   }
 }
 

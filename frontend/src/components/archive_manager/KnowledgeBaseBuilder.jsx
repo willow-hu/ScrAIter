@@ -197,7 +197,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
               
               return (
                 <Option key={category} value={category}>
-                  {category} ({categoryFiles.length} 个文件)
+                  {category}
                   {untaggedCount > 0 && <span style={{ color: 'red' }}> - {untaggedCount}个未标记</span>}
                 </Option>
               );

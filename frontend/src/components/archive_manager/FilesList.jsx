@@ -152,7 +152,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       key: 'file_type',
       width: '10%',
       render: (type) => (
-        <Tag color={type === 'structured' ? 'green' : 'blue'}>
+        <Tag color='default'>
           {type === 'structured' ? '结构化' : '非结构化'}
         </Tag>
       ),
@@ -174,7 +174,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
             loading={isUpdating}
             disabled={isUpdating}
             onChange={(newTag) => handleTagChange(record, newTag)}
-            dropdownMatchSelectWidth={false}
+            popupMatchSelectWidth={false}
           >
             {SOURCE_TAGS.map(tagOption => (
               <Option key={tagOption.value} value={tagOption.value}>
