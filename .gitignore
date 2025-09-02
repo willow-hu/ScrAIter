@@ -92,8 +92,9 @@ coverage.xml
 .pytest_cache/
 
 # AI/ML specific files
-shared/knowledge_bases/VectorStore/
+shared/knowledge_bases/
 shared/uploads/
+shared/projects/
 *.pkl
 *.model
 *.h5
