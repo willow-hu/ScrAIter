@@ -5,7 +5,10 @@ from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from app.models.file_models import FileListResponse, UploadResponse, DeleteResponse
+from app.models.file_models import (
+    FileListResponse, UploadResponse, DeleteResponse, UpdateTagRequest, 
+    UpdateTagResponse, CategoryListResponse
+)
 from app.services.file_service import file_service
 
 router = APIRouter()
@@ -14,12 +17,22 @@ router = APIRouter()
 async def get_files():
     """
     获取文件列表
-    返回：文件名、大小、上传时间、处理状态
+    返回：文件名、大小、上传时间、处理状态、标签等
     """
     try:
         return file_service.get_file_list()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
+
+@router.get("/categories", response_model=CategoryListResponse)
+async def get_categories():
+    """
+    获取所有类目列表
+    """
+    try:
+        return file_service.get_categories()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取类目列表失败: {str(e)}")
 
 @router.post("/files/upload")
 async def upload_files(
@@ -29,7 +42,7 @@ async def upload_files(
 ):
     """
     上传文件
-    支持：单个/批量文件上传
+    支持：单个/批量文件上传，指定类目
     """
     try:
         if not files:
@@ -59,6 +72,31 @@ async def upload_files(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"上传文件失败: {str(e)}")
+
+@router.put("/files/{filename:path}/tags", response_model=UpdateTagResponse)
+async def update_file_tag(filename: str, request: UpdateTagRequest):
+    """
+    更新文件标签
+    filename格式: category/filename
+    """
+    try:
+        if not filename:
+            raise HTTPException(status_code=400, detail="文件名不能为空")
+        
+        result = file_service.update_file_tag(filename, request.source_tag)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=404, detail=result["message"])
+        
+        return UpdateTagResponse(
+            message=result["message"],
+            success=result["success"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"更新标签失败: {str(e)}")
 
 @router.delete("/files/{filename:path}")
 async def delete_file(filename: str):

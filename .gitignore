@@ -133,3 +133,4 @@ settings.local.*
 
 # Local RAG system (as specified in original)
 qwen-local-rag/
+.github/prompts/

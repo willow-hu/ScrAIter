@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { act, useState } from 'react';
 import TreeEditor from './components/tree_editor/TreeEditor';
 import ContentGenerator from './components/content_generator/ContentGenerator';
+import ArchiveManager from './components/archive_manager/ArchiveManager';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('content');
+  const [activeTab, setActiveTab] = useState('archive');
 
   return (
     <div className="app">
       <nav className="navbar">
         <div className="nav-tabs">
+          <button
+            className={`nav-tab ${activeTab === 'archive' ? 'active' : ''}`}
+            onClick={() => setActiveTab('archive')}
+          >
+            资料管理
+          </button>
           <button 
             className={`nav-tab ${activeTab === 'generator' ? 'active' : ''}`}
             onClick={() => setActiveTab('generator')}
@@ -37,6 +44,7 @@ function App() {
       </nav>
       
       <div className="main-content">
+        {activeTab === 'archive' && <ArchiveManager />}
         {activeTab === 'generator' && (
           <div className="placeholder">
             <h2>结构生成</h2>

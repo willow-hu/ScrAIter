@@ -6,6 +6,9 @@
 /* 应用主框架样式 */
 @import './app.css';
 
+/* 资料管理样式 */
+@import './archive-manager.css';
+
 /* 树结构编辑器样式 */
 @import './tree-editor.css';
 
