@@ -188,9 +188,7 @@ function StructureGenerator() {
   return (
     <Layout className="structure-generator">
       <Content className="structure-content">
-        <div className="structure-container">
-          <Title level={2}>结构生成</Title>
-          
+        <div className="structure-container">         
           {/* 生成配置区域 */}
           <Card title="生成配置" style={{ marginBottom: 24 }}>
             <Form
@@ -241,12 +239,12 @@ function StructureGenerator() {
                   
                   {generatedStructure && (
                     <>
-                      <Button 
+                      {/* <Button 
                         icon={<EyeOutlined />}
                         onClick={handlePreviewStructure}
                       >
                         预览结构
-                      </Button>
+                      </Button> */}
                       
                       <Button 
                         type="default"
@@ -261,34 +259,6 @@ function StructureGenerator() {
                 </Space>
               </Form.Item>
             </Form>
-          </Card>
-
-          {/* 项目状态显示区域 */}
-          <Card title="项目状态" style={{ marginBottom: 24 }}>
-            <List
-              dataSource={projects}
-              renderItem={project => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<FileTextOutlined />}
-                    title={project.name}
-                    description={
-                      <Space>
-                        <Text type="secondary">
-                          树结构: {project.has_tree ? '✅' : '❌'}
-                        </Text>
-                        <Text type="secondary">
-                          脚本: {project.has_script ? '✅' : '❌'}
-                        </Text>
-                        <Text type="secondary">
-                          校对: {project.has_reviewed ? '✅' : '❌'}
-                        </Text>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
           </Card>
 
           {/* 使用说明 */}
@@ -308,7 +278,7 @@ function StructureGenerator() {
       </Content>
 
       {/* 结构预览模态框 */}
-      <Modal
+      {/* <Modal
         title="剧本结构预览"
         open={previewVisible}
         onCancel={() => setPreviewVisible(false)}
@@ -335,7 +305,7 @@ function StructureGenerator() {
             </div>
           )}
         </div>
-      </Modal>
+      </Modal> */}
     </Layout>
   );
 }

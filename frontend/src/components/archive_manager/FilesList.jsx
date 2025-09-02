@@ -114,7 +114,6 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
 
       if (response.ok) {
         onTagUpdateSuccess();
-        message.success('标签更新成功');
       } else {
         const error = await response.json();
         throw new Error(error.detail || '更新标签失败');

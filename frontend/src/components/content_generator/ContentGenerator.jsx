@@ -304,11 +304,10 @@ function ContentGenerator() {
 
                     <div>
                       <Text strong>用户选项</Text>
-                      <TextArea
+                      <Input
                         value={nodeForm.user}
                         onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
                         placeholder="输入用户选项/问题"
-                        rows={2}
                         className="form-input-margin"
                       />
                     </div>
@@ -319,7 +318,7 @@ function ContentGenerator() {
                         value={nodeForm.abstract}
                         onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
                         placeholder="输入节点摘要"
-                        rows={3}
+                        rows={2}
                         className="form-input-margin"
                       />
                     </div>
@@ -330,7 +329,7 @@ function ContentGenerator() {
                         value={nodeForm.content}
                         onChange={(e) => setNodeForm(prev => ({ ...prev, content: e.target.value }))}
                         placeholder="生成的内容将显示在这里，您也可以手动编辑"
-                        rows={6}
+                        rows={5}
                         className="form-input-margin"
                       />
                     </div>
@@ -362,11 +361,7 @@ function ContentGenerator() {
                         >
                           修改知识库
                         </Button>
-                      </Space>
-                    </div>
-
-                    <div className="action-buttons">
-                      <Space size="middle">
+                      
                         <Button 
                           icon={<LeftOutlined />}
                           onClick={goToPrevious}

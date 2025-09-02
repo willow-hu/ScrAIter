@@ -77,7 +77,6 @@ function ArchiveManager() {
 
   // 文件标签更新成功回调
   const handleTagUpdateSuccess = () => {
-    message.success('标签更新成功');
     handleRefresh();
   };
 
