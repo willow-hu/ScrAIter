@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button, Select, Space, Progress, Alert, Divider, message, Modal, List, Tag } from 'antd';
 import { DatabaseOutlined, PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
-import { MUSEUM_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig';
+import { KNOWLEDGE_BASE_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig';
 
 const { Option } = Select;
 
@@ -15,8 +15,8 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   const [showKBListModal, setShowKBListModal] = useState(false);
   const [loadingKBs, setLoadingKBs] = useState(false);
 
-  // 构建参数配置 - 使用博物馆优化配置
-  const buildConfig = getFlattenedConfig(MUSEUM_CONFIG);
+  // 构建参数配置
+  const buildConfig = getFlattenedConfig(KNOWLEDGE_BASE_CONFIG);
 
   // 加载知识库列表
   const loadKnowledgeBases = async () => {
@@ -88,17 +88,17 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
               <li key={cat}>{cat} ({files.filter(f => f.category === cat).length} 个文件)</li>
             ))}
           </ul>
-          <p style={{ marginTop: 16 }}>请输入知识库名称：</p>
+          <p style={{ marginTop: 16 }}>请输入知识库名称（英文）：</p>
           <input 
             id="kb-name-input" 
-            placeholder="例如：twin_pagoda_kb" 
+            placeholder="例：twin_pagoda" 
             style={{ width: '100%', padding: '8px' }}
           />
-          {existingKBs.length > 0 && (
+          {/* {existingKBs.length > 0 && (
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
               已存在的知识库：{existingKBs.map(kb => kb.name).join(', ')}
             </div>
-          )}
+          )} */}
           <div style={{ marginTop: 12, padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px', fontSize: '12px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>构建配置：</div>
             <div>分块大小: {buildConfig.chunk_size} | 重叠: {buildConfig.chunk_overlap}</div>

@@ -14,7 +14,8 @@ from app.models.file_models import KnowledgeBaseStatus, BuildStatus
 
 # 导入知识库构建相关模块
 try:
-    from llama_index.core import VectorStoreIndex, Settings, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, Settings, SimpleDirectoryReader, ServiceContext
+    from llama_index.core.node_parser import SentenceSplitter
     from llama_index.embeddings.dashscope import (
         DashScopeEmbedding,
         DashScopeTextEmbeddingModels,
@@ -217,6 +218,12 @@ class KnowledgeBaseService:
             build_status.current_file = f"初始化构建环境... (chunk_size: {build_config['chunk_size']})"
             build_status.progress = 5.0
             
+            # 设置分块配置
+            text_splitter = SentenceSplitter(
+                chunk_size=build_config['chunk_size'],
+                chunk_overlap=build_config['chunk_overlap']
+            )
+            
             # 创建知识库目录
             kb_vector_path = os.path.join(self.kb_path, "VectorStore", name)
             os.makedirs(kb_vector_path, exist_ok=True)
@@ -227,6 +234,7 @@ class KnowledgeBaseService:
             await asyncio.sleep(0.5)
             
             documents = []
+            nodes = []  # 初始化nodes列表
             total_files = 0
             
             # 根据file_type决定处理哪些文件
@@ -237,28 +245,37 @@ class KnowledgeBaseService:
                         build_status.current_file = f"处理非结构化文件: {category}"
                         try:
                             category_docs = SimpleDirectoryReader(category_path).load_data()
-                            documents.extend(category_docs)
+                            # 对非结构化文件使用自定义分块
+                            for doc in category_docs:
+                                chunks = text_splitter.split_text(doc.get_content())
+                                for chunk_text in chunks:
+                                    if chunk_text.strip():  # 跳过空块
+                                        node = TextNode(text=chunk_text)
+                                        node.metadata = doc.metadata.copy()
+                                        node.metadata['file_type'] = 'unstructured'
+                                        node.metadata['category'] = category
+                                        nodes.append(node)
                             total_files += len(category_docs)
                         except Exception as e:
                             print(f"读取类目 {category} 失败: {e}")
                         
-                        build_status.progress = min(30.0, 10.0 + (len(documents) / max(1, total_files)) * 20)
+                        build_status.progress = min(30.0, 10.0 + (len(nodes) / max(1, total_files * 5)) * 20)
                         await asyncio.sleep(0.2)
             
             if file_type in ["structured", "mixed"]:
-                nodes = []
                 for category in categories:
                     category_path = os.path.join(self.uploads_path, "File", "Structured", category)
                     if os.path.exists(category_path):
                         build_status.current_file = f"处理结构化文件: {category}"
                         try:
                             category_docs = SimpleDirectoryReader(category_path).load_data()
-                            # 对结构化文件进行特殊处理
+                            # 对结构化文件使用自定义分块
                             for doc in category_docs:
-                                doc_content = doc.get_content().split('\n')
-                                for chunk in doc_content:
-                                    if chunk.strip():  # 跳过空行
-                                        node = TextNode(text=chunk)
+                                # 使用配置的分块器而不是简单按行分割
+                                chunks = text_splitter.split_text(doc.get_content())
+                                for chunk_text in chunks:
+                                    if chunk_text.strip():  # 跳过空块
+                                        node = TextNode(text=chunk_text)
                                         node.metadata = {
                                             'source': doc.get_doc_id(),
                                             'file_name': doc.metadata.get('file_name', 'unknown'),
@@ -273,7 +290,7 @@ class KnowledgeBaseService:
                         build_status.progress = min(50.0, 30.0 + (len(nodes) / max(1, total_files * 10)) * 20)
                         await asyncio.sleep(0.2)
             
-            if not documents and not nodes:
+            if not nodes:
                 raise Exception("没有找到可用的文件进行知识库构建")
             
             # 构建向量索引
@@ -281,24 +298,8 @@ class KnowledgeBaseService:
             build_status.progress = 60.0
             await asyncio.sleep(0.5)
             
-            if file_type == "structured" and nodes:
-                # 只有结构化数据
-                index = VectorStoreIndex(nodes)
-            elif documents:
-                # 包含非结构化数据
-                if nodes:
-                    # 混合模式：将文档也转换为节点
-                    for doc in documents:
-                        node = TextNode(text=doc.get_content())
-                        node.metadata = doc.metadata.copy()
-                        node.metadata['file_type'] = 'unstructured'
-                        nodes.append(node)
-                    index = VectorStoreIndex(nodes)
-                else:
-                    # 纯非结构化模式
-                    index = VectorStoreIndex.from_documents(documents)
-            else:
-                raise Exception("没有有效的文档或节点用于构建索引")
+            # 统一使用nodes构建索引
+            index = VectorStoreIndex(nodes)
             
             build_status.current_file = "保存向量索引..."
             build_status.progress = 80.0
@@ -320,7 +321,7 @@ class KnowledgeBaseService:
                 "file_count": self._count_files_in_categories(categories),
                 "task_id": task_id,
                 "vector_path": kb_vector_path,
-                "document_count": len(documents) + len(nodes),
+                "document_count": len(nodes),
                 "build_config": build_config  # 保存构建配置
             }
             self._save_kb_metadata(metadata)
