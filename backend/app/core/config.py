@@ -10,7 +10,13 @@ class Settings:
     API_V1_STR: str = "/api/v1"
     
     # CORS设置
-    ALLOWED_HOSTS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    ALLOWED_HOSTS: List[str] = [
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*"  # 开发环境允许所有来源
+    ]
     
     # 文件路径设置
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

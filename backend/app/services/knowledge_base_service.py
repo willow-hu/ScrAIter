@@ -12,6 +12,28 @@ from typing import Dict, Any, Optional, List
 from app.core.config import settings
 from app.models.file_models import KnowledgeBaseStatus, BuildStatus
 
+# 导入知识库构建相关模块
+try:
+    from llama_index.core import VectorStoreIndex, Settings, SimpleDirectoryReader
+    from llama_index.embeddings.dashscope import (
+        DashScopeEmbedding,
+        DashScopeTextEmbeddingModels,
+        DashScopeTextEmbeddingType,
+    )
+    from llama_index.core.schema import TextNode
+    LLAMA_INDEX_AVAILABLE = True
+except ImportError:
+    print("Warning: llama_index not available, knowledge base building will be disabled")
+    LLAMA_INDEX_AVAILABLE = False
+
+# 设置嵌入模型
+if LLAMA_INDEX_AVAILABLE:
+    EMBED_MODEL = DashScopeEmbedding(
+        model_name=DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
+        text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
+    )
+    Settings.embed_model = EMBED_MODEL
+
 class KnowledgeBaseService:
     def __init__(self):
         self.kb_path = settings.KNOWLEDGE_BASES_DIR
@@ -116,6 +138,31 @@ class KnowledgeBaseService:
         """构建知识库"""
         task_id = str(uuid.uuid4())
         
+        # 验证输入参数
+        if not name or not name.strip():
+            raise ValueError("知识库名称不能为空")
+        
+        if not categories:
+            raise ValueError("请选择至少一个类目")
+        
+        # 检查是否有文件可用
+        available_files = 0
+        for category in categories:
+            if file_type in ["unstructured", "mixed"]:
+                unstructured_path = os.path.join(self.uploads_path, "File", "Unstructured", category)
+                if os.path.exists(unstructured_path):
+                    available_files += len([f for f in os.listdir(unstructured_path) 
+                                          if os.path.isfile(os.path.join(unstructured_path, f))])
+            
+            if file_type in ["structured", "mixed"]:
+                structured_path = os.path.join(self.uploads_path, "File", "Structured", category)
+                if os.path.exists(structured_path):
+                    available_files += len([f for f in os.listdir(structured_path) 
+                                          if os.path.isfile(os.path.join(structured_path, f))])
+        
+        if available_files == 0:
+            raise ValueError(f"在选择的类目中没有找到可用文件")
+        
         # 检查知识库是否已存在
         kb_path = os.path.join(self.kb_path, "VectorStore", name)
         if os.path.exists(kb_path):
@@ -126,7 +173,8 @@ class KnowledgeBaseService:
         build_status = BuildStatus(
             task_id=task_id,
             progress=0.0,
-            status="running"
+            status="running",
+            current_file="准备开始构建..."
         )
         self.build_tasks[task_id] = build_status
         
@@ -135,16 +183,112 @@ class KnowledgeBaseService:
         
         return {
             "task_id": task_id,
-            "message": f"知识库 '{name}' 构建任务已启动"
+            "message": f"知识库 '{name}' 构建任务已启动，预计处理 {available_files} 个文件"
         }
     
     async def _build_knowledge_base_task(self, task_id: str, name: str, categories: List[str], file_type: str):
         """执行知识库构建任务"""
         try:
-            build_status = self.build_tasks[task_id]
+            if not LLAMA_INDEX_AVAILABLE:
+                raise Exception("llama_index 模块不可用，无法构建知识库")
             
-            # 模拟构建过程（后续需要集成真实的构建逻辑）
-            await self._simulate_build_process(task_id, name, categories, file_type)
+            build_status = self.build_tasks[task_id]
+            build_status.current_file = "初始化构建环境..."
+            build_status.progress = 5.0
+            
+            # 创建知识库目录
+            kb_vector_path = os.path.join(self.kb_path, "VectorStore", name)
+            os.makedirs(kb_vector_path, exist_ok=True)
+            
+            # 收集指定类目的文件
+            build_status.current_file = "收集文件..."
+            build_status.progress = 10.0
+            await asyncio.sleep(0.5)
+            
+            documents = []
+            total_files = 0
+            
+            # 根据file_type决定处理哪些文件
+            if file_type in ["unstructured", "mixed"]:
+                for category in categories:
+                    category_path = os.path.join(self.uploads_path, "File", "Unstructured", category)
+                    if os.path.exists(category_path):
+                        build_status.current_file = f"处理非结构化文件: {category}"
+                        try:
+                            category_docs = SimpleDirectoryReader(category_path).load_data()
+                            documents.extend(category_docs)
+                            total_files += len(category_docs)
+                        except Exception as e:
+                            print(f"读取类目 {category} 失败: {e}")
+                        
+                        build_status.progress = min(30.0, 10.0 + (len(documents) / max(1, total_files)) * 20)
+                        await asyncio.sleep(0.2)
+            
+            if file_type in ["structured", "mixed"]:
+                nodes = []
+                for category in categories:
+                    category_path = os.path.join(self.uploads_path, "File", "Structured", category)
+                    if os.path.exists(category_path):
+                        build_status.current_file = f"处理结构化文件: {category}"
+                        try:
+                            category_docs = SimpleDirectoryReader(category_path).load_data()
+                            # 对结构化文件进行特殊处理
+                            for doc in category_docs:
+                                doc_content = doc.get_content().split('\n')
+                                for chunk in doc_content:
+                                    if chunk.strip():  # 跳过空行
+                                        node = TextNode(text=chunk)
+                                        node.metadata = {
+                                            'source': doc.get_doc_id(),
+                                            'file_name': doc.metadata.get('file_name', 'unknown'),
+                                            'category': category,
+                                            'file_type': 'structured'
+                                        }
+                                        nodes.append(node)
+                            total_files += len(category_docs)
+                        except Exception as e:
+                            print(f"读取结构化类目 {category} 失败: {e}")
+                        
+                        build_status.progress = min(50.0, 30.0 + (len(nodes) / max(1, total_files * 10)) * 20)
+                        await asyncio.sleep(0.2)
+            
+            if not documents and not nodes:
+                raise Exception("没有找到可用的文件进行知识库构建")
+            
+            # 构建向量索引
+            build_status.current_file = "生成向量嵌入..."
+            build_status.progress = 60.0
+            await asyncio.sleep(0.5)
+            
+            if file_type == "structured" and nodes:
+                # 只有结构化数据
+                index = VectorStoreIndex(nodes)
+            elif documents:
+                # 包含非结构化数据
+                if nodes:
+                    # 混合模式：将文档也转换为节点
+                    for doc in documents:
+                        node = TextNode(text=doc.get_content())
+                        node.metadata = doc.metadata.copy()
+                        node.metadata['file_type'] = 'unstructured'
+                        nodes.append(node)
+                    index = VectorStoreIndex(nodes)
+                else:
+                    # 纯非结构化模式
+                    index = VectorStoreIndex.from_documents(documents)
+            else:
+                raise Exception("没有有效的文档或节点用于构建索引")
+            
+            build_status.current_file = "保存向量索引..."
+            build_status.progress = 80.0
+            await asyncio.sleep(0.5)
+            
+            # 持久化存储
+            index.storage_context.persist(kb_vector_path)
+            
+            build_status.current_file = "更新元数据..."
+            build_status.progress = 90.0
+            await asyncio.sleep(0.2)
             
             # 更新知识库元数据
             metadata = self._load_kb_metadata()
@@ -153,19 +297,24 @@ class KnowledgeBaseService:
                 "file_type": file_type,
                 "created_time": datetime.now().isoformat(),
                 "file_count": self._count_files_in_categories(categories),
-                "task_id": task_id
+                "task_id": task_id,
+                "vector_path": kb_vector_path,
+                "document_count": len(documents) + len(nodes)
             }
             self._save_kb_metadata(metadata)
             
             # 完成构建
             build_status.status = "completed"
             build_status.progress = 100.0
+            build_status.current_file = "知识库构建完成"
             
         except Exception as e:
+            print(f"知识库构建失败: {e}")
             build_status = self.build_tasks.get(task_id)
             if build_status:
                 build_status.status = "error"
                 build_status.error_message = str(e)
+                build_status.current_file = f"构建失败: {str(e)}"
     
     def _count_files_in_categories(self, categories: List[str]) -> int:
         """统计指定类目中的文件数量"""
@@ -183,29 +332,6 @@ class KnowledgeBaseService:
                 count += len([f for f in os.listdir(structured_path) if os.path.isfile(os.path.join(structured_path, f))])
         
         return count
-    
-    async def _simulate_build_process(self, task_id: str, name: str, categories: List[str], file_type: str):
-        """模拟构建过程（待替换为实际的构建逻辑）"""
-        build_status = self.build_tasks[task_id]
-        
-        # 这里应该替换为实际的知识库构建逻辑
-        # 目前只是模拟进度更新
-        steps = [
-            (f"扫描类目 {', '.join(categories)}...", 10),
-            ("处理文档...", 30),
-            ("生成向量嵌入...", 60),
-            ("构建索引...", 80),
-            (f"保存知识库 '{name}'...", 90),
-            ("完成", 100)
-        ]
-        
-        for step_name, progress in steps:
-            await asyncio.sleep(1)  # 模拟处理时间
-            build_status.current_file = step_name
-            build_status.progress = progress
-            
-            if progress < 100:
-                build_status.estimated_completion = datetime.now()
     
     def get_build_status(self, task_id: str) -> Optional[BuildStatus]:
         """获取构建进度"""
@@ -228,6 +354,7 @@ class KnowledgeBaseService:
                     "file_type": kb_info.get("file_type", "mixed"),
                     "created_time": kb_info.get("created_time"),
                     "file_count": kb_info.get("file_count", 0),
+                    "document_count": kb_info.get("document_count", 0),
                     "exists": exists
                 })
             
@@ -250,17 +377,28 @@ class KnowledgeBaseService:
             kb_path = os.path.join(self.kb_path, "VectorStore", kb_name)
             if os.path.exists(kb_path):
                 shutil.rmtree(kb_path)
+                deleted = True
+            else:
+                deleted = False
             
             # 更新元数据
             metadata = self._load_kb_metadata()
+            metadata_deleted = False
             if kb_name in metadata.get("knowledge_bases", {}):
                 del metadata["knowledge_bases"][kb_name]
                 self._save_kb_metadata(metadata)
+                metadata_deleted = True
             
-            return {
-                "message": f"知识库 '{kb_name}' 删除成功",
-                "success": True
-            }
+            if deleted or metadata_deleted:
+                return {
+                    "message": f"知识库 '{kb_name}' 删除成功",
+                    "success": True
+                }
+            else:
+                return {
+                    "message": f"知识库 '{kb_name}' 不存在",
+                    "success": False
+                }
             
         except Exception as e:
             return {
@@ -268,13 +406,51 @@ class KnowledgeBaseService:
                 "success": False
             }
     
-    def _copy_original_kb_logic(self):
-        """
-        这里应该复制并适配原有的知识库构建逻辑
-        从 qwen-local-rag/create_kb.py 中的相关函数
-        """
-        # TODO: 集成原有的create_kb.py逻辑
-        pass
+    def check_files_have_tags(self, categories: List[str]) -> Dict[str, Any]:
+        """检查指定类目中的文件是否都有标签"""
+        try:
+            # 加载文件元数据
+            metadata_path = os.path.join(self.uploads_path, "metadata.json")
+            if not os.path.exists(metadata_path):
+                return {"all_tagged": False, "message": "文件元数据不存在"}
+            
+            with open(metadata_path, 'r', encoding='utf-8') as f:
+                file_metadata = json.load(f)
+            
+            files_without_tags = []
+            for category in categories:
+                # 检查非结构化文件
+                unstructured_path = os.path.join(self.uploads_path, "File", "Unstructured", category)
+                if os.path.exists(unstructured_path):
+                    for filename in os.listdir(unstructured_path):
+                        if os.path.isfile(os.path.join(unstructured_path, filename)):
+                            relative_path = f"{category}/{filename}"
+                            file_info = file_metadata.get("files", {}).get(relative_path, {})
+                            if not file_info.get("source_tag"):
+                                files_without_tags.append(relative_path)
+                
+                # 检查结构化文件
+                structured_path = os.path.join(self.uploads_path, "File", "Structured", category)
+                if os.path.exists(structured_path):
+                    for filename in os.listdir(structured_path):
+                        if os.path.isfile(os.path.join(structured_path, filename)):
+                            relative_path = f"{category}/{filename}"
+                            file_info = file_metadata.get("files", {}).get(relative_path, {})
+                            if not file_info.get("source_tag"):
+                                files_without_tags.append(relative_path)
+            
+            all_tagged = len(files_without_tags) == 0
+            return {
+                "all_tagged": all_tagged,
+                "files_without_tags": files_without_tags,
+                "message": "所有文件都已标记" if all_tagged else f"还有 {len(files_without_tags)} 个文件未标记"
+            }
+            
+        except Exception as e:
+            return {
+                "all_tagged": False,
+                "message": f"检查文件标签失败: {str(e)}"
+            }
 
 # 创建全局实例
 knowledge_base_service = KnowledgeBaseService()

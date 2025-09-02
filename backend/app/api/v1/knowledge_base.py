@@ -104,3 +104,23 @@ async def delete_knowledge_base(kb_name: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"删除知识库失败: {str(e)}")
+
+@router.post("/knowledge-base/check-tags")
+async def check_files_tags(request: dict):
+    """
+    检查指定类目中的文件是否都有标签
+    """
+    try:
+        categories = request.get("categories", [])
+        if not categories:
+            raise HTTPException(status_code=400, detail="请提供类目列表")
+        
+        result = knowledge_base_service.check_files_have_tags(categories)
+        return JSONResponse(
+            status_code=200,
+            content=result
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"检查文件标签失败: {str(e)}")

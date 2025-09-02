@@ -5,10 +5,12 @@
         "罗汉院双塔及正殿遗址"
       ],
       "file_type": "mixed",
-      "created_time": "2025-09-02T14:22:56.277092",
+      "created_time": "2025-09-02T14:40:51.975450",
       "file_count": 10,
-      "task_id": "3157d7d8-bb3e-4947-ab0b-e912845de186"
+      "task_id": "db799663-1ed0-4147-bb80-01f9777eb7fe",
+      "vector_path": "E:\\Study\\AR city museum guide\\Human-AI_Col\\web-app\\ai-script-cocreator\\shared\\knowledge_bases\\VectorStore\\twin_pagoda",
+      "document_count": 36
     }
   },
-  "last_updated": "2025-09-02T14:22:56.277092"
+  "last_updated": "2025-09-02T14:40:51.976467"
 }
