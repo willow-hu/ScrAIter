@@ -413,7 +413,13 @@
 
 .kb-status-item {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.kb-status-item .ant-typography:first-child {
+  min-width: 120px;
+  margin-right: 12px;
 }
 
 .kb-progress-space {
@@ -425,15 +431,31 @@
 }
 
 .kb-config-select {
-  width: 120px;
+  min-width: 150px;
 }
 
 .kb-file-icon {
   font-size: 16px;
+  color: #1890ff;
 }
 
 .kb-close-button {
   text-align: right;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.kb-manager .ant-upload-drag {
+  margin-top: 16px;
+}
+
+.kb-manager .ant-list-item-meta-title {
+  margin-bottom: 4px !important;
+}
+
+.kb-manager .ant-list-item-meta-description {
+  color: #666 !important;
+  font-size: 12px !important;
 }
 
 /* ReferenceViewer样式 */
