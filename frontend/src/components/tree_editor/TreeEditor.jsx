@@ -35,22 +35,51 @@ function TreeEditor() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const response = await fetch('/flat_anchor_tree.json');
-        const data = await response.json();
+        // 尝试从项目API加载twin_pagoda项目
+        const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree');
         
-        // 初始化管理器
-        checkpointManager.initialize(data);
-        treeManager.setData(data);
-        updateUndoRedoState();
-        
-        // 检查是否有缓存的数据
-        if (DataCacheManager.hasCache()) {
-          // 如果有缓存数据则恢复
-          const cachedData = DataCacheManager.loadFromCache();
-          setTreeData(cachedData);
-          treeManager.setData(cachedData);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // 初始化管理器
+          checkpointManager.initialize(data);
+          treeManager.setData(data);
+          updateUndoRedoState();
+          
+          // 检查是否有缓存的数据
+          if (DataCacheManager.hasCache()) {
+            // 如果有缓存数据则恢复
+            const cachedData = DataCacheManager.loadFromCache();
+            setTreeData(cachedData);
+            treeManager.setData(cachedData);
+          } else {
+            setTreeData(data);
+          }
         } else {
-          setTreeData(data);
+          // 如果项目API失败，尝试加载public文件夹中的fallback文件
+          console.log('项目文件不存在，尝试加载fallback文件...');
+          const fallbackResponse = await fetch('/flat_anchor_tree.json');
+          
+          if (fallbackResponse.ok) {
+            const data = await fallbackResponse.json();
+            
+            // 初始化管理器
+            checkpointManager.initialize(data);
+            treeManager.setData(data);
+            updateUndoRedoState();
+            
+            // 检查是否有缓存的数据
+            if (DataCacheManager.hasCache()) {
+              // 如果有缓存数据则恢复
+              const cachedData = DataCacheManager.loadFromCache();
+              setTreeData(cachedData);
+              treeManager.setData(cachedData);
+            } else {
+              setTreeData(data);
+            }
+          } else {
+            throw new Error('无法加载树数据');
+          }
         }
       } catch (error) {
         console.error('Failed to load tree data:', error);
@@ -110,18 +139,38 @@ function TreeEditor() {
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  // 保存修改 - 创建新的checkpoint
-  const handleSave = () => {
+  // 保存修改 - 创建新的checkpoint并保存到服务器
+  const handleSave = async () => {
     if (!treeData) return;
     
     const result = checkpointManager.createCheckpoint(treeData);
     if (result.success) {
       updateUndoRedoState();
       
-      // 保存到localStorage（可选）
+      // 保存到服务器（项目API）
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(treeData)
+        });
+        
+        if (response.ok) {
+          message.success(`${result.message} (已保存到服务器)`);
+        } else {
+          // 如果服务器保存失败，仍然显示本地保存成功，但添加警告
+          message.warning(`${result.message} (服务器保存失败，仅保存到本地)`);
+        }
+      } catch (error) {
+        console.error('保存到服务器失败:', error);
+        message.warning(`${result.message} (服务器保存失败，仅保存到本地)`);
+      }
+      
+      // 保存到localStorage（本地备份）
       localStorage.setItem('treeData', JSON.stringify(treeData));
       
-      message.success(`${result.message}`);
     } else {
       // 如果是"已是最新！"的情况，显示信息提示而不是错误提示
       if (result.message === '已是最新！') {

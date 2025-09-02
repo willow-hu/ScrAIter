@@ -1,6 +1,7 @@
 """
 RAG生成API端点
 """
+from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -13,14 +14,14 @@ from app.services.rag_service import rag_service
 router = APIRouter()
 
 @router.post("/generate/structure")
-async def generate_structure():
+async def generate_structure(project_name: Optional[str] = None):
     """
     生成剧本结构
-    输入：无用户端输入，使用系统设定默认输入
+    输入：可选的项目名称
     输出：树形结构JSON
     """
     try:
-        result = rag_service.generate_script_structure()
+        result = rag_service.generate_script_structure(project_name)
         return JSONResponse(
             status_code=200,
             content=result
@@ -34,7 +35,7 @@ async def generate_structure():
 async def generate_node_content(request: GenerateNodeContentRequest):
     """
     生成节点内容
-    输入：节点信息、项目全局信息
+    输入：节点信息、项目全局信息、可选的知识库名称
     输出：该节点的详细内容
     """
     try:
@@ -46,7 +47,8 @@ async def generate_node_content(request: GenerateNodeContentRequest):
         
         result = rag_service.generate_node_content(
             node_info=request.node_info,
-            global_context=request.global_context
+            global_context=request.global_context,
+            kb_name=request.kb_name
         )
         
         return result

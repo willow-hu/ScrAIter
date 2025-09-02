@@ -7,4 +7,6 @@ mode: agent
 
 注：backend/qwen-local-rag/目录下是一个可独立运行的完整的项目，实现了本地化RAG。在此项目中，这个文件夹用作备份，方便你将功能迁移至本项目。在修改代码的过程中，若需要实现RAG相关的功能，请参考qwen-local-rag项目中的代码实现，但禁止修改该目录内的所有文件，若需移动请使用复制命令。
 
-在阅读代码时可忽略qwen-local-rag/目录和.github/prompts/目录
+在阅读代码时可忽略qwen-local-rag/目录和.github/prompts/目录。
+
+阅读完成后请回答“是”。

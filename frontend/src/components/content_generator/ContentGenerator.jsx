@@ -52,24 +52,22 @@ function ContentGenerator() {
   const loadTreeData = async () => {
     setLoading(true);
     try {
-      // 从 public 目录加载示例数据
-      const response = await fetch('/flat_anchor_tree.json');
-      if (!response.ok) {
-        throw new Error('加载数据失败');
+      // 尝试从项目API加载twin_pagoda项目
+      const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTreeData(data);
+        
+        // 将树结构转换为平铺的节点数组（DFS顺序）
+        const nodes = flattenTreeDFS(data.structure);
+        setFlatNodes(nodes);
+        
+        if (nodes.length > 0) {
+          setCurrentNode(nodes[0]);
+          setCurrentNodeIndex(0);
+        }
       }
-      const data = await response.json();
-      setTreeData(data);
-      
-      // 将树结构转换为平铺的节点数组（DFS顺序）
-      const nodes = flattenTreeDFS(data.structure);
-      setFlatNodes(nodes);
-      
-      if (nodes.length > 0) {
-        setCurrentNode(nodes[0]);
-        setCurrentNodeIndex(0);
-      }
-      
-    //   message.success('数据加载成功');
     } catch (error) {
       console.error('加载数据失败:', error);
       message.error('加载数据失败');
@@ -78,8 +76,8 @@ function ContentGenerator() {
     }
   };
 
-  // 保存当前节点
-  const saveCurrentNode = () => {
+  // 保存当前节点到服务器和本地
+  const saveCurrentNode = async () => {
     if (!currentNode || !treeData) return;
     
     // 更新当前节点的数据
@@ -97,9 +95,27 @@ function ContentGenerator() {
       newTreeData.structure[nodeIndex] = updatedNode;
     }
     setTreeData(newTreeData);
-    
     setCurrentNode(updatedNode);
-    message.success('节点保存成功');
+    
+    // 保存到服务器
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTreeData)
+      });
+      
+      if (response.ok) {
+        message.success('节点保存成功');
+      } else {
+        message.warning('节点本地保存成功，但服务器保存失败');
+      }
+    } catch (error) {
+      console.error('保存到服务器失败:', error);
+      message.warning('节点本地保存成功，但服务器保存失败');
+    }
   };
 
   // 生成内容
@@ -186,13 +202,13 @@ function ContentGenerator() {
   };
 
   // 完成并导出
-  const exportScript = () => {
+  const exportScript = async () => {
     if (!treeData) return;
     
     Modal.confirm({
       title: '导出脚本',
       content: '确定要导出完整脚本吗？',
-      onOk: () => {
+      onOk: async () => {
         // 构建导出数据
         const exportData = {
           global_context: treeData.global_context,
@@ -205,6 +221,26 @@ function ContentGenerator() {
           export_time: new Date().toISOString()
         };
         
+        // 保存到服务器（作为完成的脚本）
+        try {
+          const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/script', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(exportData)
+          });
+          
+          if (response.ok) {
+            message.success('脚本已保存到服务器');
+          } else {
+            message.warning('脚本本地导出成功，但服务器保存失败');
+          }
+        } catch (error) {
+          console.error('保存到服务器失败:', error);
+          message.warning('脚本本地导出成功，但服务器保存失败');
+        }
+        
         // 下载文件
         const blob = new Blob([JSON.stringify(exportData, null, 2)], {
           type: 'application/json'
@@ -212,7 +248,7 @@ function ContentGenerator() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `script_${Date.now()}.json`;
+        a.download = `twin_pagoda_script_${Date.now()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -303,14 +339,6 @@ function ContentGenerator() {
                     <div className="action-buttons">
                       <Space size="middle">
                         <Button 
-                          type="primary" 
-                          icon={<SaveOutlined />}
-                          onClick={saveCurrentNode}
-                        >
-                          保存
-                        </Button>
-                        
-                        <Button 
                           type="primary"
                           className="generate-btn"
                           icon={<ThunderboltOutlined />}
@@ -321,12 +349,24 @@ function ContentGenerator() {
                         </Button>
 
                         <Button 
+                          type="primary" 
+                          icon={<SaveOutlined />}
+                          onClick={saveCurrentNode}
+                        >
+                          保存
+                        </Button>
+
+                        <Button 
                           icon={<DatabaseOutlined />}
                           onClick={() => setKbDrawerVisible(true)}
                         >
                           修改知识库
                         </Button>
-                        
+                      </Space>
+                    </div>
+
+                    <div className="action-buttons">
+                      <Space size="middle">
                         <Button 
                           icon={<LeftOutlined />}
                           onClick={goToPrevious}

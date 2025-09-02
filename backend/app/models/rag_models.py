@@ -14,6 +14,7 @@ class GenerateNodeContentRequest(BaseModel):
     """生成节点内容请求"""
     node_info: Dict[str, Any]  # 节点信息
     global_context: Dict[str, Any]  # 项目全局信息
+    kb_name: Optional[str] = None  # 知识库名称，可选
 
 class GeneratedContent(BaseModel):
     """生成的内容"""

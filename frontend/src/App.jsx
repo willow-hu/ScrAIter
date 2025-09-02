@@ -2,6 +2,7 @@ import React, { act, useState } from 'react';
 import TreeEditor from './components/tree_editor/TreeEditor';
 import ContentGenerator from './components/content_generator/ContentGenerator';
 import ArchiveManager from './components/archive_manager/ArchiveManager';
+import StructureGenerator from './components/structure_generator/StructureGenerator';
 
 function App() {
   const [activeTab, setActiveTab] = useState('archive');
@@ -45,12 +46,7 @@ function App() {
       
       <div className="main-content">
         {activeTab === 'archive' && <ArchiveManager />}
-        {activeTab === 'generator' && (
-          <div className="placeholder">
-            <h2>结构生成</h2>
-            <p>结构生成功能待开发</p>
-          </div>
-        )}
+        {activeTab === 'generator' && <StructureGenerator />}
         {activeTab === 'editor' && <TreeEditor />}
         {activeTab === 'content' && <ContentGenerator />}
         {activeTab === 'review' && (

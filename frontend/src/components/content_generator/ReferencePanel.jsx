@@ -55,6 +55,9 @@ function ReferencePanel({ sources = [], loading = false }) {
             <Text type="secondary" className="reference-panel-source-text">
               来源：{currentSource.source_file || '未知文件'}
             </Text>
+            {/* <Text type="secondary" className="reference-panel-source-text">
+              类别：
+            </Text> */}
             <br />
             <Text type="secondary" className="reference-panel-source-text">
               相关度：{(currentSource.score * 100).toFixed(1)}%

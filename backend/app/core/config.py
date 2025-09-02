@@ -24,11 +24,13 @@ class Settings:
     UPLOADS_DIR = os.path.join(SHARED_DIR, "uploads")
     KNOWLEDGE_BASES_DIR = os.path.join(SHARED_DIR, "knowledge_bases")
     CONFIGS_DIR = os.path.join(SHARED_DIR, "configs")
+    PROJECTS_DIR = os.path.join(SHARED_DIR, "projects")
     
     # 确保目录存在
     os.makedirs(UPLOADS_DIR, exist_ok=True)
     os.makedirs(KNOWLEDGE_BASES_DIR, exist_ok=True)
     os.makedirs(CONFIGS_DIR, exist_ok=True)
+    os.makedirs(PROJECTS_DIR, exist_ok=True)
     
     # 文件上传设置
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
