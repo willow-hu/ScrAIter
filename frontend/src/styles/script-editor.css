@@ -1,5 +1,10 @@
 /* Script Editor 样式 */
 
+/* 定义统一的模态框内面板高度 */
+:root {
+  --node-edit-panel-height: 600px;
+}
+
 /* 节点编辑模态框 */
 .node-edit-modal {
   padding: 0;
@@ -9,11 +14,24 @@
   padding: 16px;
 }
 
+/* 模态框内的面板容器 */
+.node-edit-modal .ant-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 确保参考资料面板在模态框内的高度 */
+.node-edit-modal .reference-panel {
+  height: var(--node-edit-panel-height) !important;
+  min-height: var(--node-edit-panel-height);
+}
+
 /* 节点编辑面板 - 与参考资料面板保持一致的样式 */
 .node-edit-panel {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  min-height: 400px;
+  height: var(--node-edit-panel-height);
+  min-height: var(--node-edit-panel-height);
   display: flex;
   flex-direction: column;
 }

@@ -130,7 +130,7 @@ function NodeEditModal({
       open={visible}
       onCancel={handleCancel}
       width={1200}
-      style={{ top: 20 }}
+      centered
       className="node-edit-modal"
       footer={null}
     >
@@ -141,7 +141,6 @@ function NodeEditModal({
             title="节点编辑"
             size="small"
             className="reference-panel node-edit-panel"
-            style={{ height: '600px', overflow: 'auto' }}
             bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
           >
             <div className="node-edit-form">
@@ -219,7 +218,6 @@ function NodeEditModal({
           <ReferencePanel 
             sources={ragSources} 
             loading={generating}
-            style={{ height: '600px' }}
           />
         </Col>
       </Row>
