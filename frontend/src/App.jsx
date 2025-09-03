@@ -3,6 +3,7 @@ import TreeEditor from './components/tree_editor/TreeEditor';
 import ContentGenerator from './components/content_generator/ContentGenerator';
 import ArchiveManager from './components/archive_manager/ArchiveManager';
 import StructureGenerator from './components/structure_generator/StructureGenerator';
+import ScriptEditor from './components/script_editor/ScriptEditor';
 
 function App() {
   const [activeTab, setActiveTab] = useState('archive');
@@ -22,6 +23,12 @@ function App() {
             onClick={() => setActiveTab('generator')}
           >
             结构生成
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'script' ? 'active' : ''}`}
+            onClick={() => setActiveTab('script')}
+          >
+            脚本创作
           </button>
           <button 
             className={`nav-tab ${activeTab === 'editor' ? 'active' : ''}`}
@@ -47,6 +54,7 @@ function App() {
       <div className="main-content">
         {activeTab === 'archive' && <ArchiveManager />}
         {activeTab === 'generator' && <StructureGenerator />}
+        {activeTab === 'script' && <ScriptEditor />}
         {activeTab === 'editor' && <TreeEditor />}
         {activeTab === 'content' && <ContentGenerator />}
         {activeTab === 'review' && (
