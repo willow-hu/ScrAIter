@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Space, Card, Typography, Input, Divider, message, Modal } from 'antd';
-import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UndoOutlined, RedoOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer } from 'antd';
+import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UndoOutlined, RedoOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { isValidTree } from '../../utils/tree_editor/treeValidator';
+import KnowledgeBaseManager from './KnowledgeBaseManager';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -338,6 +339,17 @@ function Sidebar({
           </Card>
         )}
       </Space>
+
+      {/* 知识库管理抽屉 */}
+      <Drawer
+        title="知识库管理"
+        placement="left"
+        size="large"
+        onClose={() => setKbDrawerVisible(false)}
+        open={kbDrawerVisible}
+      >
+        <KnowledgeBaseManager onClose={() => setKbDrawerVisible(false)} />
+      </Drawer>
     </div>
   );
 }
