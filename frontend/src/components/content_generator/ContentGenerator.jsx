@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Card, Button, Input, Typography, Space, Spin, message, Modal, Drawer, Row, Col } from 'antd';
-import { SaveOutlined, ThunderboltOutlined, LeftOutlined, RightOutlined, DownloadOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { SaveOutlined, RobotOutlined, LeftOutlined, RightOutlined, DownloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
 import ReferencePanel from './ReferencePanel';
 import { flattenTreeDFS } from '../../utils/content_generator/treeTraversal';
@@ -362,9 +362,8 @@ function ContentGenerator() {
                     <div className="action-buttons">
                       <Space size="middle">
                         <Button 
-                          type="primary"
                           className="generate-btn"
-                          icon={<ThunderboltOutlined />}
+                          icon={<RobotOutlined />}
                           onClick={generateContent}
                           loading={generating}
                         >
@@ -372,7 +371,6 @@ function ContentGenerator() {
                         </Button>
 
                         <Button 
-                          type="primary" 
                           icon={<SaveOutlined />}
                           onClick={saveCurrentNode}
                         >

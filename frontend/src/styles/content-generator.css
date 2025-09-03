@@ -31,13 +31,15 @@
   min-height: 600px;
 }
 
+/* 移除渐变背景，使用与资料管理页面一致的样式 */
 .node-info-card .ant-card-head {
-  background: linear-gradient(90deg, #1890ff, #36cfc9);
+  background: #fafafa;
   border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .node-info-card .ant-card-head-title {
-  color: #fff;
+  color: #262626;
   font-weight: 600;
 }
 
@@ -47,13 +49,15 @@
   border-radius: 8px;
 }
 
+/* 移除渐变背景，使用与资料管理页面一致的样式 */
 .reference-panel .ant-card-head {
-  background: linear-gradient(90deg, #52c41a, #73d13d);
+  background: #fafafa;
   border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .reference-panel .ant-card-head-title {
-  color: #fff;
+  color: #262626;
   font-weight: 600;
 }
 
@@ -120,42 +124,39 @@
   min-width: 100px;
 }
 
+/* 移除渐变背景和悬停动画，使用标准按钮样式 */
 .action-buttons .ant-btn-primary {
-  background: linear-gradient(135deg, #1890ff, #36cfc9);
-  border: none;
-  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+  background: #1890ff;
+  border-color: #1890ff;
 }
 
 .action-buttons .ant-btn-primary:hover {
-  background: linear-gradient(135deg, #40a9ff, #5cdbd3);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(24, 144, 255, 0.4);
+  background: #40a9ff;
+  border-color: #40a9ff;
 }
 
-/* 生成按钮特殊样式 */
+/* 移除生成按钮的特殊样式 */
 .generate-btn {
-  background: linear-gradient(135deg, #52c41a, #73d13d) !important;
-  border: none !important;
+  background: #52c41a !important;
+  border-color: #52c41a !important;
   color: #fff !important;
 }
 
 .generate-btn:hover {
-  background: linear-gradient(135deg, #73d13d, #95de64) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(82, 196, 26, 0.4) !important;
+  background: #73d13d !important;
+  border-color: #73d13d !important;
 }
 
-/* 导出按钮样式 */
+/* 移除导出按钮的特殊样式 */
 .export-btn {
-  background: linear-gradient(135deg, #fa8c16, #ffa940) !important;
-  border: none !important;
+  background: #fa8c16 !important;
+  border-color: #fa8c16 !important;
   color: #fff !important;
 }
 
 .export-btn:hover {
-  background: linear-gradient(135deg, #ffa940, #ffc069) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(250, 140, 22, 0.4) !important;
+  background: #ffa940 !important;
+  border-color: #ffa940 !important;
 }
 
 /* 进度显示样式 - 已移除，但保留以备后用 */
@@ -187,12 +188,10 @@
   border-radius: 8px;
   margin-bottom: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
 }
 
 .reference-viewer .ant-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
 }
 
 .reference-viewer .ant-card-head {
@@ -239,8 +238,8 @@
   color: #1890ff;
 }
 
-/* 动画效果 */
-@keyframes slideIn {
+/* 移除动画效果，保持与资料管理页面一致 */
+/* @keyframes slideIn {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -253,7 +252,7 @@
 
 .content-generator .ant-card {
   animation: slideIn 0.3s ease-out;
-}
+} */
 
 /* 自定义滚动条 */
 .content-generator ::-webkit-scrollbar {
