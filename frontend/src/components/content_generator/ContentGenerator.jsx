@@ -42,8 +42,12 @@ function ContentGenerator() {
         user: currentNode.user || '',
         content: currentNode.content || ''
       });
-      
-      // 恢复该节点的参考资料
+    }
+  }, [currentNode]); // 移除 nodeRagSources 依赖，避免在保存参考资料时重置表单
+
+  // 单独处理参考资料的恢复
+  useEffect(() => {
+    if (currentNode) {
       const nodeId = currentNode.id;
       if (nodeRagSources[nodeId]) {
         setRagSources(nodeRagSources[nodeId]);
