@@ -17,3 +17,6 @@
 
 /* 内容生成器样式 */
 @import './content-generator.css';
+
+/* 脚本编辑器样式 */
+@import './script-editor.css';

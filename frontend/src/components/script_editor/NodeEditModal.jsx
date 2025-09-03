@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message } from 'antd';
 import { SaveOutlined, RobotOutlined } from '@ant-design/icons';
 import ReferencePanel from '../content_generator/ReferencePanel';
+import '../../styles/script-editor.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -105,16 +106,15 @@ function NodeEditModal({
     }
   };
 
-  // 保存节点
+  // 保存节点（不关闭模态框）
   const handleSave = () => {
     if (!node) return;
     
     // 更新节点数据
-    const updatedNode = { ...node, ...nodeForm };
     onSave(node.id, nodeForm);
     
     message.success('节点保存成功');
-    onClose();
+    // 注意：这里不调用 onClose()，保持模态框打开
   };
 
   // 取消编辑
@@ -126,89 +126,91 @@ function NodeEditModal({
 
   return (
     <Modal
-      title={`编辑节点 #${node.id}: ${node.name || '未命名'}`}
+      title={`节点 #${node.id}: ${node.name || '未命名'}`}
       open={visible}
       onCancel={handleCancel}
       width={1200}
       style={{ top: 20 }}
-      footer={[
-        <Button key="cancel" onClick={handleCancel}>
-          取消
-        </Button>,
-        <Button 
-          key="save" 
-          type="primary" 
-          icon={<SaveOutlined />}
-          onClick={handleSave}
-        >
-          保存
-        </Button>
-      ]}
+      className="node-edit-modal"
+      footer={null}
     >
       <Row gutter={16}>
         {/* 左侧：节点编辑区域 */}
         <Col span={14}>
           <Card 
             title="节点编辑"
+            size="small"
+            className="reference-panel node-edit-panel"
             style={{ height: '600px', overflow: 'auto' }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
           >
-            <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <div className="node-edit-form">
               {/* 节点信息编辑 */}
-              <div>
-                <Text strong>关键词</Text>
+              <div className="node-edit-form-item">
+                <Text className="node-edit-form-label" strong>关键词</Text>
                 <Input
+                  className="node-edit-form-input"
                   value={nodeForm.name}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="输入节点关键词"
-                  style={{ marginTop: 8 }}
                 />
               </div>
 
-              <div>
-                <Text strong>用户选项</Text>
+              <div className="node-edit-form-item">
+                <Text className="node-edit-form-label" strong>用户选项</Text>
                 <Input
+                  className="node-edit-form-input"
                   value={nodeForm.user}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
                   placeholder="输入用户选项/问题"
-                  style={{ marginTop: 8 }}
                 />
               </div>
 
-              <div>
-                <Text strong>摘要</Text>
+              <div className="node-edit-form-item">
+                <Text className="node-edit-form-label" strong>摘要</Text>
                 <TextArea
+                  className="node-edit-form-input"
                   value={nodeForm.abstract}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
                   placeholder="输入节点摘要"
                   rows={2}
-                  style={{ marginTop: 8 }}
                 />
               </div>
 
-              <div>
-                <Text strong>内容</Text>
+              <div className="node-edit-form-item" style={{ flex: 1 }}>
+                <Text className="node-edit-form-label" strong>内容</Text>
                 <TextArea
+                  className="node-edit-form-input"
                   value={nodeForm.content}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="生成的内容将显示在这里，您也可以手动编辑"
-                  rows={8}
-                  style={{ marginTop: 8 }}
+                  rows={5}
+                  style={{ height: 'calc(100% - 32px)'}}
                 />
               </div>
 
               {/* 操作按钮 */}
-              <div>
-                <Button 
-                  type="primary"
-                  icon={<RobotOutlined />}
-                  onClick={generateContent}
-                  loading={generating}
-                  style={{ marginRight: 8 }}
-                >
-                  生成内容
-                </Button>
+              <div className="node-edit-actions">
+                <Space>
+                  <Button 
+                    type="primary"
+                    className="node-edit-generate-btn"
+                    icon={<RobotOutlined />}
+                    onClick={generateContent}
+                    loading={generating}
+                  >
+                    生成内容
+                  </Button>
+                  
+                  <Button 
+                    icon={<SaveOutlined />}
+                    onClick={handleSave}
+                  >
+                    保存
+                  </Button>
+                </Space>
               </div>
-            </Space>
+            </div>
           </Card>
         </Col>
 
