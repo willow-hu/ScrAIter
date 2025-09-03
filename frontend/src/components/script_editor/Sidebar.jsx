@@ -3,6 +3,7 @@ import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer
 import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UndoOutlined, RedoOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { isValidTree } from '../../utils/tree_editor/treeValidator';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
+import NodeEditModal from './NodeEditModal';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -11,12 +12,10 @@ function Sidebar({
   width, 
   treeData, 
   selectedNode, 
-  isEditing, 
   onSave, 
   onExport, 
   onUpdateGlobalContext, 
   onUpdateNode, 
-  onCloseEdit,
   onStartEdit,
   onUndo,
   onRedo,
@@ -26,8 +25,8 @@ function Sidebar({
 }) {
   const [editingGlobal, setEditingGlobal] = useState(false);
   const [globalForm, setGlobalForm] = useState({});
-  const [nodeForm, setNodeForm] = useState({});
   const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
+  const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
 
   // 开始编辑全局信息
   const startEditingGlobal = () => {
@@ -48,30 +47,14 @@ function Sidebar({
     setGlobalForm({});
   };
 
-  // 开始编辑节点时初始化表单
-  React.useEffect(() => {
-    if (isEditing && selectedNode) {
-      setNodeForm({
-        name: selectedNode.name || '',
-        abstract: selectedNode.abstract || '',
-        user: selectedNode.user || ''
-      });
-    }
-  }, [isEditing, selectedNode]);
-
-  // 保存节点信息
-  const saveNode = () => {
-    if (selectedNode) {
-      onUpdateNode(selectedNode.id, nodeForm);
-      onCloseEdit();
-      setNodeForm({});
-    }
+  // 打开节点编辑模态框
+  const handleEditNode = () => {
+    setNodeEditModalVisible(true);
   };
 
-  // 取消编辑节点
-  const cancelEditingNode = () => {
-    onCloseEdit();
-    setNodeForm({});
+  // 关闭节点编辑模态框
+  const handleCloseNodeEdit = () => {
+    setNodeEditModalVisible(false);
   };
 
   // 处理重置脚本
@@ -180,7 +163,7 @@ function Sidebar({
         </Space>
 
         {/* 节点信息 */}
-        {selectedNode && !isEditing && (
+        {selectedNode && (
           <Card size="small" title={`📄 #${selectedNode.id} 节点信息`}>
             <Space direction="vertical" style={{ width: '100%' }}>
               <div>
@@ -199,56 +182,23 @@ function Sidebar({
                   {selectedNode.abstract || '未设置'}
                 </Text>
               </div>
+              <div>
+                <Text strong>内容：</Text>
+                <Text 
+                  style={{ fontSize: '14px', color: '#666' }}
+                  ellipsis={{ tooltip: true }}
+                >
+                  {selectedNode.content || '未生成'}
+                </Text>
+              </div>
               <Button 
                 type="primary"
                 icon={<EditOutlined />}
-                onClick={() => onStartEdit(selectedNode)}
+                onClick={handleEditNode}
                 block
               >
                 编辑节点内容
               </Button>
-            </Space>
-          </Card>
-        )}
-
-        {/* 节点编辑 */}
-        {selectedNode && isEditing && (
-          <Card size="small" title={`✏️ #${selectedNode.id} 编辑节点`}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Text strong>关键词</Text>
-                <Input
-                  value={nodeForm.name || ''}
-                  onChange={(e) => setNodeForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="输入节点关键词"
-                />
-              </div>
-              <div>
-                <Text strong>用户选项</Text>
-                <TextArea
-                  value={nodeForm.user || ''}
-                  onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
-                  placeholder="输入用户选项"
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Text strong>摘要</Text>
-                <TextArea
-                  value={nodeForm.abstract || ''}
-                  onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
-                  placeholder="输入节点摘要"
-                  rows={3}
-                />
-              </div>
-              <Space>
-                <Button type="primary" onClick={saveNode}>
-                  保存
-                </Button>
-                <Button onClick={cancelEditingNode}>
-                  取消
-                </Button>
-              </Space>
             </Space>
           </Card>
         )}
@@ -350,6 +300,15 @@ function Sidebar({
       >
         <KnowledgeBaseManager onClose={() => setKbDrawerVisible(false)} />
       </Drawer>
+
+      {/* 节点编辑模态框 */}
+      <NodeEditModal
+        visible={nodeEditModalVisible}
+        node={selectedNode}
+        treeData={treeData}
+        onClose={handleCloseNodeEdit}
+        onSave={onUpdateNode}
+      />
     </div>
   );
 }

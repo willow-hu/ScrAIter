@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
 import TreeCanvas from './TreeCanvas';
 import Sidebar from './Sidebar';
+import NodeEditModal from './NodeEditModal';
 import { isValidTree } from '../../utils/tree_editor/treeValidator';
 import { createCheckpointManager, DataCacheManager } from '../../utils/tree_editor/checkpointManager';
 import { createTreeStructureManager } from '../../utils/tree_editor/treeStructureManager';
@@ -9,9 +10,9 @@ import { createTreeStructureManager } from '../../utils/tree_editor/treeStructur
 function ScriptEditor() {
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const [isResizing, setIsResizing] = useState(false);
+  const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
   
   // checkpoint 管理器
   const [checkpointManager] = useState(() => createCheckpointManager());
@@ -189,7 +190,6 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      setIsEditing(false);
       // message.success(result.message);
     } else {
       message.warning(result.message);
@@ -204,7 +204,6 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      setIsEditing(false);
       // message.success(result.message);
     } else {
       message.warning(result.message);
@@ -219,7 +218,6 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      setIsEditing(false);
       message.success(result.message);
     } else {
       message.error(result.message);
@@ -276,7 +274,6 @@ function ScriptEditor() {
       // 如果删除的是当前选中的节点，清除选择
       if (selectedNode && selectedNode.id === nodeId) {
         setSelectedNode(null);
-        setIsEditing(false);
       }
       message.success(result.message);
     } else {
@@ -312,6 +309,17 @@ function ScriptEditor() {
     }
   };
 
+  // 处理节点双击编辑
+  const handleNodeEdit = (node) => {
+    setSelectedNode(node);
+    setNodeEditModalVisible(true);
+  };
+
+  // 关闭节点编辑模态框
+  const handleCloseNodeEdit = () => {
+    setNodeEditModalVisible(false);
+  };
+
   if (!treeData) {
     return <div>加载中...</div>;
   }
@@ -322,10 +330,7 @@ function ScriptEditor() {
         treeData={treeData}
         selectedNode={selectedNode}
         onNodeSelect={setSelectedNode}
-        onNodeEdit={(node) => {
-          setSelectedNode(node);
-          setIsEditing(true);
-        }}
+        onNodeEdit={handleNodeEdit}
         onAddNode={addNode}
         onDeleteNode={deleteNode}
         onAddEdge={addEdge}
@@ -343,24 +348,24 @@ function ScriptEditor() {
         width={sidebarWidth}
         treeData={treeData}
         selectedNode={selectedNode}
-        isEditing={isEditing}
         onSave={handleSave}
         onExport={handleExport}
         onUpdateGlobalContext={updateGlobalContext}
         onUpdateNode={updateNode}
-        onStartEdit={(node) => {
-          setSelectedNode(node);
-          setIsEditing(true);
-        }}
-        onCloseEdit={() => {
-          setIsEditing(false);
-          setSelectedNode(null);
-        }}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onReset={handleReset}
         canUndo={canUndo}
         canRedo={canRedo}
+      />
+
+      {/* 节点编辑模态框 */}
+      <NodeEditModal
+        visible={nodeEditModalVisible}
+        node={selectedNode}
+        treeData={treeData}
+        onClose={handleCloseNodeEdit}
+        onSave={updateNode}
       />
     </>
   );
