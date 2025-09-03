@@ -26,6 +26,7 @@ function ContentGenerator() {
   const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
   const [ragSources, setRagSources] = useState([]);
   const [lastGenerationId, setLastGenerationId] = useState(null);
+  const [nodeRagSources, setNodeRagSources] = useState({}); // 存储每个节点的参考资料
 
   // 初始化：加载树数据
   useEffect(() => {
@@ -42,11 +43,17 @@ function ContentGenerator() {
         content: currentNode.content || ''
       });
       
-      // 清空之前的参考资料，等待新的生成
-      setRagSources([]);
-      setLastGenerationId(null);
+      // 恢复该节点的参考资料
+      const nodeId = currentNode.id;
+      if (nodeRagSources[nodeId]) {
+        setRagSources(nodeRagSources[nodeId]);
+        setLastGenerationId(`cached_${nodeId}`);
+      } else {
+        setRagSources([]);
+        setLastGenerationId(null);
+      }
     }
-  }, [currentNode]);
+  }, [currentNode, nodeRagSources]);
 
   // 加载树数据
   const loadTreeData = async () => {
@@ -96,6 +103,14 @@ function ContentGenerator() {
     }
     setTreeData(newTreeData);
     setCurrentNode(updatedNode);
+    
+    // 保存当前节点的参考资料
+    if (ragSources.length > 0) {
+      setNodeRagSources(prev => ({
+        ...prev,
+        [currentNode.id]: ragSources
+      }));
+    }
     
     // 保存到服务器
     try {
@@ -176,7 +191,16 @@ function ContentGenerator() {
       }
       
       const result = await response.json();
-      setRagSources(result.sources || []);
+      const sources = result.sources || [];
+      setRagSources(sources);
+      
+      // 同时保存到节点关联的参考资料中
+      if (currentNode && sources.length > 0) {
+        setNodeRagSources(prev => ({
+          ...prev,
+          [currentNode.id]: sources
+        }));
+      }
     } catch (error) {
       console.error('获取参考资料失败:', error);
       message.error('获取参考资料失败');

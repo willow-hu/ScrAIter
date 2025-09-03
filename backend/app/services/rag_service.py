@@ -189,7 +189,9 @@ class RAGService:
         self, 
         node_info: Dict[str, Any], 
         global_context: Dict[str, Any],
-        kb_name: Optional[str] = None
+        kb_name: Optional[str] = None,
+        similarity_threshold: float = 0.2,
+        chunk_cnt: int = 5
     ) -> GeneratedContent:
         """生成节点内容"""
         generation_id = str(uuid.uuid4())
@@ -203,7 +205,9 @@ class RAGService:
             user_query = node_info.get("user", node_info.get("abstract", ""))
             context_knowledge, rag_sources = self.retrieve_relevant_chunks(
                 user_query, 
-                kb_name=kb_name
+                kb_name=kb_name,
+                similarity_threshold=similarity_threshold,
+                chunk_cnt=chunk_cnt
             )
             
             # 缓存RAG源
@@ -218,13 +222,6 @@ class RAGService:
                 )
             except KeyError as e:
                 print(f"❌ 提示词模板有误，请检查: {e}")
-                # 如果模板格式错误，使用简单拼接
-                filled_prompt = f"""
-根据以下信息生成内容：
-全局上下文：{json.dumps(global_context, ensure_ascii=False, indent=2)}
-节点信息：{json.dumps(node_info, ensure_ascii=False, indent=2)}
-参考知识：{context_knowledge}
-"""
 
             # 调用大模型
             completion = self.client.chat.completions.create(
