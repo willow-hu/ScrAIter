@@ -3,9 +3,9 @@ import { message } from 'antd';
 import TreeCanvas from './TreeCanvas';
 import Sidebar from './Sidebar';
 import NodeEditModal from './NodeEditModal';
-import { isValidTree } from '../../utils/tree_editor/treeValidator';
-import { createCheckpointManager, DataCacheManager } from '../../utils/tree_editor/checkpointManager';
-import { createTreeStructureManager } from '../../utils/tree_editor/treeStructureManager';
+import { isValidTree } from '../../utils/script_editor/treeValidator';
+import { createCheckpointManager, DataCacheManager } from '../../utils/script_editor/checkpointManager';
+import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
 
 function ScriptEditor() {
   const [treeData, setTreeData] = useState(null);

@@ -3,7 +3,7 @@ import { Layout, Card, Button, Input, Typography, Space, Spin, message, Modal, D
 import { SaveOutlined, RobotOutlined, LeftOutlined, RightOutlined, DownloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
 import ReferencePanel from './ReferencePanel';
-import { flattenTreeDFS } from '../../utils/content_generator/treeTraversal';
+import { flattenTreeDFS } from '../../utils/script_editor/treeTraversal';
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;

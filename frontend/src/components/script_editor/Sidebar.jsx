@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer } from 'antd';
 import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UndoOutlined, RedoOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
-import { isValidTree } from '../../utils/tree_editor/treeValidator';
+import { isValidTree } from '../../utils/script_editor/treeValidator';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
 import NodeEditModal from './NodeEditModal';
 

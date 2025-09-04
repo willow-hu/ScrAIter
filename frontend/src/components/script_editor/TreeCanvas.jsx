@@ -6,7 +6,7 @@ import {
   EventHandler, 
   CollisionDetector,
   TREE_EDITOR_CONFIG
-} from '../../utils/tree_editor/index.js';
+} from '../../utils/script_editor/index.js';
 
 function TreeCanvas({ 
   treeData, 
