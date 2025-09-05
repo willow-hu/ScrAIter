@@ -113,13 +113,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 0px;
   border-top: 1px solid #f0f0f0;
   margin-top: auto;
   background: #fafafa;
   border-radius: 0 0 8px 8px;
   margin: 0 -16px -8px -16px;
-  min-height: 48px;
+  height: 36px;
 }
 
 .reference-panel-pagination-text {
