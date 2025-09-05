@@ -140,7 +140,7 @@ function NodeEditModal({
           <Card 
             title="节点编辑"
             size="small"
-            className="reference-panel node-edit-panel"
+            className="panel node-edit-panel"
             bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
           >
             <div className="node-edit-form">

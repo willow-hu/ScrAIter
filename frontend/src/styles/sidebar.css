@@ -1,0 +1,18 @@
+/* Sidebar Styles */
+
+/* 侧边栏 */
+.sidebar {
+  width: 350px;
+  background-color: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* 调整器 */
+.resizer {
+  width: 5px;
+  background-color: #e0e0e0;
+  cursor: col-resize;
+  transition: background-color 0.2s;
+}

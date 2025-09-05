@@ -15,7 +15,7 @@ function ReferencePanel({ sources = [], loading = false }) {
   // 如果没有数据，显示空状态
   if (!sources || sources.length === 0) {
     return (
-      <Card title="参考资料" size="small" className="reference-panel reference-panel-empty">
+      <Card title="参考资料" size="small" className="panel reference-panel reference-panel-empty">
         <Empty 
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="暂无参考资料"
@@ -44,7 +44,7 @@ function ReferencePanel({ sources = [], loading = false }) {
     <Card 
       title="参考资料" 
       size="small" 
-      className="reference-panel"
+      className="panel reference-panel"
       bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
     >
       {/* 内容区域 */}
