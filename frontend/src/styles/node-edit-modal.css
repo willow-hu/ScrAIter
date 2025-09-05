@@ -53,8 +53,116 @@
 }
 
 /* 参考资料面板样式 - 继承基础面板样式 */
-/* .reference-panel {
-} */
+.reference-panel {
+  position: relative;
+}
+
+.reference-panel .ant-card-head {
+  padding: 0 16px;
+  min-height: 42px;
+}
+
+.reference-panel .ant-card-head-title {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.reference-panel .ant-card-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 参考资料内容区域 */
+.reference-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.reference-panel-space {
+  width: 100%;
+}
+
+.reference-panel-source {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 12px;
+}
+
+.reference-panel-source-text {
+  font-size: 12px;
+  color: #666;
+}
+
+.reference-panel-text-container {
+  flex: 1;
+}
+
+.reference-panel-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 分页控制器样式 */
+.reference-panel-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  border-top: 1px solid #f0f0f0;
+  margin-top: auto;
+  background: #fafafa;
+  border-radius: 0 0 8px 8px;
+  margin: 0 -16px -16px -16px;
+  padding: 5px 0;
+}
+
+.reference-panel-pagination-text {
+  margin: 0 12px;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  min-width: 40px;
+  text-align: center;
+}
+
+.reference-panel-pagination .ant-btn {
+  border: none;
+  box-shadow: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reference-panel-pagination .ant-btn:hover:not(:disabled) {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.reference-panel-pagination .ant-btn:disabled {
+  color: #bfbfbf;
+  background-color: transparent;
+}
+
+/* 空状态样式 */
+.reference-panel-empty .ant-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reference-panel-empty-content {
+  margin: 0;
+}
 
 /* 编辑表单样式 */
 .node-edit-form {

@@ -45,7 +45,6 @@ function ReferencePanel({ sources = [], loading = false }) {
       title="参考资料" 
       size="small" 
       className="panel reference-panel"
-      bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
     >
       {/* 内容区域 */}
       <div className="reference-panel-content">
