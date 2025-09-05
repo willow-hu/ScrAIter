@@ -70,7 +70,7 @@
 .reference-panel .ant-card-body {
   flex: 1;
   overflow: hidden;
-  padding: 16px;
+  padding: 8px 16px;
   display: flex;
   flex-direction: column;
 }
@@ -79,7 +79,6 @@
 .reference-panel-content {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: 12px;
 }
 
 .reference-panel-space {
@@ -89,7 +88,6 @@
 .reference-panel-source {
   padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
-  margin-bottom: 12px;
 }
 
 .reference-panel-source-text {
