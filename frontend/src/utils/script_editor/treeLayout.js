@@ -5,9 +5,6 @@
 
 import { TREE_EDITOR_CONFIG } from './config.js';
 
-export const NODE_WIDTH = TREE_EDITOR_CONFIG.node.width;
-export const NODE_HEIGHT = TREE_EDITOR_CONFIG.node.height;
-
 /**
  * 树结构自动布局类
  */
@@ -56,7 +53,7 @@ export class TreeLayoutManager {
   calculateSubtreeWidth(nodeId, nodeMap) {
     const node = nodeMap.get(nodeId);
     if (!node || !node.child_ids || node.child_ids.length === 0) {
-      return NODE_WIDTH;
+      return TREE_EDITOR_CONFIG.node.width;
     }
     
     let totalWidth = 0;
@@ -64,7 +61,7 @@ export class TreeLayoutManager {
       totalWidth += this.calculateSubtreeWidth(childId, nodeMap);
     });
     
-    return Math.max(NODE_WIDTH, totalWidth + (node.child_ids.length - 1) * this.nodeSpacing);
+    return Math.max(TREE_EDITOR_CONFIG.node.width, totalWidth + (node.child_ids.length - 1) * this.nodeSpacing);
   }
 
   /**
@@ -85,7 +82,7 @@ export class TreeLayoutManager {
     
     if (children.length === 0) {
       // 叶子节点，直接放置在centerX位置
-      positions.set(nodeId, { x: centerX - NODE_WIDTH / 2, y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset });
+      positions.set(nodeId, { x: centerX - TREE_EDITOR_CONFIG.node.width / 2, y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset });
       return;
     }
 
@@ -104,7 +101,7 @@ export class TreeLayoutManager {
 
     // 放置当前节点
     positions.set(nodeId, { 
-      x: adjustedCenterX - NODE_WIDTH / 2, 
+      x: adjustedCenterX - TREE_EDITOR_CONFIG.node.width / 2, 
       y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset 
     });
 
@@ -124,15 +121,15 @@ export class TreeLayoutManager {
     let adjustedCenterX = centerX;
     
     // 计算当前节点和子节点占用的范围
-    const nodeLeft = adjustedCenterX - NODE_WIDTH / 2;
-    const nodeRight = adjustedCenterX + NODE_WIDTH / 2;
+    const nodeLeft = adjustedCenterX - TREE_EDITOR_CONFIG.node.width / 2;
+    const nodeRight = adjustedCenterX + TREE_EDITOR_CONFIG.node.width / 2;
     
     // 检查与同级其他节点的冲突
     const levelPositions = usedPositions.get(level) || [];
     for (const usedPos of levelPositions) {
       if (nodeRight + this.nodeSpacing > usedPos.left && nodeLeft < usedPos.right + this.nodeSpacing) {
         // 发生冲突，需要向右移动
-        adjustedCenterX = usedPos.right + this.nodeSpacing + NODE_WIDTH / 2;
+        adjustedCenterX = usedPos.right + this.nodeSpacing + TREE_EDITOR_CONFIG.node.width / 2;
       }
     }
 
@@ -157,8 +154,8 @@ export class TreeLayoutManager {
    * @param {Map} usedPositions - 已使用位置映射
    */
   recordNodePosition(centerX, level, usedPositions) {
-    const nodeLeft = centerX - NODE_WIDTH / 2;
-    const nodeRight = centerX + NODE_WIDTH / 2;
+    const nodeLeft = centerX - TREE_EDITOR_CONFIG.node.width / 2;
+    const nodeRight = centerX + TREE_EDITOR_CONFIG.node.width / 2;
     
     if (!usedPositions.has(level)) {
       usedPositions.set(level, []);

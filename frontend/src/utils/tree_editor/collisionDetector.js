@@ -3,7 +3,6 @@
  * 负责检测鼠标位置与节点的碰撞
  */
 
-import { NODE_WIDTH, NODE_HEIGHT } from './treeLayout.js';
 import { TREE_EDITOR_CONFIG } from './config.js';
 
 export class CollisionDetector {
@@ -20,8 +19,8 @@ export class CollisionDetector {
     if (!nodes || nodes.length === 0) return null;
     
     // 计算在当前缩放下的节点尺寸
-    const scaledWidth = NODE_WIDTH * scale;
-    const scaledHeight = NODE_HEIGHT * scale;
+    const scaledWidth = TREE_EDITOR_CONFIG.node.width * scale;
+    const scaledHeight = TREE_EDITOR_CONFIG.node.height * scale;
     
     for (const node of nodes) {
       const pos = getNodeScreenPosition(node);
@@ -45,8 +44,8 @@ export class CollisionDetector {
   static getNodesInRect(rect, nodes, getNodeScreenPosition, scale) {
     if (!nodes || nodes.length === 0) return [];
     
-    const scaledWidth = NODE_WIDTH * scale;
-    const scaledHeight = NODE_HEIGHT * scale;
+    const scaledWidth = TREE_EDITOR_CONFIG.node.width * scale;
+    const scaledHeight = TREE_EDITOR_CONFIG.node.height * scale;
     const result = [];
     
     for (const node of nodes) {
@@ -92,14 +91,14 @@ export class CollisionDetector {
     
     for (const node of nodes) {
       const parentPos = getNodeScreenPosition(node);
-      const parentCenterX = parentPos.x + (NODE_WIDTH * scale) / 2;
-      const parentBottomY = parentPos.y + NODE_HEIGHT * scale;
+      const parentCenterX = parentPos.x + (TREE_EDITOR_CONFIG.node.width * scale) / 2;
+      const parentBottomY = parentPos.y + TREE_EDITOR_CONFIG.node.height * scale;
       
       for (const childId of node.child_ids || []) {
         const childNode = nodes.find(n => n.id === childId);
         if (childNode) {
           const childPos = getNodeScreenPosition(childNode);
-          const childCenterX = childPos.x + (NODE_WIDTH * scale) / 2;
+          const childCenterX = childPos.x + (TREE_EDITOR_CONFIG.node.width * scale) / 2;
           const childTopY = childPos.y;
           
           // 检查点是否在边上（使用点到线段的距离）
@@ -175,8 +174,8 @@ export class CollisionDetector {
     const pos2 = node2.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
     
     return this.rectIntersects(
-      { x: pos1.x - margin, y: pos1.y - margin, width: NODE_WIDTH + margin * 2, height: NODE_HEIGHT + margin * 2 },
-      { x: pos2.x - margin, y: pos2.y - margin, width: NODE_WIDTH + margin * 2, height: NODE_HEIGHT + margin * 2 }
+      { x: pos1.x - margin, y: pos1.y - margin, width: TREE_EDITOR_CONFIG.node.width + margin * 2, height: TREE_EDITOR_CONFIG.node.height + margin * 2 },
+      { x: pos2.x - margin, y: pos2.y - margin, width: TREE_EDITOR_CONFIG.node.width + margin * 2, height: TREE_EDITOR_CONFIG.node.height + margin * 2 }
     );
   }
 }
