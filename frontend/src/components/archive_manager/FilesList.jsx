@@ -3,7 +3,6 @@ import { Table, Tag, Button, Select, message, Collapse, Empty, Tooltip, Space, M
 import { DeleteOutlined, FolderOutlined, FileTextOutlined, FileExcelOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
-const { Panel } = Collapse;
 
 // 来源标签
 const SOURCE_TAGS = [
@@ -240,21 +239,22 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       </div>
 
       {/* 按类目分组显示 */}
-      <Collapse defaultActiveKey={Object.keys(groupedFiles)} ghost>
-        {Object.entries(groupedFiles).map(([category, categoryFiles]) => (
-          <Panel
-            header={
-              <Space>
-                <FolderOutlined />
-                <strong>{category}</strong>
-                <Tag>{categoryFiles.length} 个文件</Tag>
-                {categoryFiles.some(f => !f.source_tag) && (
-                  <Tag color="red">有未标记文件</Tag>
-                )}
-              </Space>
-            }
-            key={category}
-          >
+      <Collapse 
+        defaultActiveKey={Object.keys(groupedFiles)} 
+        ghost
+        items={Object.entries(groupedFiles).map(([category, categoryFiles]) => ({
+          key: category,
+          label: (
+            <Space>
+              <FolderOutlined />
+              <strong>{category}</strong>
+              <Tag>{categoryFiles.length} 个文件</Tag>
+              {categoryFiles.some(f => !f.source_tag) && (
+                <Tag color="red">有未标记文件</Tag>
+              )}
+            </Space>
+          ),
+          children: (
             <Table
               columns={columns}
               dataSource={categoryFiles}
@@ -263,9 +263,9 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
               size="small"
               loading={loading}
             />
-          </Panel>
-        ))}
-      </Collapse>
+          )
+        }))}
+      />
     </div>
   );
 }

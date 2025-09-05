@@ -42,7 +42,12 @@ function ReferencePanel({ sources = [], loading = false }) {
 
   return (
     <Card 
-      title="参考资料" 
+      title={
+        <Space>
+          <Text>参考资料</Text>
+          {sources.length > 0}
+        </Space>
+      } 
       size="small" 
       className="panel reference-panel"
     >

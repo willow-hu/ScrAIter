@@ -34,9 +34,20 @@ function NodeEditModal({
         user: node.user || '',
         content: node.content || ''
       });
-      // 清空参考资料
-      setRagSources([]);
-      setLastGenerationId(null);
+      
+      // 加载已保存的参考资料
+      if (node.ragSources && Array.isArray(node.ragSources)) {
+        setRagSources(node.ragSources);
+      } else {
+        setRagSources([]);
+      }
+      
+      // 保存生成ID（如果存在）
+      if (node.lastGenerationId) {
+        setLastGenerationId(node.lastGenerationId);
+      } else {
+        setLastGenerationId(null);
+      }
     }
   }, [node]);
 
@@ -76,7 +87,16 @@ function NodeEditModal({
       
       // 保存生成ID并自动加载参考资料
       setLastGenerationId(result.generation_id);
-      await loadReferences(result.generation_id);
+      const sources = await loadReferences(result.generation_id);
+      
+      // 自动保存节点（包含新生成的内容和参考资料）
+      const updateData = {
+        ...nodeForm,
+        content: result.content,
+        ragSources: sources && sources.length > 0 ? sources : undefined,
+        lastGenerationId: result.generation_id
+      };
+      onSave(node.id, updateData);
       
       message.success('内容生成成功');
     } catch (error) {
@@ -89,7 +109,7 @@ function NodeEditModal({
 
   // 加载参考资料
   const loadReferences = async (generationId) => {
-    if (!generationId) return;
+    if (!generationId) return [];
     
     try {
       const response = await fetch(`http://localhost:8000/api/v1/rag/sources/${generationId}`);
@@ -100,9 +120,11 @@ function NodeEditModal({
       const result = await response.json();
       const sources = result.sources || [];
       setRagSources(sources);
+      return sources; // 返回加载的参考资料
     } catch (error) {
       console.error('获取参考资料失败:', error);
       message.error('获取参考资料失败');
+      return [];
     }
   };
 
@@ -110,8 +132,15 @@ function NodeEditModal({
   const handleSave = () => {
     if (!node) return;
     
+    // 构建更新数据，包含参考资料
+    const updateData = {
+      ...nodeForm,
+      ragSources: ragSources.length > 0 ? ragSources : undefined, // 只在有参考资料时保存
+      lastGenerationId: lastGenerationId || undefined // 只在有生成ID时保存
+    };
+    
     // 更新节点数据
-    onSave(node.id, nodeForm);
+    onSave(node.id, updateData);
     
     message.success('节点保存成功');
     // 注意：这里不调用 onClose()，保持模态框打开
@@ -141,7 +170,9 @@ function NodeEditModal({
             title="节点编辑"
             size="small"
             className="panel node-edit-panel"
-            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            styles={{
+              body: { flex: 1, display: 'flex', flexDirection: 'column' }
+            }}
           >
             <div className="node-edit-form">
               {/* 节点信息编辑 */}

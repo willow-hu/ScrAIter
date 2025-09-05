@@ -254,6 +254,12 @@ function ScriptEditor() {
     const result = treeManager.updateNode(nodeId, updates);
     if (!result.success) {
       message.error(result.message);
+    } else {
+      // 如果当前选中的节点被更新，同步更新选中节点数据
+      if (selectedNode && selectedNode.id === nodeId) {
+        const updatedNode = treeManager.getNode(nodeId);
+        setSelectedNode(updatedNode);
+      }
     }
   };
 
