@@ -122,7 +122,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '文件名',
       dataIndex: 'filename',
       key: 'filename',
-      width: '35%',
+      width: '50%',
       render: (text, record) => (
         <Space>
           {getFileIcon(text, record.file_type)}
@@ -134,7 +134,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '类型',
       dataIndex: 'file_type',
       key: 'file_type',
-      width: '15%',
+      // width: '15%',
       render: (type) => (
         <Tag color='default'>
           {type === 'structured' ? '结构化' : '非结构化'}
@@ -145,7 +145,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '来源',
       dataIndex: 'source_tag',
       key: 'source_tag',
-      width: '15%',
+      // width: '15%',
       render: (tag, record) => {
         const isUpdating = updating[record.relative_path];
         
