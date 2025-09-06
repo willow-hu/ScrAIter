@@ -13,6 +13,34 @@ function ArchiveManager() {
   const [loading, setLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // 防止拖拽文件到页面其他区域导致的警告
+  useEffect(() => {
+    const handleDragOver = (e) => {
+      // 如果不是在上传区域内，阻止默认行为
+      if (!e.target.closest('.ant-upload-dragger') && !e.target.closest('.file-uploader')) {
+        e.preventDefault();
+        e.dataTransfer.effectAllowed = 'none';
+        e.dataTransfer.dropEffect = 'none';
+      }
+    };
+
+    const handleDrop = (e) => {
+      // 如果不是在上传区域内，阻止默认行为
+      if (!e.target.closest('.ant-upload-dragger') && !e.target.closest('.file-uploader')) {
+        e.preventDefault();
+      }
+    };
+
+    // 使用capture阶段处理，这样可以在事件冒泡之前处理
+    document.addEventListener('dragover', handleDragOver, { capture: true });
+    document.addEventListener('drop', handleDrop, { capture: true });
+
+    return () => {
+      document.removeEventListener('dragover', handleDragOver, { capture: true });
+      document.removeEventListener('drop', handleDrop, { capture: true });
+    };
+  }, []);
+
   // 初始化加载数据
   useEffect(() => {
     loadFiles();
@@ -119,11 +147,6 @@ function ArchiveManager() {
               <Card 
                 title="文件管理" 
                 className="files-section"
-                extra={
-                  <span style={{ fontSize: '14px', color: '#666' }}>
-                    共 {files.length} 个文件
-                  </span>
-                }
               >
                 <FilesList
                   files={files}

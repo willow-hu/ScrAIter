@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, Button, Input, Select, Space, message, Modal, Divider } from 'antd';
 import { InboxOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 
@@ -51,9 +51,6 @@ function FileUploader({ categories, onUploadSuccess, onRefresh }) {
     },
     onChange: (info) => {
       setFileList(info.fileList);
-    },
-    onDrop: (e) => {
-      console.log('Dropped files', e.dataTransfer.files);
     },
   };
 
