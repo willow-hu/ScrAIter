@@ -13,10 +13,12 @@ class FileStatus(str, Enum):
     ERROR = "error"
 
 class SourceTag(str, Enum):
-    LITERATURE = "literature"  # 文献
-    ENCYCLOPEDIA = "encyclopedia"  # 百科
-    BLOG = "blog"  # 博客
-    OTHER = "other"  # 其他
+    LITERATURE = "literature"  # 文献资料
+    ENCYCLOPEDIA = "encyclopedia"  # 百科知识
+    BLOG = "blog"  # 博客文章
+    NEWS = "news"  # 新闻报道
+    OFFICIAL = "official"  # 官方资料
+    OTHER = "other"  # 其他来源
 
 class FileInfo(BaseModel):
     filename: str

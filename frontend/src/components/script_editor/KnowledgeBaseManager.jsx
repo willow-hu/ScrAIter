@@ -56,6 +56,36 @@ function KnowledgeBaseManager({ onClose }) {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
   const [selectedCategoriesForBuild, setSelectedCategoriesForBuild] = useState([]);
+  const [sourceTags, setSourceTags] = useState([
+    { value: 'literature', label: '文献资料', color: 'blue' },
+    { value: 'encyclopedia', label: '百科知识', color: 'green' },
+    { value: 'blog', label: '博客文章', color: 'orange' },
+    { value: 'news', label: '新闻报道', color: 'purple' },
+    { value: 'official', label: '官方资料', color: 'red' },
+    { value: 'other', label: '其他来源', color: 'default' }
+  ]);
+
+  // 获取标签配置
+  const getSourceTagConfig = (value) => {
+    return sourceTags.find(tag => tag.value === value) || { label: '未标记', color: 'default' };
+  };
+
+  // 获取标签配置
+  useEffect(() => {
+    const loadSourceTags = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/source-tags');
+        if (response.ok) {
+          const config = await response.json();
+          setSourceTags(config.tags || sourceTags);
+        }
+      } catch (error) {
+        console.warn('获取标签配置失败，使用默认配置:', error);
+      }
+    };
+    
+    loadSourceTags();
+  }, []);
 
   // 初始化加载数据
   useEffect(() => {
@@ -598,7 +628,9 @@ function KnowledgeBaseManager({ onClose }) {
                       <Space>
                         <Text>{file.filename}</Text>
                         <Tag size="small" color="default">{file.file_type}</Tag>
-                        <Tag size="small" color="blue">{file.source_tag || '未标记'}</Tag>
+                        <Tag size="small" color={getSourceTagConfig(file.source_tag).color}>
+                          {getSourceTagConfig(file.source_tag).label}
+                        </Tag>
                       </Space>
                     }
                     description={

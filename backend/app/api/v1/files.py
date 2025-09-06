@@ -1,6 +1,8 @@
 """
 文件管理API端点
 """
+import json
+import os
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -10,8 +12,36 @@ from app.models.file_models import (
     UpdateTagResponse, CategoryListResponse
 )
 from app.services.file_service import file_service
+from app.core.config import settings
 
 router = APIRouter()
+
+@router.get("/source-tags")
+async def get_source_tags():
+    """
+    获取来源标签配置
+    """
+    try:
+        config_path = os.path.join(settings.SHARED_DIR, "configs", "source_tags.json")
+        
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config
+        else:
+            # 返回默认配置
+            return {
+                "tags": [
+                    {"value": "literature", "label": "文献资料", "color": "blue"},
+                    {"value": "encyclopedia", "label": "百科知识", "color": "green"},
+                    {"value": "blog", "label": "博客文章", "color": "orange"},
+                    {"value": "news", "label": "新闻报道", "color": "purple"},
+                    {"value": "official", "label": "官方资料", "color": "red"},
+                    {"value": "other", "label": "其他来源", "color": "default"}
+                ]
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取标签配置失败: {str(e)}")
 
 @router.get("/files", response_model=FileListResponse)
 async def get_files():

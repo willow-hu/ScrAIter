@@ -1,0 +1,34 @@
+{
+  "tags": [
+    {
+      "value": "literature",
+      "label": "文献资料",
+      "color": "blue"
+    },
+    {
+      "value": "encyclopedia",
+      "label": "百科词条",
+      "color": "green"
+    },
+    {
+      "value": "blog",
+      "label": "博客文章",
+      "color": "orange"
+    },
+    {
+      "value": "news",
+      "label": "新闻报道",
+      "color": "purple"
+    },
+    {
+      "value": "official",
+      "label": "官方资料",
+      "color": "cyan"
+    },
+    {
+      "value": "other",
+      "label": "其他来源",
+      "color": "default"
+    }
+  ]
+}

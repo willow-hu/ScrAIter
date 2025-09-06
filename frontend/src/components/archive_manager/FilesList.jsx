@@ -1,34 +1,51 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Select, message, Collapse, Empty, Tooltip, Space, Modal } from 'antd';
 import { DeleteOutlined, FolderOutlined, FileTextOutlined, FileExcelOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
-// 来源标签
-const SOURCE_TAGS = [
-  { value: 'literature', label: '文献', color: 'blue' },
-  { value: 'encyclopedia', label: '百科', color: 'green' },
-  { value: 'blog', label: '博客', color: 'orange' },
-  { value: 'other', label: '其他', color: 'default' }
-];
-
-// 获取标签配置
-const getSourceTagConfig = (value) => {
-  return SOURCE_TAGS.find(tag => tag.value === value) || { label: value, color: 'default' };
-};
-
-// 获取文件类型图标
-const getFileIcon = (filename, fileType) => {
-  const ext = filename.split('.').pop()?.toLowerCase();
-  
-  if (fileType === 'structured' || ['xlsx', 'csv'].includes(ext)) {
-    return <FileExcelOutlined style={{ color: '#52c41a' }} />;
-  }
-  return <FileTextOutlined style={{ color: '#1890ff' }} />;
-};
-
 function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefresh }) {
   const [updating, setUpdating] = useState({});
+  const [sourceTags, setSourceTags] = useState([
+    { value: 'literature', label: '文献资料', color: 'blue' },
+    { value: 'encyclopedia', label: '百科知识', color: 'green' },
+    { value: 'blog', label: '博客文章', color: 'orange' },
+    { value: 'news', label: '新闻报道', color: 'purple' },
+    { value: 'official', label: '官方资料', color: 'red' },
+    { value: 'other', label: '其他来源', color: 'default' }
+  ]);
+
+  // 获取标签配置
+  useEffect(() => {
+    const loadSourceTags = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/source-tags');
+        if (response.ok) {
+          const config = await response.json();
+          setSourceTags(config.tags || sourceTags);
+        }
+      } catch (error) {
+        console.warn('获取标签配置失败，使用默认配置:', error);
+      }
+    };
+    
+    loadSourceTags();
+  }, []);
+
+  // 获取标签配置
+  const getSourceTagConfig = (value) => {
+    return sourceTags.find(tag => tag.value === value) || { label: value, color: 'default' };
+  };
+
+  // 获取文件类型图标
+  const getFileIcon = (filename, fileType) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    
+    if (fileType === 'structured' || ['xlsx', 'csv'].includes(ext)) {
+      return <FileExcelOutlined style={{ color: '#52c41a' }} />;
+    }
+    return <FileTextOutlined style={{ color: '#1890ff' }} />;
+  };
 
   // 按类目分组文件
   const groupedFiles = useMemo(() => {
@@ -160,7 +177,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
             onChange={(newTag) => handleTagChange(record, newTag)}
             popupMatchSelectWidth={false}
           >
-            {SOURCE_TAGS.map(tagOption => (
+            {sourceTags.map(tagOption => (
               <Option key={tagOption.value} value={tagOption.value}>
                 <Tag color={tagOption.color} style={{ margin: 0 }}>
                   {tagOption.label}
