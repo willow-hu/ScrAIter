@@ -1,8 +1,5 @@
 import React, { act, useState } from 'react';
-// import TreeEditor from './components/tree_editor/TreeEditor';
-// import ContentGenerator from './components/content_generator/ContentGenerator';
 import ArchiveManager from './components/archive_manager/ArchiveManager';
-import StructureGenerator from './components/structure_generator/StructureGenerator';
 import ScriptEditor from './components/script_editor/ScriptEditor';
 
 function App() {
@@ -31,18 +28,6 @@ function App() {
             脚本创作
           </button>
           {/* <button 
-            className={`nav-tab ${activeTab === 'editor' ? 'active' : ''}`}
-            onClick={() => setActiveTab('editor')}
-          >
-            结构编辑
-          </button>
-          <button 
-            className={`nav-tab ${activeTab === 'content' ? 'active' : ''}`}
-            onClick={() => setActiveTab('content')}
-          >
-            内容生成
-          </button> */}
-          {/* <button 
             className={`nav-tab ${activeTab === 'review' ? 'active' : ''}`}
             onClick={() => setActiveTab('review')}
           >
@@ -53,10 +38,13 @@ function App() {
       
       <div className="main-content">
         {activeTab === 'archive' && <ArchiveManager />}
-        {activeTab === 'generator' && <StructureGenerator />}
+        {activeTab === 'generator' && (
+          <div className="placeholder">
+            <h2>结构生成</h2>
+            <p>结构生成功能尚需规划</p>
+          </div>
+        )}
         {activeTab === 'script' && <ScriptEditor />}
-        {/* {activeTab === 'editor' && <TreeEditor />}
-        {activeTab === 'content' && <ContentGenerator />} */}
         {/* {activeTab === 'review' && (
           <div className="placeholder">
             <h2>内容校对</h2>
