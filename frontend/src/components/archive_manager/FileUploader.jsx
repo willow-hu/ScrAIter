@@ -40,13 +40,6 @@ function FileUploader({ categories, onUploadSuccess, onRefresh }) {
         return Upload.LIST_IGNORE;
       }
 
-      // 检查文件大小 (200MB)
-      const isLt200M = file.size / 1024 / 1024 < 200;
-      if (!isLt200M) {
-        message.error('文件大小不能超过200MB');
-        return Upload.LIST_IGNORE;
-      }
-
       return false; // 阻止自动上传
     },
     onChange: (info) => {
