@@ -27,20 +27,6 @@ const getFileIcon = (filename, fileType) => {
   return <FileTextOutlined style={{ color: '#1890ff' }} />;
 };
 
-// 格式化文件大小
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-// 格式化日期
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleString('zh-CN');
-};
-
 function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefresh }) {
   const [updating, setUpdating] = useState({});
 
@@ -148,7 +134,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '类型',
       dataIndex: 'file_type',
       key: 'file_type',
-      width: '10%',
+      width: '15%',
       render: (type) => (
         <Tag color='default'>
           {type === 'structured' ? '结构化' : '非结构化'}
@@ -159,7 +145,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '来源',
       dataIndex: 'source_tag',
       key: 'source_tag',
-      width: '10%',
+      width: '15%',
       render: (tag, record) => {
         const isUpdating = updating[record.relative_path];
         
@@ -184,20 +170,6 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
           </Select>
         );
       },
-    },
-    {
-      title: '大小',
-      dataIndex: 'size',
-      key: 'size',
-      width: '10%',
-      render: (size) => formatFileSize(size),
-    },    
-    {
-      title: '上传时间',
-      dataIndex: 'upload_time',
-      key: 'upload_time',
-      width: '15%',
-      render: (time) => formatDate(time),
     },
     {
       title: '操作',
