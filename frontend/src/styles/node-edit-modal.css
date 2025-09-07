@@ -1,6 +1,5 @@
-/* Node Edit Modal Styles */
+/* 节点编辑模态框样式 */
 
-/* 节点编辑模态框 */
 .node-edit-modal {
   padding: 0;
 }
@@ -15,7 +14,7 @@
   flex-direction: column;
 }
 
-/* 基础面板样式 - 所有面板的通用样式 */
+/* 基础面板样式 */
 .panel {
   border-radius: 8px;
   height: 600px;
@@ -23,25 +22,15 @@
   flex-direction: column;
 }
 
-.panel .ant-card-head {
-  background: #fafafa;
-  border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.panel .ant-card-head-title {
-  color: #262626;
-  font-weight: 600;
-}
-
-/* 节点编辑面板样式 - 继承基础面板样式 */
+/* 节点编辑面板 */
 .node-edit-panel .ant-card-head{
   padding: 0 16px;
-  min-height: 42px;
+  min-height: 40px;
 }
 
 .node-edit-panel .ant-card-head-title {
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -51,18 +40,19 @@
   padding: 16px;
 }
 
-/* 参考资料面板样式 - 继承基础面板样式 */
+/* 参考资料面板 */
 .reference-panel {
   position: relative;
 }
 
 .reference-panel .ant-card-head {
   padding: 0 16px;
-  min-height: 42px;
+  min-height: 40px;
 }
 
 .reference-panel .ant-card-head-title {
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -107,7 +97,7 @@
   word-break: break-word;
 }
 
-/* 分页控制器样式 */
+/* 分页控制器 */
 .reference-panel-pagination {
   display: flex;
   align-items: center;
@@ -123,7 +113,7 @@
 .reference-panel-pagination-text {
   margin: 0 12px;
   font-size: 13px;
-  color: #666;
+  color: #595959;
   font-weight: 500;
   min-width: 40px;
   text-align: center;
@@ -134,6 +124,7 @@
   box-shadow: none;
   width: 28px;
   height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,7 +151,7 @@
   margin: 0;
 }
 
-/* 编辑表单样式 */
+/* 编辑表单 */
 .node-edit-form {
   height: 100%;
   display: flex;
@@ -179,12 +170,13 @@
   display: block;
   margin-bottom: 8px;
   color: #262626;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
 }
 
 .node-edit-form-input {
   width: 100%;
+  border-radius: 6px;
 }
 
 .node-edit-actions {

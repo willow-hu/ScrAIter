@@ -1,6 +1,5 @@
-/* Sidebar Styles */
+/* 侧边栏样式 */
 
-/* 侧边栏 */
 .sidebar {
   width: 350px;
   background-color: #f8f9fa;
@@ -15,4 +14,13 @@
   background-color: #e0e0e0;
   cursor: col-resize;
   transition: background-color 0.2s;
+}
+
+/* Card样式 */
+.sidebar .ant-card {
+  margin-bottom: 16px;
+}
+
+.sidebar .ant-card:last-child {
+  margin-bottom: 0;
 }

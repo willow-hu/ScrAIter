@@ -31,3 +31,144 @@ body {
   width: 100vw;
   height: 100vh;
 }
+
+/* 统一的Card样式 */
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+  background: #fff;
+  transition: box-shadow 0.3s ease;
+}
+
+/* Card头部样式统一 */
+.ant-card-head {
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px 8px 0 0;
+  padding: 0 20px;
+  min-height: 48px;
+}
+
+.ant-card-head-title {
+  color: #262626;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 小尺寸Card的特殊样式 */
+.ant-card-small {
+  font-size: 14px;
+}
+
+.ant-card-small .ant-card-head {
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+.ant-card-small .ant-card-head-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ant-card-small .ant-card-body {
+  padding: 16px;
+}
+
+/* Card内容样式 */
+.ant-card-body {
+  padding: 20px;
+  color: #595959;
+}
+
+/* Card内的文本样式统一 */
+.ant-card .ant-typography {
+  margin-bottom: 0;
+}
+
+.ant-card .ant-typography-caption {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+/* Card内的强调文本 */
+.ant-card .ant-typography strong,
+.ant-card strong {
+  color: #262626;
+  font-weight: 600;
+}
+
+/* Card内的标签样式 */
+.ant-card .ant-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 2px 8px;
+  margin: 2px;
+}
+
+/* Card内的按钮样式 */
+.ant-card .ant-btn {
+  border-radius: 6px;
+  font-size: 14px;
+  height: 32px;
+  padding: 4px 15px;
+}
+
+.ant-card-small .ant-btn {
+  font-size: 13px;
+  height: 28px;
+  padding: 4px 12px;
+}
+
+/* Card内的Space组件样式 */
+.ant-card .ant-space-vertical {
+  width: 100%;
+}
+
+/* Card内的输入组件样式 */
+.ant-card .ant-input,
+.ant-card .ant-select-selector,
+.ant-card .ant-input-number,
+.ant-card .ant-picker {
+  border-radius: 6px;
+  border-color: #d9d9d9;
+}
+
+.ant-card .ant-input:focus,
+.ant-card .ant-select-focused .ant-select-selector,
+.ant-card .ant-input-number:focus,
+.ant-card .ant-picker:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 特殊状态的Card */
+.ant-card-loading {
+  overflow: hidden;
+}
+
+/* 响应式Card样式 */
+/* @media (max-width: 768px) {
+  .ant-card-head {
+    padding: 0 12px;
+    min-height: 44px;
+  }
+  
+  .ant-card-body {
+    padding: 16px 12px;
+  }
+  
+  .ant-card-small .ant-card-head {
+    padding: 0 12px;
+    min-height: 36px;
+  }
+  
+  .ant-card-small .ant-card-body {
+    padding: 12px;
+  }
+} */
