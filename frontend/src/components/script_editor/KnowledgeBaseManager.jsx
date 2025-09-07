@@ -416,12 +416,12 @@ function KnowledgeBaseManager({ onClose }) {
   return (
     <div className="kb-manager">
       <Space direction="vertical" className="kb-main-space" size="large">
-        {/* 知识库状态 */}
-        <Card title="知识库状态" size="small">
+        {/* 显示当前知识库信息 */}
+        <Card title="当前知识库" size="small">
           {kbStatus && currentKnowledgeBase ? (
             <Space direction="vertical" className="kb-status-space">
               <div className="kb-status-item">
-                <Text strong>知识库名称：</Text>
+                <Text strong>名称：</Text>
                 <Text>{currentKnowledgeBase.name}</Text>
               </div>
               <div className="kb-status-item">
@@ -437,7 +437,7 @@ function KnowledgeBaseManager({ onClose }) {
                 <Text>{kbStatus.file_count || 0}</Text>
               </div>
               <div className="kb-status-item">
-                <Text strong>文档数量：</Text>
+                <Text strong>文档切片数量：</Text>
                 <Text>{currentKnowledgeBase.document_count || 0}</Text>
               </div>
               <div className="kb-status-item">
@@ -474,7 +474,7 @@ function KnowledgeBaseManager({ onClose }) {
               <Select
                 value={fileType}
                 onChange={setFileType}
-                style={{ width: 150 }}
+                style={{ width: 200 }}
               >
                 <Select.Option value={FILE_TYPES.UNSTRUCTURED}>非结构化</Select.Option>
                 <Select.Option value={FILE_TYPES.STRUCTURED}>结构化</Select.Option>
@@ -495,7 +495,7 @@ function KnowledgeBaseManager({ onClose }) {
                   value={selectedCategory}
                   onChange={setSelectedCategory}
                   placeholder="选择现有类目"
-                  style={{ width: 200 }}
+                  style={{ width: 280 }}
                   allowClear
                 >
                   {availableCategories.map(category => (

@@ -8,9 +8,7 @@
 
 /* 资料管理样式 */
 @import './archive-manager.css';
-
-/* 结构生成器样式 */
-@import './structure-generator.css';
+@import './kb-manager.css';
 
 /* 脚本编辑器 */
 @import './script-editor.css';
