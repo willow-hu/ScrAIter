@@ -641,7 +641,7 @@ function KnowledgeBaseManager({ onClose }) {
         </Card>
 
         {/* 操作提示 */}
-        <Alert
+        {/* <Alert
           message="使用说明"
           description={
             <div>
@@ -653,7 +653,7 @@ function KnowledgeBaseManager({ onClose }) {
           }
           type="info"
           showIcon
-        />
+        /> */}
       </Space>
 
       {/* 新建类目弹窗 */}

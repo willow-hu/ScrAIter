@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Card, Row, Col, message } from 'antd';
-import FileUploader from './FileUploader';
-import FilesList from './FilesList';
-import KnowledgeBaseBuilder from './KnowledgeBaseBuilder';
+import FileUploader from './modules/FileUploader';
+import FilesList from './modules/FilesList';
+import KnowledgeBaseBuilder from './modules/KnowledgeBaseBuilder';
 
 const { Content } = Layout;
 

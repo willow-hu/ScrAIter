@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message } from 'antd';
 import { SaveOutlined, RobotOutlined } from '@ant-design/icons';
 import ReferencePanel from './ReferencePanel';
-import '../../styles/script-editor.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;

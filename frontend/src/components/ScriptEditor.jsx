@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
-import TreeCanvas from './TreeCanvas';
-import Sidebar from './Sidebar';
-import NodeEditModal from './NodeEditModal';
-import { isValidTree } from '../../utils/script_editor/treeValidator';
-import { createCheckpointManager, DataCacheManager } from '../../utils/script_editor/checkpointManager';
-import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
+import TreeCanvas from './modules/TreeCanvas';
+import Sidebar from './modules/Sidebar';
+import NodeEditModal from './modules/NodeEditModal';
+import { isValidTree } from '../utils/script_editor/treeValidator';
+import { createCheckpointManager, DataCacheManager } from '../utils/script_editor/checkpointManager';
+import { createTreeStructureManager } from '../utils/script_editor/treeStructureManager';
 
 function ScriptEditor() {
   const [treeData, setTreeData] = useState(null);

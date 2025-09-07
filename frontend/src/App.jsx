@@ -1,6 +1,6 @@
 import React, { act, useState } from 'react';
-import ArchiveManager from './components/archive_manager/ArchiveManager';
-import ScriptEditor from './components/script_editor/ScriptEditor';
+import ArchiveManager from './components/ArchiveManager';
+import ScriptEditor from './components/ScriptEditor';
 
 function App() {
   const [activeTab, setActiveTab] = useState('archive');
