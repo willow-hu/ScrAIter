@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Button, 
-  List, 
-  Upload, 
   message, 
   Space, 
   Typography, 
@@ -12,83 +10,36 @@ import {
   Progress,
   Spin,
   Alert,
-  Select,
-  Input
+  Select
 } from 'antd';
 import { 
-  UploadOutlined, 
-  DeleteOutlined, 
   ExclamationCircleOutlined,
-  FileTextOutlined,
-  InboxOutlined,
-  PlusOutlined,
   PlayCircleOutlined
 } from '@ant-design/icons';
 import { KNOWLEDGE_BASE_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig.js';
+import FilesList from './FilesList';
+import FileUploader from './FileUploader';
 
-const { Title, Text } = Typography;
-const { Dragger } = Upload;
-
-// 文件类型常量
-const FILE_TYPES = {
-  STRUCTURED: 'structured',
-  UNSTRUCTURED: 'unstructured'
-};
-
-// 支持的文件格式
-const SUPPORTED_FORMATS = {
-  [FILE_TYPES.STRUCTURED]: ['.xlsx', '.csv'],
-  [FILE_TYPES.UNSTRUCTURED]: ['.pdf', '.docx', '.txt']
-};
+const { Text } = Typography;
 
 function KnowledgeBaseManager({ onClose }) {
   const [files, setFiles] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [building, setBuilding] = useState(false);
   const [kbStatus, setKbStatus] = useState(null);
   const [buildProgress, setBuildProgress] = useState(null);
-  const [fileType, setFileType] = useState(FILE_TYPES.UNSTRUCTURED);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [availableCategories, setAvailableCategories] = useState([]);
   const [currentKnowledgeBase, setCurrentKnowledgeBase] = useState(null);
-  const [fileList, setFileList] = useState([]);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
   const [selectedCategoriesForBuild, setSelectedCategoriesForBuild] = useState([]);
-  const [sourceTags, setSourceTags] = useState([]);
-
-  // 获取标签配置
-  const getSourceTagConfig = (value) => {
-    return sourceTags.find(tag => tag.value === value) || { label: '未标记', color: 'default' };
-  };
-
-  // 获取标签配置
-  useEffect(() => {
-    const loadSourceTags = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/v1/source-tags');
-        if (response.ok) {
-          const config = await response.json();
-          setSourceTags(config.tags || []);
-        } else {
-          console.warn('获取标签配置失败，API响应错误');
-        }
-      } catch (error) {
-        console.error('获取标签配置失败:', error);
-      }
-    };
-    
-    loadSourceTags();
-  }, []);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // 初始化加载数据
   useEffect(() => {
     loadFiles();
-    loadKnowledgeBaseStatus();
     loadCategories();
+    loadKnowledgeBaseStatus();
     loadKnowledgeBases();
-  }, []);
+  }, [refreshTrigger]);
 
   // 加载文件列表
   const loadFiles = async () => {
@@ -108,6 +59,26 @@ function KnowledgeBaseManager({ onClose }) {
     }
   };
 
+  // 加载类目列表
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/categories');
+      if (response.ok) {
+        const result = await response.json();
+        setCategories(result.categories || []);
+      } else {
+        // 如果接口不存在，从文件列表中提取类目
+        const uniqueCategories = [...new Set(files.map(file => file.category).filter(Boolean))];
+        setCategories(uniqueCategories);
+      }
+    } catch (error) {
+      console.error('加载类目列表失败:', error);
+      // 从文件列表中提取类目作为fallback
+      const uniqueCategories = [...new Set(files.map(file => file.category).filter(Boolean))];
+      setCategories(uniqueCategories);
+    }
+  };
+
   // 加载知识库状态
   const loadKnowledgeBaseStatus = async () => {
     try {
@@ -119,29 +90,6 @@ function KnowledgeBaseManager({ onClose }) {
       setKbStatus(result);
     } catch (error) {
       console.error('获取知识库状态失败:', error);
-    }
-  };
-
-  // 加载类目列表
-  const loadCategories = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/v1/categories');
-      if (!response.ok) {
-        throw new Error('获取类目列表失败');
-      }
-      const result = await response.json();
-      setAvailableCategories(result.categories || []);
-      
-      // 设置默认类目
-      if (result.categories && result.categories.length > 0 && !selectedCategory) {
-        setSelectedCategory(result.categories[0]);
-      }
-    } catch (error) {
-      console.error('获取类目列表失败:', error);
-      // 使用默认类目
-      if (!selectedCategory) {
-        setSelectedCategory('twin_pagoda');
-      }
     }
   };
 
@@ -167,134 +115,26 @@ function KnowledgeBaseManager({ onClose }) {
     }
   };
 
-  // 文件上传配置
-  const uploadProps = {
-    name: 'files',
-    multiple: true,
-    fileList,
-    beforeUpload: (file) => {
-      // 检查文件格式
-      const allowedFormats = SUPPORTED_FORMATS[fileType];
-      const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-      
-      if (!allowedFormats.includes(fileExt)) {
-        message.error(`${fileType === FILE_TYPES.STRUCTURED ? '结构化' : '非结构化'}文件只支持${allowedFormats.join(', ')}格式`);
-        return Upload.LIST_IGNORE;
-      }
-
-      return false; // 阻止自动上传
-    },
-    onChange: (info) => {
-      setFileList(info.fileList);
-    },
-    onDrop: (e) => {
-      console.log('Dropped files', e.dataTransfer.files);
-    },
+  // 刷新数据
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
-  // 创建新类目
-  const handleCreateCategory = () => {
-    if (!newCategoryName.trim()) {
-      message.error('请输入类目名称');
-      return;
-    }
-
-    if (availableCategories.includes(newCategoryName.trim())) {
-      message.error('类目已存在');
-      return;
-    }
-
-    // 这里暂时直接添加到本地状态，后续需要调用API
-    setSelectedCategory(newCategoryName.trim());
-    setShowNewCategoryModal(false);
-    setNewCategoryName('');
-    message.success('类目创建成功');
-    
-    // 刷新类目列表
-    loadCategories();
+  // 文件上传成功回调
+  const handleUploadSuccess = () => {
+    message.success('文件上传成功');
+    handleRefresh();
   };
 
-  // 处理文件上传
-  const handleUpload = async () => {
-    if (!selectedCategory) {
-      message.error('请选择或创建类目');
-      return;
-    }
-
-    if (fileList.length === 0) {
-      message.error('请选择要上传的文件');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      
-      // 添加文件
-      fileList.forEach(file => {
-        formData.append('files', file.originFileObj);
-      });
-      
-      // 添加分类和类型
-      formData.append('category', selectedCategory);
-      formData.append('file_type', fileType);
-
-      const response = await fetch('http://localhost:8000/api/v1/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('上传文件失败');
-      }
-
-      const result = await response.json();
-      
-      if (result.failed_files && result.failed_files.length > 0) {
-        message.warning(`部分文件上传失败: ${result.failed_files.join(', ')}`);
-      } else {
-        message.success('文件上传成功');
-      }
-
-      // 清空表单
-      setFileList([]);
-      setSelectedCategory('');
-
-      // 重新加载文件列表
-      await loadFiles();
-      
-    } catch (error) {
-      console.error('上传文件失败:', error);
-      message.error('上传文件失败');
-    } finally {
-      setUploading(false);
-    }
+  // 文件删除成功回调
+  const handleDeleteSuccess = () => {
+    message.success('文件删除成功');
+    handleRefresh();
   };
 
-  // 删除文件
-  const deleteFile = async (filename) => {
-    Modal.confirm({
-      title: '删除文件',
-      icon: <ExclamationCircleOutlined />,
-      content: `确定要删除文件 "${filename}" 吗？`,
-      onOk: async () => {
-        try {
-          const response = await fetch(`http://localhost:8000/api/v1/files/${encodeURIComponent(filename)}`, {
-            method: 'DELETE',
-          });
-
-          if (!response.ok) {
-            throw new Error('删除文件失败');
-          }
-
-          message.success('文件删除成功');
-          await loadFiles();
-        } catch (error) {
-          console.error('删除文件失败:', error);
-          message.error('删除文件失败');
-        }
-      },
-    });
+  // 文件标签更新成功回调
+  const handleTagUpdateSuccess = () => {
+    handleRefresh();
   };
 
   // 重建知识库
@@ -398,15 +238,6 @@ function KnowledgeBaseManager({ onClose }) {
     checkProgress();
   };
 
-  // 格式化文件大小
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   // 格式化时间
   const formatTime = (timeStr) => {
     if (!timeStr) return '未知';
@@ -467,76 +298,11 @@ function KnowledgeBaseManager({ onClose }) {
 
         {/* 上传文件 */}
         <Card title="上传文件" size="small">
-          <Space direction="vertical" className="kb-upload-space">
-            {/* 文件类型选择 */}
-            <div>
-              <Text strong style={{ marginRight: 8 }}>文件类型：</Text>
-              <Select
-                value={fileType}
-                onChange={setFileType}
-                style={{ width: 200 }}
-              >
-                <Select.Option value={FILE_TYPES.UNSTRUCTURED}>非结构化</Select.Option>
-                <Select.Option value={FILE_TYPES.STRUCTURED}>结构化</Select.Option>
-              </Select>
-              <Text style={{ marginLeft: 8, color: '#666', fontSize: '12px' }}>
-                {fileType === FILE_TYPES.STRUCTURED 
-                  ? '支持：Excel(.xlsx), CSV(.csv)' 
-                  : '支持：PDF(.pdf), Word(.docx), 文本(.txt)'
-                }
-              </Text>
-            </div>
-
-            {/* 类目选择 */}
-            <div>
-              <Text strong style={{ marginRight: 8 }}>选择类目：</Text>
-              <Space>
-                <Select
-                  value={selectedCategory}
-                  onChange={setSelectedCategory}
-                  placeholder="选择现有类目"
-                  style={{ width: 280 }}
-                  allowClear
-                >
-                  {availableCategories.map(category => (
-                    <Select.Option key={category} value={category}>{category}</Select.Option>
-                  ))}
-                </Select>
-                <Button 
-                  icon={<PlusOutlined />} 
-                  onClick={() => setShowNewCategoryModal(true)}
-                >
-                  新建类目
-                </Button>
-              </Space>
-            </div>
-
-            {/* 文件上传区域 */}
-            <Dragger {...uploadProps} style={{ padding: '20px' }}>
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-              <p className="ant-upload-hint">
-                支持单个或批量上传。所有文件将归类到选定的类目中。
-              </p>
-            </Dragger>
-
-            {/* 上传按钮 */}
-            {fileList.length > 0 && (
-              <div style={{ textAlign: 'center' }}>
-                <Button 
-                  type="primary" 
-                  icon={<UploadOutlined />}
-                  onClick={handleUpload}
-                  loading={uploading}
-                  size="large"
-                >
-                  上传 {fileList.length} 个文件到「{selectedCategory}」
-                </Button>
-              </div>
-            )}
-          </Space>
+          <FileUploader
+            categories={categories}
+            onUploadSuccess={handleUploadSuccess}
+            onRefresh={handleRefresh}
+          />
         </Card>
 
         {/* 知识库重建 */}
@@ -553,7 +319,7 @@ function KnowledgeBaseManager({ onClose }) {
                 style={{ width: '100%' }}
                 maxTagCount={3}
               >
-                {availableCategories.map(category => {
+                {categories.map(category => {
                   const categoryFiles = files.filter(f => f.category === category);
                   const untaggedCount = categoryFiles.filter(f => !f.source_tag).length;
                   
@@ -599,86 +365,15 @@ function KnowledgeBaseManager({ onClose }) {
 
         {/* 文件列表 */}
         <Card title="文件列表" size="small">
-          {loading ? (
-            <Spin />
-          ) : (
-            <List
-              dataSource={files}
-              renderItem={(file) => (
-                <List.Item
-                  actions={[
-                    <Button
-                      icon={<DeleteOutlined />}
-                      type="text"
-                      danger
-                      onClick={() => deleteFile(file.relative_path)}
-                    >
-                      删除
-                    </Button>
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={<FileTextOutlined className="kb-file-icon" />}
-                    title={
-                      <Space>
-                        <Text>{file.filename}</Text>
-                        <Tag size="small" color="default">{file.file_type}</Tag>
-                        <Tag size="small" color={getSourceTagConfig(file.source_tag).color}>
-                          {getSourceTagConfig(file.source_tag).label}
-                        </Tag>
-                      </Space>
-                    }
-                    description={
-                      <Space size="small">
-                        <Text type="secondary">类目: {file.category}</Text>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          )}
-        </Card>
-
-        {/* 操作提示 */}
-        {/* <Alert
-          message="使用说明"
-          description={
-            <div>
-              <p>1. 上传新文件：选择文件类型和类目，然后拖拽或点击上传文件</p>
-              <p>2. 删除文件：点击文件列表中的删除按钮</p>
-              <p>3. 重建知识库：选择类目后点击"重建知识库"按钮覆盖现有知识库</p>
-              <p>4. 知识库构建完成后，就可以在内容生成中使用新的知识库了</p>
-            </div>
-          }
-          type="info"
-          showIcon
-        /> */}
-      </Space>
-
-      {/* 新建类目弹窗 */}
-      <Modal
-        title="新建类目"
-        open={showNewCategoryModal}
-        onOk={handleCreateCategory}
-        onCancel={() => {
-          setShowNewCategoryModal(false);
-          setNewCategoryName('');
-        }}
-        okText="创建"
-        cancelText="取消"
-      >
-        <div>
-          <Text strong>类目名称：</Text>
-          <Input
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            placeholder="请输入类目名称"
-            style={{ marginTop: 8 }}
-            onPressEnter={handleCreateCategory}
+          <FilesList
+            files={files}
+            loading={loading}
+            onDeleteSuccess={handleDeleteSuccess}
+            onTagUpdateSuccess={handleTagUpdateSuccess}
+            onRefresh={handleRefresh}
           />
-        </div>
-      </Modal>
+        </Card>
+      </Space>
     </div>
   );
 }
