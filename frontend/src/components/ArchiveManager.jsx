@@ -114,7 +114,7 @@ function ArchiveManager() {
         <div className="archive-container">
           {/* 上方区域：上传文件和知识库构建并排 */}
           <Row gutter={24} style={{ marginBottom: 24 }}>
-            <Col span={16}>
+            <Col span={12}>
               <Card 
                 title="上传文件" 
                 className="upload-section"
@@ -127,7 +127,7 @@ function ArchiveManager() {
               </Card>
             </Col>
             
-            <Col span={8}>
+            <Col span={12}>
               <Card 
                 title="知识库构建" 
                 className="kb-section"
@@ -143,7 +143,7 @@ function ArchiveManager() {
 
           {/* 下方区域：文件列表和使用说明 */}
           <Row gutter={24}>
-            <Col span={16}>
+            <Col span={12}>
               <Card 
                 title="文件管理" 
                 className="files-section"
@@ -159,7 +159,7 @@ function ArchiveManager() {
             </Col>
 
             {/* 使用说明区域 */}
-            <Col span={8}>
+            <Col span={12}>
               <Card 
                 title="使用说明" 
                 className="instruction-section"
