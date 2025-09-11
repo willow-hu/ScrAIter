@@ -6,3 +6,4 @@
 // export * from './tree_editor/index.js';
 // export * from './content_generator/index.js';
 export * from './script_editor/index.js';
+export * from './archive_manager/index.js';

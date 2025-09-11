@@ -2,6 +2,17 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Button, Select, Space, Progress, Alert, Divider, message, Modal, List, Tag } from 'antd';
 import { DatabaseOutlined, PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
 import { KNOWLEDGE_BASE_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig';
+import {
+  calculateSelectedStats,
+  canBuildKnowledgeBase,
+  fetchKnowledgeBases,
+  isKnowledgeBaseNameExists,
+  startKnowledgeBaseBuild,
+  fetchBuildProgress,
+  deleteKnowledgeBase,
+  formatDate,
+  getBuildStatusColor
+} from '../../utils/archive_manager';
 
 const { Option } = Select;
 
@@ -22,14 +33,8 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   const loadKnowledgeBases = async () => {
     setLoadingKBs(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/knowledge-base/list');
-      if (response.ok) {
-        const result = await response.json();
-        setExistingKBs(result.knowledge_bases || []);
-      } else {
-        console.error('获取知识库列表失败');
-        setExistingKBs([]);
-      }
+      const kbList = await fetchKnowledgeBases();
+      setExistingKBs(kbList);
     } catch (error) {
       console.error('获取知识库列表失败:', error);
       setExistingKBs([]);
@@ -52,19 +57,12 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
 
   // 计算选中类目的文件统计
   const selectedStats = useMemo(() => {
-    if (selectedCategories.length === 0) return { total: 0, withTags: 0, withoutTags: 0 };
-    
-    const selectedFiles = files.filter(file => selectedCategories.includes(file.category));
-    const total = selectedFiles.length;
-    const withTags = selectedFiles.filter(file => file.source_tag).length;
-    const withoutTags = total - withTags;
-    
-    return { total, withTags, withoutTags };
+    return calculateSelectedStats(selectedCategories, files);
   }, [selectedCategories, files]);
 
   // 检查是否可以构建知识库
   const canBuild = useMemo(() => {
-    return selectedCategories.length > 0 && selectedStats.withoutTags === 0 && selectedStats.total > 0;
+    return canBuildKnowledgeBase(selectedCategories, selectedStats);
   }, [selectedCategories, selectedStats]);
 
   // 开始构建知识库
@@ -117,7 +115,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
         }
         
         // 检查知识库名称是否已存在
-        const nameExists = existingKBs.some(kb => kb.name === kbName);
+        const nameExists = isKnowledgeBaseNameExists(kbName, existingKBs);
         if (nameExists) {
           message.error(`知识库 "${kbName}" 已存在，请使用其他名称`);
           return Promise.reject();
@@ -136,27 +134,10 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
     setBuildMessage('正在初始化...');
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/knowledge-base/build', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: kbName,
-          categories: selectedCategories,
-          ...buildConfig  // 展开所有构建参数
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        // 开始轮询构建进度
-        pollBuildProgress(result.task_id);
-      } else {
-        const error = await response.json();
-        throw new Error(error.detail || '构建失败');
-      }
+      const result = await startKnowledgeBaseBuild(kbName, selectedCategories, buildConfig);
+      
+      // 开始轮询构建进度
+      pollBuildProgress(result.task_id);
     } catch (error) {
       console.error('构建知识库失败:', error);
       message.error(`构建失败: ${error.message}`);
@@ -170,34 +151,25 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   const pollBuildProgress = async (taskId) => {
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/build-status/${taskId}`);
+        const status = await fetchBuildProgress(taskId);
+        setBuildProgress(status.progress);
+        setBuildMessage(status.current_file || '处理中...');
         
-        if (response.ok) {
-          const status = await response.json();
-          setBuildProgress(status.progress);
-          setBuildMessage(status.current_file || '处理中...');
-          
-          if (status.status === 'completed') {
-            clearInterval(pollInterval);
-            setBuildStatus('completed');
-            setBuildMessage('知识库构建完成！');
-            setBuilding(false);
-            message.success('知识库构建完成');
-            onRefresh();
-            // 刷新知识库列表
-            loadKnowledgeBases();
-          } else if (status.status === 'error') {
-            clearInterval(pollInterval);
-            setBuildStatus('error');
-            setBuildMessage(status.error_message || '构建过程中发生错误');
-            setBuilding(false);
-            message.error('知识库构建失败');
-          }
-        } else {
+        if (status.status === 'completed') {
+          clearInterval(pollInterval);
+          setBuildStatus('completed');
+          setBuildMessage('知识库构建完成！');
+          setBuilding(false);
+          message.success('知识库构建完成');
+          onRefresh();
+          // 刷新知识库列表
+          loadKnowledgeBases();
+        } else if (status.status === 'error') {
           clearInterval(pollInterval);
           setBuildStatus('error');
-          setBuildMessage('无法获取构建进度');
+          setBuildMessage(status.error_message || '构建过程中发生错误');
           setBuilding(false);
+          message.error('知识库构建失败');
         }
       } catch (error) {
         console.error('获取构建进度失败:', error);
@@ -219,34 +191,16 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
       cancelText: '取消',
       onOk: async () => {
         try {
-          const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kbName}`, {
-            method: 'DELETE'
-          });
-
-          if (response.ok) {
-            message.success(`知识库 "${kbName}" 删除成功`);
-            // 刷新知识库列表
-            loadKnowledgeBases();
-          } else {
-            const error = await response.json();
-            throw new Error(error.detail || '删除失败');
-          }
+          await deleteKnowledgeBase(kbName);
+          message.success(`知识库 "${kbName}" 删除成功`);
+          // 刷新知识库列表
+          loadKnowledgeBases();
         } catch (error) {
           console.error('删除知识库失败:', error);
           message.error(`删除失败: ${error.message}`);
         }
       }
     });
-  };
-
-  // 格式化日期
-  const formatDate = (dateString) => {
-    if (!dateString) return '未知';
-    try {
-      return new Date(dateString).toLocaleString('zh-CN');
-    } catch (e) {
-      return '未知';
-    }
   };
 
   // 停止构建
@@ -269,12 +223,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
 
   // 获取状态颜色
   const getStatusColor = () => {
-    switch (buildStatus) {
-      case 'building': return 'blue';
-      case 'completed': return 'green';
-      case 'error': return 'red';
-      default: return 'default';
-    }
+    return getBuildStatusColor(buildStatus);
   };
 
   return (

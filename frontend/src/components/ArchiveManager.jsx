@@ -3,6 +3,7 @@ import { Layout, Card, Row, Col, message } from 'antd';
 import FileUploader from './modules/FileUploader';
 import FilesList from './modules/FilesList';
 import KnowledgeBaseBuilder from './modules/KnowledgeBaseBuilder';
+import { fetchFiles, fetchCategories } from '../utils/archive_manager';
 
 const { Content } = Layout;
 
@@ -51,13 +52,8 @@ function ArchiveManager() {
   const loadFiles = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/files');
-      if (response.ok) {
-        const result = await response.json();
-        setFiles(result.files || []);
-      } else {
-        throw new Error('获取文件列表失败');
-      }
+      const result = await fetchFiles();
+      setFiles(result.files || []);
     } catch (error) {
       console.error('加载文件列表失败:', error);
       message.error('加载文件列表失败');
@@ -69,15 +65,8 @@ function ArchiveManager() {
   // 加载类目列表
   const loadCategories = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/categories');
-      if (response.ok) {
-        const result = await response.json();
-        setCategories(result.categories || []);
-      } else {
-        // 如果接口不存在，从文件列表中提取类目
-        const uniqueCategories = [...new Set(files.map(file => file.category).filter(Boolean))];
-        setCategories(uniqueCategories);
-      }
+      const result = await fetchCategories();
+      setCategories(result.categories || []);
     } catch (error) {
       console.error('加载类目列表失败:', error);
       // 从文件列表中提取类目作为fallback

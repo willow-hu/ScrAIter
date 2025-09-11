@@ -1,6 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Select, message, Collapse, Empty, Tooltip, Space, Modal } from 'antd';
 import { DeleteOutlined, FolderOutlined, FileTextOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { 
+  fetchSourceTags,
+  getSourceTagConfig,
+  getFileIconType,
+  groupFilesByCategory,
+  calculateFileStats,
+  deleteFileFromServer,
+  updateFileTag
+} from '../../utils/archive_manager';
 
 const { Option } = Select;
 
@@ -12,13 +21,8 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
   useEffect(() => {
     const loadSourceTags = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/source-tags');
-        if (response.ok) {
-          const config = await response.json();
-          setSourceTags(config.tags || []);
-        } else {
-          console.warn('获取标签配置失败，API响应错误');
-        }
+        const tags = await fetchSourceTags();
+        setSourceTags(tags);
       } catch (error) {
         console.error('获取标签配置失败:', error);
       }
@@ -28,15 +32,15 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
   }, []);
 
   // 获取标签配置
-  const getSourceTagConfig = (value) => {
-    return sourceTags.find(tag => tag.value === value) || { label: value, color: 'default' };
+  const getSourceTagConfigLocal = (value) => {
+    return getSourceTagConfig(value, sourceTags);
   };
 
   // 获取文件类型图标
   const getFileIcon = (filename, fileType) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
+    const iconType = getFileIconType(filename, fileType);
     
-    if (fileType === 'structured' || ['xlsx', 'csv'].includes(ext)) {
+    if (iconType === 'excel') {
       return <FileExcelOutlined style={{ color: '#52c41a' }} />;
     }
     return <FileTextOutlined style={{ color: '#1890ff' }} />;
@@ -44,25 +48,12 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
 
   // 按类目分组文件
   const groupedFiles = useMemo(() => {
-    const groups = {};
-    files.forEach(file => {
-      const category = file.category || '未分类';
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push(file);
-    });
-    return groups;
+    return groupFilesByCategory(files);
   }, [files]);
 
   // 统计信息
   const stats = useMemo(() => {
-    const total = files.length;
-    const withTags = files.filter(file => file.source_tag).length;
-    const withoutTags = total - withTags;
-    const categories = Object.keys(groupedFiles).length;
-    
-    return { total, withTags, withoutTags, categories };
+    return calculateFileStats(files, groupedFiles);
   }, [files, groupedFiles]);
 
   // 删除文件
@@ -75,16 +66,8 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       cancelText: '取消',
       onOk: async () => {
         try {
-          const response = await fetch(`http://localhost:8000/api/v1/files/${file.relative_path}`, {
-            method: 'DELETE'
-          });
-
-          if (response.ok) {
-            onDeleteSuccess();
-          } else {
-            const error = await response.json();
-            throw new Error(error.detail || '删除失败');
-          }
+          await deleteFileFromServer(file);
+          onDeleteSuccess();
         } catch (error) {
           console.error('删除文件失败:', error);
           message.error(`删除失败: ${error.message}`);
@@ -99,22 +82,8 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
     setUpdating(prev => ({ ...prev, [file.relative_path]: true }));
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/files/${file.relative_path}/tags`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          source_tag: newTag
-        })
-      });
-
-      if (response.ok) {
-        onTagUpdateSuccess();
-      } else {
-        const error = await response.json();
-        throw new Error(error.detail || '更新标签失败');
-      }
+      await updateFileTag(file, newTag);
+      onTagUpdateSuccess();
     } catch (error) {
       console.error('更新标签失败:', error);
       message.error(`更新失败: ${error.message}`);
