@@ -70,7 +70,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   // 开始构建知识库
   const handleBuild = async () => {
     if (!canBuild) {
-      message.error('请确保所选类目中的所有文件都已设置标签');
+      message.error('请确保所选类目中的所有文件都已标记标签');
       return;
     }
 
@@ -353,7 +353,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
 
           {!canBuild && selectedCategories.length > 0 && selectedStats.withoutTags > 0 && (
             <div style={{ marginTop: 8, fontSize: '12px', color: '#ff4d4f' }}>
-              请先为所有文件设置标签后再构建知识库
+              请先为所有文件标记标签后再构建知识库
             </div>
           )}
         </div>

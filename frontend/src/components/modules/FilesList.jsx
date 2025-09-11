@@ -154,7 +154,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       ),
     },
     {
-      title: '来源',
+      title: '可信度',
       dataIndex: 'source_tag',
       key: 'source_tag',
       // width: '15%',
@@ -164,7 +164,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
         return (
           <Select
             value={tag || undefined}
-            placeholder="选择来源"
+            placeholder="标记可信度"
             style={{ width: '100%' }}
             size="small"
             loading={isUpdating}
