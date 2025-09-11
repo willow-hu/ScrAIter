@@ -12,13 +12,13 @@ class FileStatus(str, Enum):
     COMPLETED = "completed"
     ERROR = "error"
 
-class TrustType(str, Enum):
+class SourceTag(str, Enum):
     LITERATURE = "literature"  # 文献资料
     ENCYCLOPEDIA = "encyclopedia"  # 百科知识
     BLOG = "blog"  # 博客文章
     NEWS = "news"  # 新闻报道
     OFFICIAL = "official"  # 官方资料
-    OTHER = "other"  # 其他可信度
+    OTHER = "other"  # 其他来源
 
 class FileInfo(BaseModel):
     filename: str
@@ -28,7 +28,7 @@ class FileInfo(BaseModel):
     status: FileStatus
     category: Optional[str] = None
     file_type: Optional[str] = None  # structured 或 unstructured
-    trust_type: Optional[TrustType] = None  # 可信度标签
+    source_tag: Optional[SourceTag] = None  # 来源标签
 
 class FileListResponse(BaseModel):
     files: List[FileInfo]
@@ -43,10 +43,10 @@ class DeleteResponse(BaseModel):
     message: str
     success: bool
 
-class UpdateTrustTypeRequest(BaseModel):
-    trust_type: TrustType
+class UpdateTagRequest(BaseModel):
+    source_tag: SourceTag
 
-class UpdateTrustTypeResponse(BaseModel):
+class UpdateTagResponse(BaseModel):
     message: str
     success: bool
 

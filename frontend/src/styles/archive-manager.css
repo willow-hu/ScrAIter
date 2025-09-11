@@ -131,8 +131,8 @@
   margin: 8px 0;
 }
 
-/* 可信度标签相关样式 */
-.trust-type-required {
+/* 标签相关样式 */
+.source-tag-required {
   border: 1px solid #ff4d4f !important;
   background-color: #fff2f0 !important;
 }
@@ -242,7 +242,7 @@
   margin-bottom: 16px;
 }
 
-/* 可信度选择器样式 */
+/* 来源选择器样式 */
 .files-list .ant-select {
   width: 100% !important;
 }

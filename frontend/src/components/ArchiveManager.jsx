@@ -170,12 +170,12 @@ function ArchiveManager() {
                     <li>选择文件类型（结构化/非结构化）</li>
                     <li>选择或创建类目</li>
                     <li>上传文件到指定类目</li>
-                    <li>为每个文件设置可信度标签</li>
+                    <li>为每个文件标记来源</li>
                   </ol>
 
                   <h4 style={{ marginTop: '24px' }}>知识库构建</h4>
                   <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                    <li>确保所有文件已设置可信度标签</li>
+                    <li>确保所有文件已标记来源</li>
                     <li>选择要构建知识库的类目</li>
                     <li>输入知识库名称并开始构建</li>
                     <li>等待构建完成</li>

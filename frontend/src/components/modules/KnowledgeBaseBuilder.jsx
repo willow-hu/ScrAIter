@@ -56,7 +56,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
     
     const selectedFiles = files.filter(file => selectedCategories.includes(file.category));
     const total = selectedFiles.length;
-    const withTags = selectedFiles.filter(file => file.trust_type).length;
+    const withTags = selectedFiles.filter(file => file.source_tag).length;
     const withoutTags = total - withTags;
     
     return { total, withTags, withoutTags };
@@ -293,7 +293,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
           >
             {categories.map(category => {
               const categoryFiles = files.filter(f => f.category === category);
-              const untaggedCount = categoryFiles.filter(f => !f.trust_type).length;
+              const untaggedCount = categoryFiles.filter(f => !f.source_tag).length;
               
               return (
                 <Option key={category} value={category}>

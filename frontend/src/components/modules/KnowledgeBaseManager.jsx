@@ -321,7 +321,7 @@ function KnowledgeBaseManager({ onClose }) {
               >
                 {categories.map(category => {
                   const categoryFiles = files.filter(f => f.category === category);
-                  const untaggedCount = categoryFiles.filter(f => !f.trust_type).length;
+                  const untaggedCount = categoryFiles.filter(f => !f.source_tag).length;
                   
                   return (
                     <Select.Option key={category} value={category}>

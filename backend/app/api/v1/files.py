@@ -8,21 +8,21 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from app.models.file_models import (
-    FileListResponse, UploadResponse, DeleteResponse, UpdateTrustTypeRequest, 
-    UpdateTrustTypeResponse, CategoryListResponse
+    FileListResponse, UploadResponse, DeleteResponse, UpdateTagRequest, 
+    UpdateTagResponse, CategoryListResponse
 )
 from app.services.file_service import file_service
 from app.core.config import settings
 
 router = APIRouter()
 
-@router.get("/trust-types")
-async def get_trust_types():
+@router.get("/source-tags")
+async def get_source_tags():
     """
-    获取可信度标签配置
+    获取来源标签配置
     """
     try:
-        config_path = os.path.join(settings.SHARED_DIR, "configs", "trust_types.json")
+        config_path = os.path.join(settings.SHARED_DIR, "configs", "source_tags.json")
         
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -37,11 +37,11 @@ async def get_trust_types():
                     {"value": "blog", "label": "博客文章", "color": "orange"},
                     {"value": "news", "label": "新闻报道", "color": "purple"},
                     {"value": "official", "label": "官方资料", "color": "red"},
-                    {"value": "other", "label": "其他可信度", "color": "default"}
+                    {"value": "other", "label": "其他来源", "color": "default"}
                 ]
             }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取可信度标签配置失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取标签配置失败: {str(e)}")
 
 @router.get("/files", response_model=FileListResponse)
 async def get_files():
@@ -103,22 +103,22 @@ async def upload_files(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"上传文件失败: {str(e)}")
 
-@router.put("/files/{filename:path}/trust-types", response_model=UpdateTrustTypeResponse)
-async def update_file_trust_type(filename: str, request: UpdateTrustTypeRequest):
+@router.put("/files/{filename:path}/tags", response_model=UpdateTagResponse)
+async def update_file_tag(filename: str, request: UpdateTagRequest):
     """
-    更新文件可信度标签
+    更新文件标签
     filename格式: category/filename
     """
     try:
         if not filename:
             raise HTTPException(status_code=400, detail="文件名不能为空")
         
-        result = file_service.update_file_trust_type(filename, request.trust_type)
+        result = file_service.update_file_tag(filename, request.source_tag)
         
         if not result["success"]:
             raise HTTPException(status_code=404, detail=result["message"])
         
-        return UpdateTrustTypeResponse(
+        return UpdateTagResponse(
             message=result["message"],
             success=result["success"]
         )
@@ -126,7 +126,7 @@ async def update_file_trust_type(filename: str, request: UpdateTrustTypeRequest)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"更新可信度标签失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"更新标签失败: {str(e)}")
 
 @router.delete("/files/{filename:path}")
 async def delete_file(filename: str):

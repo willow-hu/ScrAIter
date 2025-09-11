@@ -11,7 +11,7 @@ from fastapi import UploadFile, HTTPException
 import pandas as pd
 
 from app.core.config import settings
-from app.models.file_models import FileInfo, FileStatus, FileListResponse, CategoryListResponse, TrustType
+from app.models.file_models import FileInfo, FileStatus, FileListResponse, CategoryListResponse, SourceTag
 
 class FileService:
     def __init__(self):
@@ -30,7 +30,7 @@ class FileService:
         """初始化元数据文件"""
         if not os.path.exists(self.metadata_path):
             metadata = {
-                "files": {},  # filename -> {trust_type, category, file_type, ...}
+                "files": {},  # filename -> {source_tag, category, file_type, ...}
                 "categories": [],
                 "last_updated": datetime.now().isoformat()
             }
@@ -114,7 +114,7 @@ class FileService:
         
         # 从元数据获取额外信息
         file_metadata = metadata.get("files", {}).get(relative_path, {})
-        trust_type = file_metadata.get("trust_type")
+        source_tag = file_metadata.get("source_tag")
         
         return FileInfo(
             filename=filename,
@@ -124,11 +124,11 @@ class FileService:
             status=FileStatus.COMPLETED,
             category=category,
             file_type=file_type,
-            trust_type=trust_type
+            source_tag=source_tag
         )
     
-    def update_file_trust_type(self, filename: str, trust_type: TrustType) -> Dict[str, Any]:
-        """更新文件可信度标签"""
+    def update_file_tag(self, filename: str, source_tag: SourceTag) -> Dict[str, Any]:
+        """更新文件标签"""
         try:
             # 解析文件路径
             if "/" not in filename:
@@ -154,16 +154,16 @@ class FileService:
             if filename not in metadata["files"]:
                 metadata["files"][filename] = {}
             
-            metadata["files"][filename]["trust_type"] = trust_type.value
+            metadata["files"][filename]["source_tag"] = source_tag.value
             metadata["files"][filename]["category"] = category
             metadata["files"][filename]["updated_time"] = datetime.now().isoformat()
             
             self._save_metadata(metadata)
             
-            return {"message": f"文件可信度标签更新成功", "success": True}
+            return {"message": f"文件标签更新成功", "success": True}
             
         except Exception as e:
-            return {"message": f"更新可信度标签失败: {str(e)}", "success": False}
+            return {"message": f"更新标签失败: {str(e)}", "success": False}
     
     async def upload_files(self, files: List[UploadFile], category: str, file_type: str = "unstructured") -> Dict[str, Any]:
         """上传文件"""
