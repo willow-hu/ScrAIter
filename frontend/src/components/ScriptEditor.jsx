@@ -159,14 +159,14 @@ function ScriptEditor() {
         });
         
         if (response.ok) {
-          message.success(`${result.message} (已保存到服务器)`);
+          message.success(`${result.message}`);
         } else {
           // 如果服务器保存失败，仍然显示本地保存成功，但添加警告
-          message.warning(`${result.message} (服务器保存失败，仅保存到本地)`);
+          message.warning(`${result.message}`);
         }
       } catch (error) {
         console.error('保存到服务器失败:', error);
-        message.warning(`${result.message} (服务器保存失败，仅保存到本地)`);
+        message.warning(`${result.message}`);
       }
       
       // 保存到localStorage（本地备份）

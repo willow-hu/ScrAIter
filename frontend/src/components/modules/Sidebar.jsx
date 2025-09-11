@@ -191,14 +191,14 @@ function Sidebar({
                   {selectedNode.content || '未生成'}
                 </Text>
               </div>
-              <Button 
+              {/* <Button 
                 type="primary"
                 icon={<EditOutlined />}
                 onClick={handleEditNode}
                 block
               >
                 编辑节点内容
-              </Button>
+              </Button> */}
             </Space>
           </Card>
         )}
@@ -284,7 +284,14 @@ function Sidebar({
         {(
           <Card size="small" title="使用说明">
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              待补充
+              <ol style={{lineHeight: '1.8'}}>
+                <li>在侧边栏修改项目信息</li>
+                <li>拖动树节点以移动</li>
+                <li>点击节点以选中，右侧显示节点信息</li>
+                <li>点击“编辑节点内容”按钮或双击节点以修改节点详细信息</li>
+                <li>右键节点以获取更多操作选项</li>
+                <li>若您需要修改知识库，可进入知识库管理界面添加、编辑、删除知识库条目</li>
+              </ol>
             </Text>
           </Card>
         )}

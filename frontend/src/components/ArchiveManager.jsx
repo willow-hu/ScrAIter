@@ -169,8 +169,8 @@ function ArchiveManager() {
                   <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
                     <li>选择文件类型（结构化/非结构化）</li>
                     <li>选择或创建类目</li>
-                    <li>上传文件到指定类目</li>
-                    <li>为每个文件标记标签</li>
+                    <li>拖拽/点击上传文件</li>
+                    <li>在文件管理区为每个文件标记标签</li>
                   </ol>
 
                   <h4 style={{ marginTop: '24px' }}>知识库构建</h4>
