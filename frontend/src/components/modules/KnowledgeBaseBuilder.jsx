@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Button, Select, Space, Progress, Alert, Divider, message, Modal, List, Tag } from 'antd';
-import { DatabaseOutlined, PlayCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Select, Space, Progress, Alert, Divider, message, Modal } from 'antd';
+import { PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
 import { KNOWLEDGE_BASE_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig';
 import {
   calculateSelectedStats,
@@ -9,8 +9,6 @@ import {
   isKnowledgeBaseNameExists,
   startKnowledgeBaseBuild,
   fetchBuildProgress,
-  deleteKnowledgeBase,
-  formatDate,
   getBuildStatusColor
 } from '../../utils/archive_manager';
 
@@ -23,23 +21,18 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   const [buildStatus, setBuildStatus] = useState('idle'); // idle, building, completed, error
   const [buildMessage, setBuildMessage] = useState('');
   const [existingKBs, setExistingKBs] = useState([]);
-  const [showKBListModal, setShowKBListModal] = useState(false);
-  const [loadingKBs, setLoadingKBs] = useState(false);
 
   // 构建参数配置
   const buildConfig = getFlattenedConfig(KNOWLEDGE_BASE_CONFIG);
 
   // 加载知识库列表
   const loadKnowledgeBases = async () => {
-    setLoadingKBs(true);
     try {
       const kbList = await fetchKnowledgeBases();
       setExistingKBs(kbList);
     } catch (error) {
       console.error('获取知识库列表失败:', error);
       setExistingKBs([]);
-    } finally {
-      setLoadingKBs(false);
     }
   };
 
@@ -47,13 +40,6 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   useEffect(() => {
     loadKnowledgeBases();
   }, []);
-
-  // 当模态框打开时刷新知识库列表
-  useEffect(() => {
-    if (showKBListModal) {
-      loadKnowledgeBases();
-    }
-  }, [showKBListModal]);
 
   // 计算选中类目的文件统计
   const selectedStats = useMemo(() => {
@@ -92,11 +78,6 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
             placeholder="例：twin_pagoda" 
             style={{ width: '100%', padding: '8px' }}
           />
-          {/* {existingKBs.length > 0 && (
-            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
-              已存在的知识库：{existingKBs.map(kb => kb.name).join(', ')}
-            </div>
-          )} */}
           <div style={{ marginTop: 12, padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px', fontSize: '12px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>构建配置：</div>
             <div>分块大小: {buildConfig.chunk_size} | 重叠: {buildConfig.chunk_overlap}</div>
@@ -179,28 +160,6 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
         setBuilding(false);
       }
     }, 2000); // 每2秒检查一次
-  };
-
-  // 删除知识库
-  const handleDeleteKB = async (kbName) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: `确定要删除知识库 "${kbName}" 吗？此操作不可恢复。`,
-      okText: '删除',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          await deleteKnowledgeBase(kbName);
-          message.success(`知识库 "${kbName}" 删除成功`);
-          // 刷新知识库列表
-          loadKnowledgeBases();
-        } catch (error) {
-          console.error('删除知识库失败:', error);
-          message.error(`删除失败: ${error.message}`);
-        }
-      }
-    });
   };
 
   // 停止构建
@@ -328,80 +287,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
             showIcon
           />
         )}
-
-        <Divider />
-
-        {/* 已有知识库管理 */}
-        <div>
-          <Space>
-            <Button
-              icon={<DatabaseOutlined />}
-              onClick={() => setShowKBListModal(true)}
-              loading={loadingKBs}
-            >
-              管理知识库 {existingKBs.length > 0 && `(${existingKBs.length})`}
-            </Button>
-          </Space>
-        </div>
       </Space>
-
-      {/* 知识库列表弹窗 */}
-      <Modal
-        title="知识库管理"
-        open={showKBListModal}
-        onCancel={() => setShowKBListModal(false)}
-        footer={null}
-        width={700}
-      >
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span>已构建的知识库：</span>
-            <Button 
-              size="small" 
-              onClick={loadKnowledgeBases}
-              loading={loadingKBs}
-            >
-              刷新
-            </Button>
-          </div>
-          
-          <List
-            dataSource={existingKBs}
-            loading={loadingKBs}
-            locale={{ emptyText: '暂无知识库' }}
-            renderItem={item => (
-              <List.Item
-                actions={[
-                  <Button 
-                    size="small" 
-                    danger 
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDeleteKB(item.name)}
-                  >
-                    删除
-                  </Button>
-                ]}
-              >
-                <List.Item.Meta
-                  title={
-                    <Space>
-                      <span style={{ fontWeight: 'bold' }}>{item.name}</span>
-                      {!item.exists && <Tag color="red">文件缺失</Tag>}
-                    </Space>
-                  }
-                  description={
-                    <div>
-                      <div>类目: {(item.categories || []).join(', ')}</div>
-                      <div>文件数量: {item.file_count || 0} 个</div>
-                      <div>切片数量: {item.document_count || 0} 个</div>
-                    </div>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </div>
-      </Modal>
     </div>
   );
 }

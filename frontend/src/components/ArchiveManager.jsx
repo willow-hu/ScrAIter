@@ -3,6 +3,7 @@ import { Layout, Card, Row, Col, message } from 'antd';
 import FileUploader from './modules/FileUploader';
 import FilesList from './modules/FilesList';
 import KnowledgeBaseBuilder from './modules/KnowledgeBaseBuilder';
+import KnowledgeBasesList from './modules/KnowledgeBasesList';
 import { fetchFiles, fetchCategories } from '../utils/archive_manager';
 
 const { Content } = Layout;
@@ -97,6 +98,12 @@ function ArchiveManager() {
     handleRefresh();
   };
 
+  // 知识库删除成功回调
+  const handleKBDeleteSuccess = () => {
+    message.success('知识库删除成功');
+    handleRefresh();
+  };
+
   return (
     <Layout className="archive-manager">
       <Content className="archive-content">
@@ -130,7 +137,7 @@ function ArchiveManager() {
             </Col>
           </Row>
 
-          {/* 下方区域：文件列表和使用说明 */}
+          {/* 下方区域：文件列表和知识库列表 */}
           <Row gutter={24}>
             <Col span={12}>
               <Card 
@@ -147,31 +154,68 @@ function ArchiveManager() {
               </Card>
             </Col>
 
-            {/* 使用说明区域 */}
-            {/* <Col span={12}>
+            {/* 知识库列表区域 */}
+            <Col span={12}>
+              <Card 
+                title="知识库管理" 
+                className="kb-list-section"
+              >
+                <KnowledgeBasesList
+                  onDeleteSuccess={handleKBDeleteSuccess}
+                  onRefresh={refreshTrigger}
+                  loading={loading}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {/* 使用说明区域 */}
+          <Row gutter={24} style={{ marginTop: 24 }}>
+            <Col span={24}>
               <Card 
                 title="使用说明" 
                 className="instruction-section"
               >
                 <div className="instruction-content">
-                  <h4>文件管理流程</h4>
-                  <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                    <li>选择文件类型（结构化/非结构化）</li>
-                    <li>选择或创建类目</li>
-                    <li>拖拽/点击上传文件</li>
-                    <li>在文件管理区为每个文件标记标签</li>
-                  </ol>
+                  <Row gutter={24}>
+                    <Col span={12}>
+                      <h4>文件管理流程</h4>
+                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                        <li>选择文件类型（结构化/非结构化）</li>
+                        <li>选择或创建类目</li>
+                        <li>拖拽/点击上传文件</li>
+                        <li>在文件管理区为每个文件标记标签</li>
+                      </ol>
 
-                  <h4 style={{ marginTop: '24px' }}>知识库构建</h4>
-                  <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                    <li>确保所有文件已标记标签</li>
-                    <li>选择要构建知识库的类目</li>
-                    <li>输入知识库名称并开始构建</li>
-                    <li>等待构建完成</li>
-                  </ol>
+                      <h4 style={{ marginTop: '24px' }}>知识库构建</h4>
+                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                        <li>确保所有文件已标记标签</li>
+                        <li>选择要构建知识库的类目</li>
+                        <li>输入知识库名称并开始构建</li>
+                        <li>等待构建完成</li>
+                      </ol>
+                    </Col>
+                    
+                    <Col span={12}>
+                      <h4>知识库管理</h4>
+                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                        <li>查看已构建的知识库列表</li>
+                        <li>查看每个知识库的文件和切片数量</li>
+                        <li>提取知识图谱（开发中）</li>
+                        <li>删除不需要的知识库</li>
+                      </ol>
+
+                      <h4 style={{ marginTop: '24px' }}>注意事项</h4>
+                      <ul style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+                        <li>删除知识库操作不可恢复</li>
+                        <li>知识图谱提取功能正在开发中</li>
+                        <li>建议定期备份重要知识库</li>
+                      </ul>
+                    </Col>
+                  </Row>
                 </div>
               </Card>
-            </Col> */}
+            </Col>
           </Row>
         </div>
       </Content>
