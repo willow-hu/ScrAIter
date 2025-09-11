@@ -450,7 +450,7 @@ class KnowledgeBaseService:
                         if os.path.isfile(os.path.join(unstructured_path, filename)):
                             relative_path = f"{category}/{filename}"
                             file_info = file_metadata.get("files", {}).get(relative_path, {})
-                            if not file_info.get("source_tag"):
+                            if not file_info.get("trust_type"):
                                 files_without_tags.append(relative_path)
                 
                 # 检查结构化文件
@@ -460,7 +460,7 @@ class KnowledgeBaseService:
                         if os.path.isfile(os.path.join(structured_path, filename)):
                             relative_path = f"{category}/{filename}"
                             file_info = file_metadata.get("files", {}).get(relative_path, {})
-                            if not file_info.get("source_tag"):
+                            if not file_info.get("trust_type"):
                                 files_without_tags.append(relative_path)
             
             all_tagged = len(files_without_tags) == 0

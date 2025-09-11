@@ -6,30 +6,30 @@ const { Option } = Select;
 
 function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefresh }) {
   const [updating, setUpdating] = useState({});
-  const [sourceTags, setSourceTags] = useState([]);
+  const [trustTypes, setTrustTypes] = useState([]);
 
   // 获取标签配置
   useEffect(() => {
-    const loadSourceTags = async () => {
+    const loadTrustTypes = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/source-tags');
+        const response = await fetch('http://localhost:8000/api/v1/trust-types');
         if (response.ok) {
           const config = await response.json();
-          setSourceTags(config.tags || []);
+          setTrustTypes(config.tags || []);
         } else {
-          console.warn('获取标签配置失败，API响应错误');
+          console.warn('获取可信度配置失败，API响应错误');
         }
       } catch (error) {
-        console.error('获取标签配置失败:', error);
+        console.error('获取可信度配置失败:', error);
       }
     };
     
-    loadSourceTags();
+    loadTrustTypes();
   }, []);
 
   // 获取标签配置
-  const getSourceTagConfig = (value) => {
-    return sourceTags.find(tag => tag.value === value) || { label: value, color: 'default' };
+  const getTrustTypeConfig = (value) => {
+    return trustTypes.find(tag => tag.value === value) || { label: value, color: 'default' };
   };
 
   // 获取文件类型图标
@@ -58,7 +58,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
   // 统计信息
   const stats = useMemo(() => {
     const total = files.length;
-    const withTags = files.filter(file => file.source_tag).length;
+    const withTags = files.filter(file => file.trust_type).length;
     const withoutTags = total - withTags;
     const categories = Object.keys(groupedFiles).length;
     
@@ -93,19 +93,19 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
     });
   };
 
-  // 直接更新文件标签
+  // 直接更新文件可信度标签
   const handleTagChange = async (file, newTag) => {
     // 设置当前文件为更新状态
     setUpdating(prev => ({ ...prev, [file.relative_path]: true }));
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/files/${file.relative_path}/tags`, {
+      const response = await fetch(`http://localhost:8000/api/v1/files/${file.relative_path}/trust-types`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          source_tag: newTag
+          trust_type: newTag
         })
       });
 
@@ -113,10 +113,10 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
         onTagUpdateSuccess();
       } else {
         const error = await response.json();
-        throw new Error(error.detail || '更新标签失败');
+        throw new Error(error.detail || '更新可信度标签失败');
       }
     } catch (error) {
-      console.error('更新标签失败:', error);
+      console.error('更新可信度标签失败:', error);
       message.error(`更新失败: ${error.message}`);
     } finally {
       // 移除更新状态
@@ -154,9 +154,9 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       ),
     },
     {
-      title: '来源',
-      dataIndex: 'source_tag',
-      key: 'source_tag',
+      title: '可信度',
+      dataIndex: 'trust_type',
+      key: 'trust_type',
       // width: '15%',
       render: (tag, record) => {
         const isUpdating = updating[record.relative_path];
@@ -164,7 +164,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
         return (
           <Select
             value={tag || undefined}
-            placeholder="选择来源"
+            placeholder="选择可信度"
             style={{ width: '100%' }}
             size="small"
             loading={isUpdating}
@@ -172,7 +172,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
             onChange={(newTag) => handleTagChange(record, newTag)}
             popupMatchSelectWidth={false}
           >
-            {sourceTags.map(tagOption => (
+            {trustTypes.map(tagOption => (
               <Option key={tagOption.value} value={tagOption.value}>
                 <Tag color={tagOption.color} style={{ margin: 0 }}>
                   {tagOption.label}
@@ -215,10 +215,10 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       {/* 统计信息 */}
       <div style={{ marginBottom: 16, padding: 12, background: '#f5f5f5', borderRadius: 6 }}>
         <Space size="large">
-          <span>总文件数: <strong>{stats.total}</strong></span>
-          <span>已标记: <strong style={{ color: '#52c41a' }}>{stats.withTags}</strong></span>
-          <span>未标记: <strong style={{ color: '#ff4d4f' }}>{stats.withoutTags}</strong></span>
           <span>类目数: <strong>{stats.categories}</strong></span>
+          <span>总文件数: <strong>{stats.total}</strong></span>
+          {/* <span>已标记: <strong style={{ color: '#52c41a' }}>{stats.withTags}</strong></span> */}
+          <span>未标记: <strong style={{ color: '#ff4d4f' }}>{stats.withoutTags}</strong></span>
         </Space>
       </div>
 
@@ -233,7 +233,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
               <FolderOutlined />
               <strong>{category}</strong>
               <Tag>{categoryFiles.length} 个文件</Tag>
-              {categoryFiles.some(f => !f.source_tag) && (
+              {categoryFiles.some(f => !f.trust_type) && (
                 <Tag color="red">有未标记文件</Tag>
               )}
             </Space>
