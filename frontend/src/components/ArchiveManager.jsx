@@ -148,7 +148,7 @@ function ArchiveManager() {
             </Col>
 
             {/* 使用说明区域 */}
-            <Col span={12}>
+            {/* <Col span={12}>
               <Card 
                 title="使用说明" 
                 className="instruction-section"
@@ -171,7 +171,7 @@ function ArchiveManager() {
                   </ol>
                 </div>
               </Card>
-            </Col>
+            </Col> */}
           </Row>
         </div>
       </Content>

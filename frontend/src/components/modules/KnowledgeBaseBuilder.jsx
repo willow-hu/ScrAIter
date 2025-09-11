@@ -391,10 +391,9 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
                   }
                   description={
                     <div>
-                      <div>创建时间: {formatDate(item.created_time)}</div>
+                      <div>类目: {(item.categories || []).join(', ')}</div>
                       <div>文件数量: {item.file_count || 0} 个</div>
                       <div>切片数量: {item.document_count || 0} 个</div>
-                      <div>类目: {(item.categories || []).join(', ')}</div>
                     </div>
                   }
                 />
