@@ -6,6 +6,7 @@ import NodeEditModal from './modules/NodeEditModal';
 import { isValidTree } from '../utils/script_editor/treeValidator';
 import { createCheckpointManager, DataCacheManager } from '../utils/script_editor/checkpointManager';
 import { createTreeStructureManager } from '../utils/script_editor/treeStructureManager';
+import { TreeLayoutManager } from '../utils/script_editor/index.js';
 
 function ScriptEditor() {
   const [treeData, setTreeData] = useState(null);
@@ -22,10 +23,34 @@ function ScriptEditor() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
+  // 布局管理器
+  const [layoutManager] = useState(() => new TreeLayoutManager());
+
+  // 为树数据添加自动布局位置
+  const addAutoLayoutPositions = (data) => {
+    if (!data || !data.structure) return data;
+    
+    // 创建数据副本
+    const dataWithPositions = JSON.parse(JSON.stringify(data));
+    
+    // 计算自动布局位置
+    const positions = layoutManager.layoutNodes(dataWithPositions.structure);
+    
+    // 为每个节点添加位置信息
+    dataWithPositions.structure = dataWithPositions.structure.map(node => ({
+      ...node,
+      position: positions.get(node.id) || { x: 400, y: 100 }
+    }));
+    
+    return dataWithPositions;
+  };
+
   // 树结构管理器
   const [treeManager] = useState(() => createTreeStructureManager(null, (newData) => {
     setTreeData(newData);
     DataCacheManager.saveToCache(newData);
+    // 更新checkpointManager的工作数据，用于检测未保存的修改
+    checkpointManager.updateWorkingData(newData);
   }));
 
   // 更新撤销/重做按钮状态
@@ -45,10 +70,13 @@ function ScriptEditor() {
         if (response.ok) {
           const data = await response.json();
           
+          // 为数据添加自动布局位置（如果没有位置信息的话）
+          const hasPositions = data.structure && data.structure.some(node => node.position);
+          const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
+          
           // 初始化管理器
-          checkpointManager.initialize(data);
-          treeManager.setData(data);
-          updateUndoRedoState();
+          checkpointManager.initialize(dataWithPositions);
+          treeManager.setData(dataWithPositions);
           
           // 检查是否有缓存的数据
           if (DataCacheManager.hasCache()) {
@@ -56,9 +84,12 @@ function ScriptEditor() {
             const cachedData = DataCacheManager.loadFromCache();
             setTreeData(cachedData);
             treeManager.setData(cachedData);
+            checkpointManager.updateWorkingData(cachedData);
           } else {
-            setTreeData(data);
+            setTreeData(dataWithPositions);
+            checkpointManager.updateWorkingData(dataWithPositions);
           }
+          updateUndoRedoState();
         } else {
           // 如果项目API失败，尝试加载public文件夹中的fallback文件
           console.log('项目文件不存在，尝试加载fallback文件...');
@@ -67,10 +98,13 @@ function ScriptEditor() {
           if (fallbackResponse.ok) {
             const data = await fallbackResponse.json();
             
+            // 为数据添加自动布局位置（如果没有位置信息的话）
+            const hasPositions = data.structure && data.structure.some(node => node.position);
+            const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
+            
             // 初始化管理器
-            checkpointManager.initialize(data);
-            treeManager.setData(data);
-            updateUndoRedoState();
+            checkpointManager.initialize(dataWithPositions);
+            treeManager.setData(dataWithPositions);
             
             // 检查是否有缓存的数据
             if (DataCacheManager.hasCache()) {
@@ -78,9 +112,12 @@ function ScriptEditor() {
               const cachedData = DataCacheManager.loadFromCache();
               setTreeData(cachedData);
               treeManager.setData(cachedData);
+              checkpointManager.updateWorkingData(cachedData);
             } else {
-              setTreeData(data);
+              setTreeData(dataWithPositions);
+              checkpointManager.updateWorkingData(dataWithPositions);
             }
+            updateUndoRedoState();
           } else {
             throw new Error('无法加载树数据');
           }
@@ -105,9 +142,14 @@ function ScriptEditor() {
             }
           ]
         };
-        setTreeData(defaultData);
-        checkpointManager.initialize(defaultData);
-        treeManager.setData(defaultData);
+        
+        // 为默认数据添加自动布局位置
+        const defaultDataWithPositions = addAutoLayoutPositions(defaultData);
+        
+        setTreeData(defaultDataWithPositions);
+        checkpointManager.initialize(defaultDataWithPositions);
+        treeManager.setData(defaultDataWithPositions);
+        checkpointManager.updateWorkingData(defaultDataWithPositions);
         updateUndoRedoState();
       }
     };
@@ -193,7 +235,11 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      // message.success(result.message);
+      
+      // 如果是恢复未保存修改，显示相应消息
+      if (result.wasUnsavedRevert && result.message) {
+        message.info(result.message);
+      }
     } else {
       message.warning(result.message);
     }
@@ -221,13 +267,6 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      
-      // 重置后执行重新布局
-      setTimeout(() => {
-        if (treeCanvasRef.current && treeCanvasRef.current.layoutNodes) {
-          treeCanvasRef.current.layoutNodes();
-        }
-      }, 100); // 给一个小延时确保数据更新完成
       
       message.success(result.message);
     } else {
@@ -257,6 +296,8 @@ function ScriptEditor() {
     const result = treeManager.updateGlobalContext(newContext);
     if (!result.success) {
       message.error(result.message);
+    } else {
+      updateUndoRedoState();
     }
   };
 
@@ -271,6 +312,7 @@ function ScriptEditor() {
         const updatedNode = treeManager.getNode(nodeId);
         setSelectedNode(updatedNode);
       }
+      updateUndoRedoState();
     }
   };
 
@@ -282,6 +324,7 @@ function ScriptEditor() {
     } else {
       message.error(result.message);
     }
+    updateUndoRedoState();
   };
 
   // 删除节点
@@ -296,6 +339,7 @@ function ScriptEditor() {
     } else {
       message.error(result.message);
     }
+    updateUndoRedoState();
   };
 
   // 添加边
@@ -306,6 +350,7 @@ function ScriptEditor() {
     } else {
       message.error(result.message);
     }
+    updateUndoRedoState();
   };
 
   // 删除边
@@ -316,6 +361,7 @@ function ScriptEditor() {
     } else {
       message.error(result.message);
     }
+    updateUndoRedoState();
   };
 
   // 更新节点位置
@@ -324,6 +370,7 @@ function ScriptEditor() {
     if (!result.success) {
       message.error(result.message);
     }
+    // 注意：节点位置变化不触发updateUndoRedoState，因为位置不影响保存状态
   };
 
   // 处理节点双击编辑

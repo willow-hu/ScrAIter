@@ -20,6 +20,8 @@ export class CheckpointManager {
     this.checkpoints = [];
     this.currentIndex = -1;
     this.initialData = null;
+    this.hasUnsavedChanges = false; // 标记是否有未保存的修改
+    this.currentWorkingData = null; // 当前工作数据
   }
 
   /**
@@ -91,6 +93,31 @@ export class CheckpointManager {
   }
 
   /**
+   * 更新当前工作数据并检查是否有未保存的修改
+   * @param {Object} data - 当前工作数据
+   */
+  updateWorkingData(data) {
+    this.currentWorkingData = this.deepClone(data);
+    
+    // 检查是否有未保存的修改
+    const currentCheckpointData = this.getCurrentCheckpointData();
+    this.hasUnsavedChanges = !this.isDataEqual(data, currentCheckpointData);
+  }
+
+  /**
+   * 获取当前checkpoint的数据
+   * @returns {Object|null} 当前checkpoint的数据
+   */
+  getCurrentCheckpointData() {
+    if (this.currentIndex >= 0 && this.currentIndex < this.checkpoints.length) {
+      return this.checkpoints[this.currentIndex];
+    } else if (this.currentIndex === -1 && this.initialData) {
+      return this.initialData;
+    }
+    return null;
+  }
+
+  /**
    * 创建新的 checkpoint
    * @param {Object} data - 当前数据
    * @returns {Object} 操作结果
@@ -137,6 +164,10 @@ export class CheckpointManager {
     this.checkpoints.push(newCheckpoint);
     this.currentIndex = this.checkpoints.length - 1;
     
+    // 清除未保存修改标记
+    this.hasUnsavedChanges = false;
+    this.currentWorkingData = this.deepClone(newCheckpoint);
+    
     // 保存到本地存储
     this.saveCheckpointsToStorage();
     
@@ -150,13 +181,33 @@ export class CheckpointManager {
 
   /**
    * 撤销到前一个 checkpoint
+   * 如果有未保存的修改，先恢复到当前checkpoint
    * @returns {Object} 操作结果，包含数据或错误信息
    */
   undo() {
+    // 如果有未保存的修改，先恢复到当前checkpoint
+    if (this.hasUnsavedChanges) {
+      const currentCheckpointData = this.getCurrentCheckpointData();
+      if (currentCheckpointData) {
+        this.hasUnsavedChanges = false;
+        this.currentWorkingData = this.deepClone(currentCheckpointData);
+        return {
+          success: true,
+          data: this.deepClone(currentCheckpointData),
+          message: '已恢复到最新保存点',
+          checkpointIndex: this.currentIndex,
+          wasUnsavedRevert: true
+        };
+      }
+    }
+
+    // 正常的撤销逻辑
     if (this.currentIndex > 0) {
       // 撤销到前一个 checkpoint
       this.currentIndex--;
       const data = this.deepClone(this.checkpoints[this.currentIndex]);
+      this.hasUnsavedChanges = false;
+      this.currentWorkingData = this.deepClone(data);
       return {
         success: true,
         data,
@@ -167,6 +218,8 @@ export class CheckpointManager {
       // 如果是第一个 checkpoint，回到初始状态
       this.currentIndex = -1;
       const data = this.deepClone(this.initialData);
+      this.hasUnsavedChanges = false;
+      this.currentWorkingData = this.deepClone(data);
       return {
         success: true,
         data,
@@ -190,6 +243,8 @@ export class CheckpointManager {
       // 重做到下一个 checkpoint
       this.currentIndex++;
       const data = this.deepClone(this.checkpoints[this.currentIndex]);
+      this.hasUnsavedChanges = false;
+      this.currentWorkingData = this.deepClone(data);
       return {
         success: true,
         data,
@@ -218,6 +273,8 @@ export class CheckpointManager {
 
     this.checkpoints = [];
     this.currentIndex = -1;
+    this.hasUnsavedChanges = false;
+    this.currentWorkingData = this.deepClone(this.initialData);
     
     // 清除所有本地存储
     this.clearStorage();
@@ -234,6 +291,11 @@ export class CheckpointManager {
    * @returns {boolean} 是否可以撤销
    */
   canUndo() {
+    // 如果有未保存的修改，总是可以撤销（恢复到当前checkpoint）
+    if (this.hasUnsavedChanges) {
+      return true;
+    }
+    // 否则检查是否有之前的checkpoint可以撤销到
     return this.currentIndex >= 0;
   }
 
@@ -255,7 +317,8 @@ export class CheckpointManager {
       currentIndex: this.currentIndex,
       canUndo: this.canUndo(),
       canRedo: this.canRedo(),
-      hasInitialData: !!this.initialData
+      hasInitialData: !!this.initialData,
+      hasUnsavedChanges: this.hasUnsavedChanges
     };
   }
 
