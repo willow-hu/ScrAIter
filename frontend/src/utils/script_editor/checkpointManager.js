@@ -46,6 +46,7 @@ export class CheckpointManager {
 
   /**
    * 比较两个数据对象是否相同
+   * 仅比较实质性内容，忽略节点位置等不影响JSON保存内容的变化
    * @param {Object} data1 - 第一个数据对象
    * @param {Object} data2 - 第二个数据对象
    * @returns {boolean} 是否相同
@@ -54,14 +55,39 @@ export class CheckpointManager {
     if (!data1 || !data2) return false;
     
     try {
+      // 创建数据副本，移除不影响实质内容的字段
+      const cleanData1 = this.removeNonEssentialFields(data1);
+      const cleanData2 = this.removeNonEssentialFields(data2);
+      
       // 使用 JSON 字符串比较来检查深度相等性
-      const str1 = JSON.stringify(data1);
-      const str2 = JSON.stringify(data2);
+      const str1 = JSON.stringify(cleanData1);
+      const str2 = JSON.stringify(cleanData2);
       return str1 === str2;
     } catch (error) {
       console.error('比较数据时出错:', error);
       return false;
     }
+  }
+
+  /**
+   * 移除数据中的非实质性字段（如节点位置等）
+   * @param {Object} data - 原始数据
+   * @returns {Object} 清理后的数据
+   */
+  removeNonEssentialFields(data) {
+    const cleaned = this.deepClone(data);
+    
+    // 如果有structure数组，移除每个节点的position字段
+    if (cleaned.structure && Array.isArray(cleaned.structure)) {
+      cleaned.structure = cleaned.structure.map(node => {
+        const cleanedNode = { ...node };
+        // 移除position字段，因为这只是UI展示相关，不影响实际内容
+        delete cleanedNode.position;
+        return cleanedNode;
+      });
+    }
+    
+    return cleaned;
   }
 
   /**

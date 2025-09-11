@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { message } from 'antd';
 import TreeCanvas from './modules/TreeCanvas';
 import Sidebar from './modules/Sidebar';
@@ -13,6 +13,9 @@ function ScriptEditor() {
   const [sidebarWidth, setSidebarWidth] = useState(350);
   const [isResizing, setIsResizing] = useState(false);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
+  
+  // TreeCanvas ref
+  const treeCanvasRef = useRef(null);
   
   // checkpoint 管理器
   const [checkpointManager] = useState(() => createCheckpointManager());
@@ -218,6 +221,14 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
+      
+      // 重置后执行重新布局
+      setTimeout(() => {
+        if (treeCanvasRef.current && treeCanvasRef.current.layoutNodes) {
+          treeCanvasRef.current.layoutNodes();
+        }
+      }, 100); // 给一个小延时确保数据更新完成
+      
       message.success(result.message);
     } else {
       message.error(result.message);
@@ -333,6 +344,7 @@ function ScriptEditor() {
   return (
     <>
       <TreeCanvas
+        ref={treeCanvasRef}
         treeData={treeData}
         selectedNode={selectedNode}
         onNodeSelect={setSelectedNode}

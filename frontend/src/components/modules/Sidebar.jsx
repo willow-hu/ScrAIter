@@ -115,7 +115,16 @@ function Sidebar({
         >
             保存修改
         </Button>
-        
+
+        <Button 
+            type='primary'
+            icon={<DownloadOutlined />} 
+            onClick={handleExport}
+            block
+        >
+            导出脚本
+        </Button>   
+
         {/* 撤销和回做按钮并排 */}
         <Space.Compact style={{ width: '100%' }}>
           <Button 
@@ -135,14 +144,6 @@ function Sidebar({
               前进到下一版
           </Button>
         </Space.Compact>
-        
-        <Button 
-            icon={<ReloadOutlined />} 
-            onClick={handleReset}
-            block
-        >
-            重置脚本
-        </Button>
 
         <Button 
             icon={<DatabaseOutlined />} 
@@ -153,12 +154,11 @@ function Sidebar({
         </Button>
         
         <Button 
-            type='primary'
-            icon={<DownloadOutlined />} 
-            onClick={handleExport}
+            icon={<ReloadOutlined />} 
+            onClick={handleReset}
             block
         >
-            导出脚本
+            重置脚本
         </Button>
         </Space>
 

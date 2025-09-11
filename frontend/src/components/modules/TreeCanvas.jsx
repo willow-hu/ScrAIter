@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { 
   TreeLayoutManager, 
   CoordinateTransformer, 
@@ -8,7 +8,7 @@ import {
   TREE_EDITOR_CONFIG
 } from '../../utils/script_editor/index.js';
 
-function TreeCanvas({ 
+const TreeCanvas = forwardRef(({ 
   treeData, 
   selectedNode, 
   onNodeSelect, 
@@ -18,7 +18,7 @@ function TreeCanvas({
   onAddEdge, 
   onUpdateNodePosition,
   config = TREE_EDITOR_CONFIG  // 接受配置参数，默认使用全局配置
-}) {
+}, ref) => {
   
   const canvasRef = useRef(null);
   const [scale, setScale] = useState(0.5);
@@ -89,6 +89,11 @@ function TreeCanvas({
       onUpdateNodePosition(nodeId, position);
     });
   };
+
+  // 暴露给父组件的方法
+  useImperativeHandle(ref, () => ({
+    layoutNodes
+  }), [layoutNodes]);
 
   // 工具函数
   const getNodeAtPosition = (x, y) => {
@@ -250,6 +255,6 @@ function TreeCanvas({
       )}
     </div>
   );
-}
+});
 
 export default TreeCanvas;
