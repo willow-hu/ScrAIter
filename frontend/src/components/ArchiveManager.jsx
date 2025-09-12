@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Card, Row, Col, message } from 'antd';
+import { Layout, Card, Row, Col, message, Modal, Button } from 'antd';
+import { UploadOutlined, PlusOutlined } from '@ant-design/icons';
 import FileUploader from './modules/FileUploader';
 import FilesList from './modules/FilesList';
 import KnowledgeBaseBuilder from './modules/KnowledgeBaseBuilder';
@@ -14,6 +15,10 @@ function ArchiveManager() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // 弹窗状态
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showKBBuildModal, setShowKBBuildModal] = useState(false);
 
   // 防止拖拽文件到页面其他区域导致的警告
   useEffect(() => {
@@ -84,6 +89,7 @@ function ArchiveManager() {
   // 文件上传成功回调
   const handleUploadSuccess = () => {
     message.success('文件上传成功');
+    setShowUploadModal(false); // 关闭弹窗
     handleRefresh();
   };
 
@@ -108,41 +114,22 @@ function ArchiveManager() {
     <Layout className="archive-manager">
       <Content className="archive-content">
         <div className="archive-container">
-          {/* 上方区域：上传文件和知识库构建并排 */}
-          <Row gutter={24} style={{ marginBottom: 24 }}>
-            <Col span={12}>
-              <Card 
-                title="上传文件" 
-                className="upload-section"
-              >
-                <FileUploader
-                  categories={categories}
-                  onUploadSuccess={handleUploadSuccess}
-                  onRefresh={handleRefresh}
-                />
-              </Card>
-            </Col>
-            
-            <Col span={12}>
-              <Card 
-                title="知识库构建" 
-                className="kb-section"
-              >
-                <KnowledgeBaseBuilder
-                  categories={categories}
-                  files={files}
-                  onRefresh={handleRefresh}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          {/* 下方区域：文件列表和知识库列表 */}
+          {/* 主要区域：文件管理和知识库管理并排 */}
           <Row gutter={24}>
             <Col span={12}>
               <Card 
                 title="文件管理" 
                 className="files-section"
+                extra={
+                  <Button
+                    type="primary"
+                    icon={<UploadOutlined />}
+                    size="small"
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    上传文件
+                  </Button>
+                }
               >
                 <FilesList
                   files={files}
@@ -154,11 +141,20 @@ function ArchiveManager() {
               </Card>
             </Col>
 
-            {/* 知识库列表区域 */}
             <Col span={12}>
               <Card 
                 title="知识库管理" 
                 className="kb-list-section"
+                extra={
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    size="small"
+                    onClick={() => setShowKBBuildModal(true)}
+                  >
+                    新建知识库
+                  </Button>
+                }
               >
                 <KnowledgeBasesList
                   onDeleteSuccess={handleKBDeleteSuccess}
@@ -168,56 +164,42 @@ function ArchiveManager() {
               </Card>
             </Col>
           </Row>
-
-          {/* 使用说明区域 */}
-          <Row gutter={24} style={{ marginTop: 24 }}>
-            <Col span={24}>
-              <Card 
-                title="使用说明" 
-                className="instruction-section"
-              >
-                <div className="instruction-content">
-                  <Row gutter={24}>
-                    <Col span={12}>
-                      <h4>文件管理流程</h4>
-                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                        <li>选择文件类型（结构化/非结构化）</li>
-                        <li>选择或创建类目</li>
-                        <li>拖拽/点击上传文件</li>
-                        <li>在文件管理区为每个文件标记标签</li>
-                      </ol>
-
-                      <h4 style={{ marginTop: '24px' }}>知识库构建</h4>
-                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                        <li>确保所有文件已标记标签</li>
-                        <li>选择要构建知识库的类目</li>
-                        <li>输入知识库名称并开始构建</li>
-                        <li>等待构建完成</li>
-                      </ol>
-                    </Col>
-                    
-                    <Col span={12}>
-                      <h4>知识库管理</h4>
-                      <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                        <li>查看已构建的知识库列表</li>
-                        <li>查看每个知识库的文件和切片数量</li>
-                        <li>提取知识图谱（开发中）</li>
-                        <li>删除不需要的知识库</li>
-                      </ol>
-
-                      <h4 style={{ marginTop: '24px' }}>注意事项</h4>
-                      <ul style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                        <li>删除知识库操作不可恢复</li>
-                        <li>知识图谱提取功能正在开发中</li>
-                        <li>建议定期备份重要知识库</li>
-                      </ul>
-                    </Col>
-                  </Row>
-                </div>
-              </Card>
-            </Col>
-          </Row>
         </div>
+
+        {/* 上传文件弹窗 */}
+        <Modal
+          title="上传文件"
+          open={showUploadModal}
+          onCancel={() => setShowUploadModal(false)}
+          footer={null}
+          width={500}
+          destroyOnHidden
+        >
+          <FileUploader
+            categories={categories}
+            onUploadSuccess={handleUploadSuccess}
+            onRefresh={handleRefresh}
+          />
+        </Modal>
+
+        {/* 知识库构建弹窗 */}
+        <Modal
+          title="知识库构建"
+          open={showKBBuildModal}
+          onCancel={() => setShowKBBuildModal(false)}
+          footer={null}
+          width={500}
+          destroyOnHidden
+        >
+          <KnowledgeBaseBuilder
+            categories={categories}
+            files={files}
+            onRefresh={() => {
+              handleRefresh();
+              setShowKBBuildModal(false); // 构建完成后关闭弹窗
+            }}
+          />
+        </Modal>
       </Content>
     </Layout>
   );
