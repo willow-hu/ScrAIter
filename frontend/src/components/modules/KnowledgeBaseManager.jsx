@@ -7,18 +7,17 @@ import {
   Typography, 
   Tag, 
   Modal, 
-  Progress,
   Spin,
-  Alert,
-  Select
+  Row,
+  Col
 } from 'antd';
 import { 
-  ExclamationCircleOutlined,
-  PlayCircleOutlined
+  UploadOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
-import { KNOWLEDGE_BASE_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig.js';
 import FilesList from './FilesList';
 import FileUploader from './FileUploader';
+import KnowledgeBaseBuilder from './KnowledgeBaseBuilder';
 
 const { Text } = Typography;
 
@@ -26,12 +25,13 @@ function KnowledgeBaseManager({ onClose }) {
   const [files, setFiles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [building, setBuilding] = useState(false);
   const [kbStatus, setKbStatus] = useState(null);
-  const [buildProgress, setBuildProgress] = useState(null);
   const [currentKnowledgeBase, setCurrentKnowledgeBase] = useState(null);
-  const [selectedCategoriesForBuild, setSelectedCategoriesForBuild] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // 弹窗状态
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showRebuildModal, setShowRebuildModal] = useState(false);
 
   // 初始化加载数据
   useEffect(() => {
@@ -123,6 +123,7 @@ function KnowledgeBaseManager({ onClose }) {
   // 文件上传成功回调
   const handleUploadSuccess = () => {
     message.success('文件上传成功');
+    setShowUploadModal(false); // 关闭弹窗
     handleRefresh();
   };
 
@@ -137,107 +138,6 @@ function KnowledgeBaseManager({ onClose }) {
     handleRefresh();
   };
 
-  // 重建知识库
-  const rebuildKnowledgeBase = async () => {
-    if (!currentKnowledgeBase) {
-      message.error('没有找到当前知识库信息');
-      return;
-    }
-
-    if (selectedCategoriesForBuild.length === 0) {
-      message.error('请选择至少一个类目');
-      return;
-    }
-
-    Modal.confirm({
-      title: '重建知识库',
-      icon: <ExclamationCircleOutlined />,
-      content: (
-        <div>
-          <p>将重建知识库"{currentKnowledgeBase.name}"，使用以下类目：</p>
-          <ul>
-            {selectedCategoriesForBuild.map(cat => (
-              <li key={cat}>{cat} ({files.filter(f => f.category === cat).length} 个文件)</li>
-            ))}
-          </ul>
-          <p style={{ color: '#ff4d4f' }}>注意：这将覆盖现有知识库。</p>
-        </div>
-      ),
-      okText: '开始重建',
-      cancelText: '取消',
-      onOk: async () => {
-        setBuilding(true);
-        try {
-          // 使用选择的类目和配置
-          const buildRequest = {
-            name: currentKnowledgeBase.name,
-            categories: selectedCategoriesForBuild,
-            ...getFlattenedConfig(KNOWLEDGE_BASE_CONFIG)
-          };
-
-          const response = await fetch('http://localhost:8000/api/v1/knowledge-base/build', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(buildRequest),
-          });
-
-          if (!response.ok) {
-            throw new Error('启动知识库构建失败');
-          }
-
-          const result = await response.json();
-          message.success('知识库重建已启动');
-          
-          // 开始轮询构建进度
-          pollBuildProgress(result.task_id);
-          
-        } catch (error) {
-          console.error('重建知识库失败:', error);
-          message.error('重建知识库失败');
-          setBuilding(false);
-        }
-      },
-    });
-  };
-
-  // 轮询构建进度
-  const pollBuildProgress = async (taskId) => {
-    const checkProgress = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/build-status/${taskId}`);
-        if (!response.ok) {
-          throw new Error('获取构建进度失败');
-        }
-
-        const result = await response.json();
-        setBuildProgress(result);
-
-        if (result.status === 'completed') {
-          setBuilding(false);
-          setBuildProgress(null);
-          message.success('知识库构建完成');
-          await loadKnowledgeBaseStatus();
-          await loadKnowledgeBases();
-        } else if (result.status === 'failed') {
-          setBuilding(false);
-          setBuildProgress(null);
-          message.error(`知识库构建失败: ${result.error || '未知错误'}`);
-        } else if (result.status === 'running') {
-          // 继续轮询
-          setTimeout(checkProgress, 2000);
-        }
-      } catch (error) {
-        console.error('检查构建进度失败:', error);
-        setBuilding(false);
-        setBuildProgress(null);
-      }
-    };
-
-    checkProgress();
-  };
-
   // 格式化时间
   const formatTime = (timeStr) => {
     if (!timeStr) return '未知';
@@ -246,125 +146,78 @@ function KnowledgeBaseManager({ onClose }) {
 
   return (
     <div className="kb-manager">
-      <Space direction="vertical" className="kb-main-space" size="large">
-        {/* 显示当前知识库信息 */}
-        <Card title="当前知识库" size="small">
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {/* 当前知识库卡片 */}
+        <Card 
+          title="当前知识库" 
+          size="small"
+          extra={
+            currentKnowledgeBase && (
+              <Button
+                type="primary"
+                icon={<SyncOutlined />}
+                size="small"
+                onClick={() => setShowRebuildModal(true)}
+              >
+                重建知识库
+              </Button>
+            )
+          }
+        >
           {kbStatus && currentKnowledgeBase ? (
-            <Space direction="vertical" className="kb-status-space">
-              <div className="kb-status-item">
-                <Text strong>名称：</Text>
-                <Text>{currentKnowledgeBase.name}</Text>
-              </div>
-              <div className="kb-status-item">
-                <Text strong>包含类目：</Text>
-                <Space size="small">
-                  {currentKnowledgeBase.categories && currentKnowledgeBase.categories.map(cat => (
-                    <Tag key={cat} color="blue">{cat}</Tag>
-                  ))}
-                </Space>
-              </div>
-              <div className="kb-status-item">
-                <Text strong>文件数量：</Text>
-                <Text>{kbStatus.file_count || 0}</Text>
-              </div>
-              <div className="kb-status-item">
-                <Text strong>文档切片数量：</Text>
-                <Text>{currentKnowledgeBase.document_count || 0}</Text>
-              </div>
-              <div className="kb-status-item">
-                <Text strong>创建时间：</Text>
-                <Text>{formatTime(currentKnowledgeBase.created_time)}</Text>
-              </div>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Row>
+                <Col span={8}>
+                  <Text strong>名称：</Text>
+                  <Text>{currentKnowledgeBase.name}</Text>
+                </Col>
+                <Col span={8}>
+                  <Text strong>文件数量：</Text>
+                  <Text>{kbStatus.file_count || 0}</Text>
+                </Col>
+                <Col span={8}>
+                  <Text strong>文档切片：</Text>
+                  <Text>{currentKnowledgeBase.document_count || 0}</Text>
+                </Col>
+              </Row>
+              <Row>
+                <Col span={12}>
+                  <Text strong>包含类目：</Text>
+                  <div style={{ marginTop: 4 }}>
+                    {currentKnowledgeBase.categories && currentKnowledgeBase.categories.map(cat => (
+                      <Tag key={cat} color="blue" size="small">{cat}</Tag>
+                    ))}
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <Text strong>创建时间：</Text>
+                  <div>{formatTime(currentKnowledgeBase.created_time)}</div>
+                </Col>
+              </Row>
             </Space>
           ) : (
-            <Spin />
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <Spin />
+              <div style={{ marginTop: 8, color: '#666' }}>加载知识库信息...</div>
+            </div>
           )}
         </Card>
 
-        {/* 构建进度 */}
-        {building && buildProgress && (
-          <Card title="构建进度" size="small">
-            <Space direction="vertical" className="kb-progress-space">
-              <Progress 
-                percent={buildProgress.progress || 0} 
-                status={buildProgress.status === 'failed' ? 'exception' : 'active'}
-              />
-              <Text type="secondary">
-                {buildProgress.current_file || '正在处理...'}
-              </Text>
-            </Space>
-          </Card>
-        )}
-
-        {/* 上传文件 */}
-        <Card title="上传文件" size="small">
-          <FileUploader
-            categories={categories}
-            onUploadSuccess={handleUploadSuccess}
-            onRefresh={handleRefresh}
-          />
-        </Card>
-
-        {/* 知识库重建 */}
-        <Card title="知识库重建" size="small">
-          <Space direction="vertical" className="kb-upload-space">
-            {/* 类目选择 */}
-            <div>
-              <Text strong style={{ display: 'block', marginBottom: 8 }}>选择类目：</Text>
-              <Select
-                mode="multiple"
-                value={selectedCategoriesForBuild}
-                onChange={setSelectedCategoriesForBuild}
-                placeholder="选择一个或多个类目"
-                style={{ width: '100%' }}
-                maxTagCount={3}
-              >
-                {categories.map(category => {
-                  const categoryFiles = files.filter(f => f.category === category);
-                  const untaggedCount = categoryFiles.filter(f => !f.source_tag).length;
-                  
-                  return (
-                    <Select.Option key={category} value={category}>
-                      {category}
-                      {untaggedCount > 0 && <span style={{ color: 'red' }}> - {untaggedCount}个未标记</span>}
-                    </Select.Option>
-                  );
-                })}
-              </Select>
-            </div>
-
-            {/* 选中文件统计 */}
-            {selectedCategoriesForBuild.length > 0 && (
-              <Alert
-                message={
-                  <div>
-                    <p>已选择 {selectedCategoriesForBuild.reduce((total, cat) => {
-                      return total + files.filter(f => f.category === cat).length;
-                    }, 0)} 个文件</p>
-                  </div>
-                }
-                type="info"
-                showIcon
-              />
-            )}
-
-            {/* 重建按钮 */}
+        {/* 文件列表卡片 */}
+        <Card 
+          title="文件列表" 
+          size="small"
+          extra={
             <Button
               type="primary"
-              icon={<PlayCircleOutlined />}
-              onClick={rebuildKnowledgeBase}
-              disabled={selectedCategoriesForBuild.length === 0}
-              loading={building}
-              size="large"
-              style={{ width: '100%' }}
+              icon={<UploadOutlined />}
+              size="small"
+              onClick={() => setShowUploadModal(true)}
             >
-              重建知识库
+              添加文件
             </Button>
-          </Space>
-        </Card>
-
-        {/* 文件列表 */}
-        <Card title="文件列表" size="small">
+          }
+        >
           <FilesList
             files={files}
             loading={loading}
@@ -374,6 +227,43 @@ function KnowledgeBaseManager({ onClose }) {
           />
         </Card>
       </Space>
+
+      {/* 文件上传弹窗 */}
+      <Modal
+        title="上传文件"
+        open={showUploadModal}
+        onCancel={() => setShowUploadModal(false)}
+        footer={null}
+        width={500}
+        destroyOnHidden
+      >
+        <FileUploader
+          categories={categories}
+          onUploadSuccess={handleUploadSuccess}
+          onRefresh={handleRefresh}
+        />
+      </Modal>
+
+      {/* 知识库重建弹窗 */}
+      <Modal
+        title="重建知识库"
+        open={showRebuildModal}
+        onCancel={() => setShowRebuildModal(false)}
+        footer={null}
+        width={500}
+        destroyOnHidden
+      >
+        <KnowledgeBaseBuilder
+          categories={categories}
+          files={files}
+          onRefresh={() => {
+            handleRefresh();
+            setShowRebuildModal(false); // 重建完成后关闭弹窗
+          }}
+          isRebuild={true}
+          existingKnowledgeBase={currentKnowledgeBase}
+        />
+      </Modal>
     </div>
   );
 }

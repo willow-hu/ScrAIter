@@ -14,7 +14,7 @@ import {
 
 const { Option } = Select;
 
-function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
+function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false, existingKnowledgeBase = null }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [kbName, setKbName] = useState('');
   const [building, setBuilding] = useState(false);
@@ -23,6 +23,18 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   const [buildMessage, setBuildMessage] = useState('');
   const [existingKBs, setExistingKBs] = useState([]);
   const [form] = Form.useForm();
+
+  // 如果是重建模式，初始化现有知识库的数据
+  useEffect(() => {
+    if (isRebuild && existingKnowledgeBase) {
+      setSelectedCategories(existingKnowledgeBase.categories || []);
+      setKbName(existingKnowledgeBase.name || '');
+      form.setFieldsValue({
+        categories: existingKnowledgeBase.categories || [],
+        kbName: existingKnowledgeBase.name || ''
+      });
+    }
+  }, [isRebuild, existingKnowledgeBase, form]);
 
   // 构建参数配置
   const buildConfig = getFlattenedConfig(KNOWLEDGE_BASE_CONFIG);
@@ -56,22 +68,43 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
   // 开始构建知识库
   const handleBuild = async () => {
     try {
-      // 验证表单
-      const values = await form.validateFields();
+      // 验证表单 - 重建模式只需验证类目
+      const fieldsToValidate = isRebuild ? ['categories'] : ['categories', 'kbName'];
+      
+      let values;
+      if (isRebuild) {
+        // 重建模式：使用现有知识库名称和选择的类目
+        values = {
+          categories: selectedCategories,
+          kbName: kbName
+        };
+        // 只验证类目
+        if (selectedCategories.length === 0) {
+          message.error('请选择至少一个类目');
+          return;
+        }
+      } else {
+        // 新建模式：验证完整表单
+        values = await form.validateFields(fieldsToValidate);
+      }
       
       if (!canBuild) {
         message.error('请确保所选类目中的所有文件都已标记标签');
         return;
       }
 
-      // 首先获取已有知识库列表来检查名称冲突
-      await loadKnowledgeBases();
+      // 加载已有知识库列表来检查名称冲突（仅新建模式需要）
+      if (!isRebuild) {
+        await loadKnowledgeBases();
+      }
       
-      // 检查知识库名称是否已存在
-      const nameExists = isKnowledgeBaseNameExists(values.kbName, existingKBs);
-      if (nameExists) {
-        message.error(`知识库 "${values.kbName}" 已存在，请使用其他名称`);
-        return;
+      // 检查知识库名称是否已存在（重建模式跳过此检查）
+      if (!isRebuild) {
+        const nameExists = isKnowledgeBaseNameExists(values.kbName, existingKBs);
+        if (nameExists) {
+          message.error(`知识库 "${values.kbName}" 已存在，请使用其他名称`);
+          return;
+        }
       }
       
       // 直接开始构建
@@ -193,20 +226,32 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
           </Form.Item>
 
           {/* 知识库命名 */}
-          <Form.Item 
-            label="知识库名称" 
-            name="kbName"
-            rules={[
-              { required: true, message: '请输入知识库名称' },
-              { pattern: /^[a-zA-Z0-9_-]+$/, message: '知识库名称只能包含字母、数字、下划线和短横线' }
-            ]}
-          >
-            <Input 
-              placeholder="例：twin_pagoda" 
-              value={kbName}
-              onChange={(e) => setKbName(e.target.value)}
+          {!isRebuild && (
+            <Form.Item 
+              label="知识库名称" 
+              name="kbName"
+              rules={[
+                { required: true, message: '请输入知识库名称' },
+                { pattern: /^[a-zA-Z0-9_-]+$/, message: '知识库名称只能包含字母、数字、下划线和短横线' }
+              ]}
+            >
+              <Input 
+                placeholder="例：twin_pagoda" 
+                value={kbName}
+                onChange={(e) => setKbName(e.target.value)}
+              />
+            </Form.Item>
+          )}
+
+          {/* 重建模式显示知识库名称 */}
+          {isRebuild && (
+            <Alert
+              message={`重建知识库：${kbName}`}
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
             />
-          </Form.Item>
+          )}
 
           {/* 选中文件统计 */}
           {selectedCategories.length > 0 && (
@@ -254,7 +299,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
                 size="large"
                 style={{ width: '100%' }}
               >
-                构建知识库
+                {isRebuild ? '重建知识库' : '构建知识库'}
               </Button>
             ) : (
               <Button
