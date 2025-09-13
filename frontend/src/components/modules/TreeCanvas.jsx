@@ -16,6 +16,7 @@ const TreeCanvas = forwardRef(({
   onAddNode, 
   onDeleteNode, 
   onAddEdge, 
+  onDeleteEdge,
   onUpdateNodePosition,
   config = TREE_EDITOR_CONFIG  // 接受配置参数，默认使用全局配置
 }, ref) => {
@@ -66,6 +67,9 @@ const TreeCanvas = forwardRef(({
     eventHandler.on('nodeSelect', onNodeSelect);
     eventHandler.on('nodeEdit', onNodeEdit);
     eventHandler.on('addEdge', ({ parentId, childId }) => onAddEdge(parentId, childId));
+    eventHandler.on('deleteEdge', ({ nodeId1, nodeId2 }) => {
+      onDeleteEdge(nodeId1, nodeId2);
+    });
     eventHandler.on('updateNodePosition', ({ nodeId, position }) => onUpdateNodePosition(nodeId, position));
     eventHandler.on('contextMenuClose', () => setContextMenu(null));
     eventHandler.on('contextMenuOpen', setContextMenu);
@@ -77,7 +81,7 @@ const TreeCanvas = forwardRef(({
       setScale(newTransform.scale);
       setTranslate(newTransform.translate);
     });
-  }, [onNodeSelect, onNodeEdit, onAddEdge, onUpdateNodePosition, scale, translate]);
+  }, [onNodeSelect, onNodeEdit, onAddEdge, onDeleteEdge, onUpdateNodePosition, scale, translate]);
 
   // 自动布局
   const layoutNodes = () => {
@@ -214,6 +218,12 @@ const TreeCanvas = forwardRef(({
                 添加边
               </div>
               <div className="context-menu-item" onClick={() => {
+                eventHandler.startDeletingEdge(contextMenu.node);
+                eventHandler.closeContextMenu();
+              }}>
+                删除边
+              </div>
+              <div className="context-menu-item" onClick={() => {
                 onDeleteNode(contextMenu.node.id);
                 eventHandler.closeContextMenu();
               }}>
@@ -251,6 +261,21 @@ const TreeCanvas = forwardRef(({
           fontSize: '14px'
         }}>
           点击目标节点完成连接，右键取消
+        </div>
+      )}
+      
+      {eventHandler.getState().deletingEdge && (
+        <div style={{
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          background: '#dc3545',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '14px'
+        }}>
+          点击目标节点删除连接，右键取消
         </div>
       )}
     </div>

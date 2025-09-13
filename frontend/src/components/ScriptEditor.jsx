@@ -354,8 +354,8 @@ function ScriptEditor() {
   };
 
   // 删除边
-  const deleteEdge = (parentId, childId) => {
-    const result = treeManager.deleteEdge(parentId, childId);
+  const deleteEdge = (nodeId1, nodeId2) => {
+    const result = treeManager.deleteEdge(nodeId1, nodeId2);
     if (result.success) {
       message.success(result.message);
     } else {

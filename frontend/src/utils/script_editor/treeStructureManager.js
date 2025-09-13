@@ -212,37 +212,61 @@ export class TreeStructureManager {
 
   /**
    * 删除边（父子关系）
-   * @param {number} parentId - 父节点ID
-   * @param {number} childId - 子节点ID
+   * 支持双向删除：自动检测两个节点间是否存在边，不管方向
+   * @param {number} nodeId1 - 节点1 ID
+   * @param {number} nodeId2 - 节点2 ID
    * @returns {Object} 操作结果
    */
-  deleteEdge(parentId, childId) {
+  deleteEdge(nodeId1, nodeId2) {
     if (!this.data || !this.data.structure) {
       return { success: false, message: '树结构不存在' };
     }
 
-    const parentNode = this.data.structure.find(node => node.id === parentId);
-    if (!parentNode) {
-      return { success: false, message: `父节点 ${parentId} 不存在` };
+    const node1 = this.data.structure.find(node => node.id === nodeId1);
+    const node2 = this.data.structure.find(node => node.id === nodeId2);
+    
+    if (!node1) {
+      return { success: false, message: `节点 ${nodeId1} 不存在` };
+    }
+    
+    if (!node2) {
+      return { success: false, message: `节点 ${nodeId2} 不存在` };
     }
 
-    if (!parentNode.child_ids || !parentNode.child_ids.includes(childId)) {
-      return { success: false, message: `边 ${parentId} -> ${childId} 不存在` };
+    // 检查两个方向的连接
+    const node1HasChild2 = node1.child_ids && node1.child_ids.includes(nodeId2);
+    const node2HasChild1 = node2.child_ids && node2.child_ids.includes(nodeId1);
+    
+    if (!node1HasChild2 && !node2HasChild1) {
+      return { success: false, message: `节点 ${nodeId1} 和节点 ${nodeId2} 之间没有连接` };
     }
 
-    const updated = {
-      ...this.data,
-      structure: this.data.structure.map(node =>
-        node.id === parentId
-          ? { ...node, child_ids: node.child_ids.filter(id => id !== childId) }
+    let updated = { ...this.data };
+    let deletedEdges = [];
+
+    // 删除找到的边
+    if (node1HasChild2) {
+      updated.structure = updated.structure.map(node =>
+        node.id === nodeId1
+          ? { ...node, child_ids: node.child_ids.filter(id => id !== nodeId2) }
           : node
-      )
-    };
+      );
+      deletedEdges.push(`${nodeId1} -> ${nodeId2}`);
+    }
+    
+    if (node2HasChild1) {
+      updated.structure = updated.structure.map(node =>
+        node.id === nodeId2
+          ? { ...node, child_ids: node.child_ids.filter(id => id !== nodeId1) }
+          : node
+      );
+      deletedEdges.push(`${nodeId2} -> ${nodeId1}`);
+    }
 
     this.notifyDataChange(updated);
     return { 
       success: true, 
-      message: `边 ${parentId} -> ${childId} 已删除`, 
+      message: `已删除连接: ${deletedEdges.join(', ')}`, 
       data: updated
     };
   }

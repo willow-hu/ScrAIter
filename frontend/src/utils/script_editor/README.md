@@ -95,14 +95,12 @@ const levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight;
 ### 5. CollisionDetector (`collisionDetector.js`)
 **职责**: 碰撞检测和几何计算
 - 点与节点的碰撞检测
-- 点与边的碰撞检测
 - 矩形相交判断
 - 节点重叠检测
 
 **主要方法**:
 - `getNodeAtPosition(x, y, nodes, ...)`: 获取指定位置的节点
 - `getNodesInRect(rect, nodes, ...)`: 获取矩形区域内的节点
-- `getEdgeAtPosition(x, y, nodes, ...)`: 获取指定位置的边
 - `nodesOverlap(node1, node2, margin)`: 判断节点是否重叠
 
 ### 6. CheckpointManager (`checkpointManager.js`)
@@ -129,7 +127,7 @@ const levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight;
 - `deleteNode(nodeId)`: 删除节点
 - `updateNode(nodeId, updates)`: 更新节点
 - `addEdge(parentId, childId)`: 添加边
-- `deleteEdge(parentId, childId)`: 删除边
+- `deleteEdge(nodeId1, nodeId2)`: 删除边（支持双向删除）
 
 ### 8. TreeValidator (`treeValidator.js`)
 **职责**: 树结构验证

@@ -17,6 +17,9 @@ export class EventHandler {
     // 添加边状态
     this.addingEdge = null;
     
+    // 删除边状态
+    this.deletingEdge = null;
+    
     // 回调函数
     this.callbacks = {};
   }
@@ -64,6 +67,15 @@ export class EventHandler {
         return;
       }
       
+      if (this.deletingEdge) {
+        // 完成删除边的操作
+        if (this.deletingEdge.id !== node.id) {
+          this.emit('deleteEdge', { nodeId1: this.deletingEdge.id, nodeId2: node.id });
+        }
+        this.deletingEdge = null;
+        return;
+      }
+      
       this.emit('nodeSelect', node);
       this.draggedNode = node;
       const nodePos = getNodeScreenPosition(node);
@@ -74,6 +86,11 @@ export class EventHandler {
     } else {
       if (this.addingEdge) {
         this.addingEdge = null;
+        return;
+      }
+      
+      if (this.deletingEdge) {
+        this.deletingEdge = null;
         return;
       }
       
@@ -201,6 +218,23 @@ export class EventHandler {
   }
 
   /**
+   * 开始删除边
+   * @param {Object} node - 起始节点
+   */
+  startDeletingEdge(node) {
+    this.deletingEdge = node;
+    this.emit('deletingEdgeStart', node);
+  }
+
+  /**
+   * 取消删除边
+   */
+  cancelDeletingEdge() {
+    this.deletingEdge = null;
+    this.emit('deletingEdgeCancel');
+  }
+
+  /**
    * 获取当前状态
    */
   getState() {
@@ -208,7 +242,8 @@ export class EventHandler {
       isDragging: this.isDragging,
       draggedNode: this.draggedNode,
       contextMenu: this.contextMenu,
-      addingEdge: this.addingEdge
+      addingEdge: this.addingEdge,
+      deletingEdge: this.deletingEdge
     };
   }
 
@@ -220,6 +255,7 @@ export class EventHandler {
     this.draggedNode = null;
     this.contextMenu = null;
     this.addingEdge = null;
+    this.deletingEdge = null;
     this.dragStart = { x: 0, y: 0 };
     this.dragOffset = { x: 0, y: 0 };
   }

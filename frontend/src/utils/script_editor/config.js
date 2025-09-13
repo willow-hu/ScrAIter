@@ -1,9 +1,9 @@
 /**
- * Tree Editor 配置文件
+ * Script Editor 配置文件
  * 统一管理所有数值配置，便于调整和维护
  */
 
-export const TREE_EDITOR_CONFIG = {
+export const SCRIPT_EDITOR_CONFIG = {
   // 节点尺寸配置
   node: {
     width: 160,           // 节点宽度
@@ -86,11 +86,6 @@ export const TREE_EDITOR_CONFIG = {
       scaleFactorOut: 0.8,  // 缩小因子
       minScale: 0.1,        // 最小缩放比例
       maxScale: 3,          // 最大缩放比例
-    },
-
-    // 碰撞检测配置
-    collision: {
-      edgeTolerance: 5,     // 边的容错距离（像素）
     },
   },
 };
