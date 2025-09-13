@@ -1,0 +1,74 @@
+/* 文件列表样式 */
+.files-list {
+  width: 100%;
+}
+
+.files-list .ant-collapse > .ant-collapse-item > .ant-collapse-header {
+  padding: 12px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.files-list .ant-collapse-content > .ant-collapse-content-box {
+  padding: 0;
+}
+
+.files-list .ant-table {
+  margin: 0;
+}
+
+.files-list .ant-table-thead > tr > th {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e8e8e8;
+  font-weight: 600;
+}
+
+.files-list .ant-table-tbody > tr:hover > td {
+  background: #f5f8ff;
+}
+
+/* 来源选择器样式 */
+.files-list .ant-select {
+  width: 100% !important;
+}
+
+.files-list .ant-select-selector {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 6px;
+}
+
+.files-list .ant-select:hover .ant-select-selector {
+  border-color: #d9d9d9 !important;
+  background: #fafafa !important;
+}
+
+.files-list .ant-select-focused .ant-select-selector {
+  border-color: #1890ff !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.files-list .ant-select-dropdown {
+  min-width: 120px !important;
+}
+
+.files-list .ant-select-item-option-content .ant-tag {
+  margin: 0 !important;
+}
+
+/* 标签相关样式 */
+.source-tag-required {
+  border: 1px solid #ff4d4f !important;
+  background-color: #fff2f0 !important;
+}
+
+/* 操作按钮样式 */
+.action-buttons .ant-btn {
+  margin-right: 8px;
+}
+
+.action-buttons .ant-btn:last-child {
+  margin-right: 0;
+}

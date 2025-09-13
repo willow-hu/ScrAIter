@@ -243,8 +243,6 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh }) {
             </div>
           )} */}
 
-          <Divider />
-
           {/* 构建控制 */}
           <div>
             {!building ? (

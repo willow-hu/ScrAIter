@@ -1,0 +1,49 @@
+/* 文件上传器样式 - Modal弹窗版本 */
+.file-uploader {
+  width: 100%;
+}
+
+.file-uploader .ant-upload-drag {
+  border: 2px dashed #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+
+.file-uploader .ant-upload-drag:hover {
+  border-color: #1890ff;
+  background: #f0f8ff;
+}
+
+.file-uploader .ant-upload-drag.ant-upload-drag-hover {
+  border-color: #1890ff;
+  background: #f0f8ff;
+}
+
+/* 文件类型图标样式 */
+.file-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* 提示信息样式 */
+.info-tip {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.warning-tip {
+  font-size: 12px;
+  color: #ff4d4f;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.success-tip {
+  font-size: 12px;
+  color: #52c41a;
+  margin-top: 4px;
+  line-height: 1.4;
+}

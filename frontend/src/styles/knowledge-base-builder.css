@@ -1,0 +1,51 @@
+/* 知识库构建器样式 - Modal弹窗版本 */
+.kb-builder {
+  width: 100%;
+}
+
+.kb-builder .ant-select-multiple .ant-select-selection-item {
+  background: #f0f8ff;
+  border: 1px solid #d4edda;
+}
+
+.kb-builder .ant-progress-line {
+  margin: 8px 0;
+}
+
+.kb-builder .ant-alert {
+  margin: 8px 0;
+}
+
+/* 进度条样式 */
+.build-progress {
+  margin: 16px 0;
+}
+
+.build-progress .ant-progress-text {
+  color: #666;
+  font-size: 12px;
+}
+
+/* 构建配置信息样式 */
+.kb-builder .build-config {
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  font-size: 12px;
+  margin: 16px 0;
+}
+
+.kb-builder .build-config .config-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* 表单样式优化 */
+.kb-builder .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.kb-builder .ant-form-item-label > label {
+  font-weight: 600;
+  color: #262626;
+}

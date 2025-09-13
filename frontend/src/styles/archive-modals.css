@@ -1,0 +1,52 @@
+/* Modal弹窗样式 */
+
+/* 通用弹窗样式 */
+.archive-modal .ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+.archive-modal .ant-modal-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.archive-modal .ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 10px 24px;
+}
+
+/* 上传文件弹窗 */
+.upload-modal .ant-modal-body {
+  padding: 24px;
+}
+
+/* 知识库构建弹窗 */
+.kb-build-modal .ant-modal-body {
+  padding: 24px;
+}
+
+/* 标签选择弹窗 */
+.tag-modal .ant-modal-body {
+  padding: 24px;
+}
+
+/* 类目创建弹窗 */
+.category-modal .ant-modal-body {
+  padding: 24px;
+}
+
+/* 加载状态样式 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
