@@ -3,7 +3,7 @@
  * 负责画布坐标与屏幕坐标之间的转换
  */
 
-import { TREE_EDITOR_CONFIG } from './config.js';
+import { SCRIPT_EDITOR_CONFIG } from './config.js';
 
 export class CoordinateTransformer {
   constructor() {
@@ -27,7 +27,7 @@ export class CoordinateTransformer {
    * @returns {Object} 屏幕坐标 {x, y}
    */
   getNodeScreenPosition(node) {
-    const pos = node.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
+    const pos = node.position || SCRIPT_EDITOR_CONFIG.layout.defaultPosition;
     return {
       x: pos.x * this.scale + this.translate.x,
       y: pos.y * this.scale + this.translate.y
@@ -71,7 +71,7 @@ export class CoordinateTransformer {
    * @returns {Object} 新的变换参数 {scale, translate}
    */
   calculateZoomTransform(mouseX, mouseY, delta, currentScale, currentTranslate) {
-    const zoomConfig = TREE_EDITOR_CONFIG.interaction.zoom;
+    const zoomConfig = SCRIPT_EDITOR_CONFIG.interaction.zoom;
     const scaleFactor = delta > 0 ? zoomConfig.scaleFactorOut : zoomConfig.scaleFactorIn;
     const newScale = Math.max(zoomConfig.minScale, Math.min(zoomConfig.maxScale, currentScale * scaleFactor));
     

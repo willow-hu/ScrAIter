@@ -319,9 +319,7 @@ function ScriptEditor() {
   // 添加节点
   const addNode = (position) => {
     const result = treeManager.addNode({ position });
-    if (result.success) {
-      message.success(`${result.message}`);
-    } else {
+    if (!result.success) {
       message.error(result.message);
     }
     updateUndoRedoState();
@@ -335,7 +333,6 @@ function ScriptEditor() {
       if (selectedNode && selectedNode.id === nodeId) {
         setSelectedNode(null);
       }
-      message.success(result.message);
     } else {
       message.error(result.message);
     }
@@ -345,9 +342,7 @@ function ScriptEditor() {
   // 添加边
   const addEdge = (parentId, childId) => {
     const result = treeManager.addEdge(parentId, childId);
-    if (result.success) {
-      message.success(result.message);
-    } else {
+    if (!result.success) {
       message.error(result.message);
     }
     updateUndoRedoState();
@@ -356,9 +351,7 @@ function ScriptEditor() {
   // 删除边
   const deleteEdge = (nodeId1, nodeId2) => {
     const result = treeManager.deleteEdge(nodeId1, nodeId2);
-    if (result.success) {
-      message.success(result.message);
-    } else {
+    if (!result.success) {
       message.error(result.message);
     }
     updateUndoRedoState();
@@ -370,7 +363,7 @@ function ScriptEditor() {
     if (!result.success) {
       message.error(result.message);
     }
-    // 注意：节点位置变化不触发updateUndoRedoState，因为位置不影响保存状态
+
   };
 
   // 处理节点双击编辑

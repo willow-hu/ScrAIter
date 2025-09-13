@@ -188,11 +188,6 @@ export class TreeStructureManager {
       return { success: false, message: `边 ${parentId} -> ${childId} 已存在` };
     }
 
-    // 检查是否会形成环
-    if (this.wouldCreateCycle(childId, parentId)) {
-      return { success: false, message: `添加边 ${parentId} -> ${childId} 会形成环` };
-    }
-
     const updated = {
       ...this.data,
       structure: this.data.structure.map(node =>

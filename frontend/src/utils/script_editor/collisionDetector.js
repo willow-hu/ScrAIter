@@ -3,7 +3,7 @@
  * 负责检测鼠标位置与节点的碰撞
  */
 
-import { TREE_EDITOR_CONFIG } from './config.js';
+import { SCRIPT_EDITOR_CONFIG } from './config.js';
 
 export class CollisionDetector {
   /**
@@ -19,8 +19,8 @@ export class CollisionDetector {
     if (!nodes || nodes.length === 0) return null;
     
     // 计算在当前缩放下的节点尺寸
-    const scaledWidth = TREE_EDITOR_CONFIG.node.width * scale;
-    const scaledHeight = TREE_EDITOR_CONFIG.node.height * scale;
+    const scaledWidth = SCRIPT_EDITOR_CONFIG.node.width * scale;
+    const scaledHeight = SCRIPT_EDITOR_CONFIG.node.height * scale;
     
     for (const node of nodes) {
       const pos = getNodeScreenPosition(node);
@@ -44,8 +44,8 @@ export class CollisionDetector {
   static getNodesInRect(rect, nodes, getNodeScreenPosition, scale) {
     if (!nodes || nodes.length === 0) return [];
     
-    const scaledWidth = TREE_EDITOR_CONFIG.node.width * scale;
-    const scaledHeight = TREE_EDITOR_CONFIG.node.height * scale;
+    const scaledWidth = SCRIPT_EDITOR_CONFIG.node.width * scale;
+    const scaledHeight = SCRIPT_EDITOR_CONFIG.node.height * scale;
     const result = [];
     
     for (const node of nodes) {
@@ -84,12 +84,12 @@ export class CollisionDetector {
    * @returns {boolean} 是否重叠
    */
   static nodesOverlap(node1, node2, margin = 0) {
-    const pos1 = node1.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
-    const pos2 = node2.position || TREE_EDITOR_CONFIG.layout.defaultPosition;
+    const pos1 = node1.position || SCRIPT_EDITOR_CONFIG.layout.defaultPosition;
+    const pos2 = node2.position || SCRIPT_EDITOR_CONFIG.layout.defaultPosition;
     
     return this.rectIntersects(
-      { x: pos1.x - margin, y: pos1.y - margin, width: TREE_EDITOR_CONFIG.node.width + margin * 2, height: TREE_EDITOR_CONFIG.node.height + margin * 2 },
-      { x: pos2.x - margin, y: pos2.y - margin, width: TREE_EDITOR_CONFIG.node.width + margin * 2, height: TREE_EDITOR_CONFIG.node.height + margin * 2 }
+      { x: pos1.x - margin, y: pos1.y - margin, width: SCRIPT_EDITOR_CONFIG.node.width + margin * 2, height: SCRIPT_EDITOR_CONFIG.node.height + margin * 2 },
+      { x: pos2.x - margin, y: pos2.y - margin, width: SCRIPT_EDITOR_CONFIG.node.width + margin * 2, height: SCRIPT_EDITOR_CONFIG.node.height + margin * 2 }
     );
   }
 }

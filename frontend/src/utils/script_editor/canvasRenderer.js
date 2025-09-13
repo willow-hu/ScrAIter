@@ -3,14 +3,14 @@
  * 负责树结构的绘制和渲染
  */
 
-import { TREE_EDITOR_CONFIG } from './config.js';
+import { SCRIPT_EDITOR_CONFIG } from './config.js';
 import { CSSHelper } from './cssHelper.js';
 
 export class CanvasRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    this.config = TREE_EDITOR_CONFIG; // 默认配置
+    this.config = SCRIPT_EDITOR_CONFIG; // 默认配置
   }
 
   /**

@@ -5,7 +5,7 @@ import {
   CanvasRenderer, 
   EventHandler, 
   CollisionDetector,
-  TREE_EDITOR_CONFIG
+  SCRIPT_EDITOR_CONFIG
 } from '../../utils/script_editor/index.js';
 
 const TreeCanvas = forwardRef(({ 
@@ -18,7 +18,7 @@ const TreeCanvas = forwardRef(({
   onAddEdge, 
   onDeleteEdge,
   onUpdateNodePosition,
-  config = TREE_EDITOR_CONFIG  // 接受配置参数，默认使用全局配置
+  config = SCRIPT_EDITOR_CONFIG  // 接受配置参数，默认使用全局配置
 }, ref) => {
   
   const canvasRef = useRef(null);

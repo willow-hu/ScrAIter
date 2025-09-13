@@ -3,15 +3,15 @@
  * 负责计算节点的最优位置，避免重叠，保持层级清晰
  */
 
-import { TREE_EDITOR_CONFIG } from './config.js';
+import { SCRIPT_EDITOR_CONFIG } from './config.js';
 
 /**
  * 树结构自动布局类
  */
 export class TreeLayoutManager {
   constructor() {
-    this.levelHeight = TREE_EDITOR_CONFIG.layout.levelHeight;
-    this.nodeSpacing = TREE_EDITOR_CONFIG.layout.nodeSpacing;
+    this.levelHeight = SCRIPT_EDITOR_CONFIG.layout.levelHeight;
+    this.nodeSpacing = SCRIPT_EDITOR_CONFIG.layout.nodeSpacing;
   }
 
   /**
@@ -34,11 +34,11 @@ export class TreeLayoutManager {
     const roots = nodes.filter(node => !hasParent.has(node.id));
 
     // 布局每个根节点
-    let rootStartX = TREE_EDITOR_CONFIG.layout.rootStartX;
+    let rootStartX = SCRIPT_EDITOR_CONFIG.layout.rootStartX;
     roots.forEach((root, rootIndex) => {
       const rootWidth = this.calculateSubtreeWidth(root.id, nodeMap);
       this.layoutTree(root.id, 0, rootStartX + rootWidth / 2, rootWidth, nodeMap, positions, usedPositions);
-      rootStartX += rootWidth + this.nodeSpacing * TREE_EDITOR_CONFIG.layout.rootSpacingMultiplier; // 根节点之间留更大间距
+      rootStartX += rootWidth + this.nodeSpacing * SCRIPT_EDITOR_CONFIG.layout.rootSpacingMultiplier; // 根节点之间留更大间距
     });
 
     return positions;
@@ -53,7 +53,7 @@ export class TreeLayoutManager {
   calculateSubtreeWidth(nodeId, nodeMap) {
     const node = nodeMap.get(nodeId);
     if (!node || !node.child_ids || node.child_ids.length === 0) {
-      return TREE_EDITOR_CONFIG.node.width;
+      return SCRIPT_EDITOR_CONFIG.node.width;
     }
     
     let totalWidth = 0;
@@ -61,7 +61,7 @@ export class TreeLayoutManager {
       totalWidth += this.calculateSubtreeWidth(childId, nodeMap);
     });
     
-    return Math.max(TREE_EDITOR_CONFIG.node.width, totalWidth + (node.child_ids.length - 1) * this.nodeSpacing);
+    return Math.max(SCRIPT_EDITOR_CONFIG.node.width, totalWidth + (node.child_ids.length - 1) * this.nodeSpacing);
   }
 
   /**
@@ -82,7 +82,7 @@ export class TreeLayoutManager {
     
     if (children.length === 0) {
       // 叶子节点，直接放置在centerX位置
-      positions.set(nodeId, { x: centerX - TREE_EDITOR_CONFIG.node.width / 2, y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset });
+      positions.set(nodeId, { x: centerX - SCRIPT_EDITOR_CONFIG.node.width / 2, y: level * this.levelHeight + SCRIPT_EDITOR_CONFIG.layout.initialYOffset });
       return;
     }
 
@@ -101,8 +101,8 @@ export class TreeLayoutManager {
 
     // 放置当前节点
     positions.set(nodeId, { 
-      x: adjustedCenterX - TREE_EDITOR_CONFIG.node.width / 2, 
-      y: level * this.levelHeight + TREE_EDITOR_CONFIG.layout.initialYOffset 
+      x: adjustedCenterX - SCRIPT_EDITOR_CONFIG.node.width / 2, 
+      y: level * this.levelHeight + SCRIPT_EDITOR_CONFIG.layout.initialYOffset 
     });
 
     // 布局子节点
@@ -121,15 +121,15 @@ export class TreeLayoutManager {
     let adjustedCenterX = centerX;
     
     // 计算当前节点和子节点占用的范围
-    const nodeLeft = adjustedCenterX - TREE_EDITOR_CONFIG.node.width / 2;
-    const nodeRight = adjustedCenterX + TREE_EDITOR_CONFIG.node.width / 2;
+    const nodeLeft = adjustedCenterX - SCRIPT_EDITOR_CONFIG.node.width / 2;
+    const nodeRight = adjustedCenterX + SCRIPT_EDITOR_CONFIG.node.width / 2;
     
     // 检查与同级其他节点的冲突
     const levelPositions = usedPositions.get(level) || [];
     for (const usedPos of levelPositions) {
       if (nodeRight + this.nodeSpacing > usedPos.left && nodeLeft < usedPos.right + this.nodeSpacing) {
         // 发生冲突，需要向右移动
-        adjustedCenterX = usedPos.right + this.nodeSpacing + TREE_EDITOR_CONFIG.node.width / 2;
+        adjustedCenterX = usedPos.right + this.nodeSpacing + SCRIPT_EDITOR_CONFIG.node.width / 2;
       }
     }
 
@@ -154,8 +154,8 @@ export class TreeLayoutManager {
    * @param {Map} usedPositions - 已使用位置映射
    */
   recordNodePosition(centerX, level, usedPositions) {
-    const nodeLeft = centerX - TREE_EDITOR_CONFIG.node.width / 2;
-    const nodeRight = centerX + TREE_EDITOR_CONFIG.node.width / 2;
+    const nodeLeft = centerX - SCRIPT_EDITOR_CONFIG.node.width / 2;
+    const nodeRight = centerX + SCRIPT_EDITOR_CONFIG.node.width / 2;
     
     if (!usedPositions.has(level)) {
       usedPositions.set(level, []);
