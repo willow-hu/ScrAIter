@@ -7,7 +7,6 @@
 @import './app.css';
 
 /* 脚本编辑器样式 */
-@import './script-editor.css';
 @import './tree-vis.css';
 @import './node-edit-modal.css';
 @import './sidebar.css';
