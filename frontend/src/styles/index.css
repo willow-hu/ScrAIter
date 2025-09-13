@@ -10,6 +10,7 @@
 @import './tree-vis.css';
 @import './node-edit-modal.css';
 @import './sidebar.css';
+@import './draft-generator.css';
 
 /* 资料管理样式 */
 @import './archive-layout.css';

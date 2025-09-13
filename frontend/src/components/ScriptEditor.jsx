@@ -3,12 +3,16 @@ import { message } from 'antd';
 import TreeCanvas from './modules/TreeCanvas';
 import Sidebar from './modules/Sidebar';
 import NodeEditModal from './modules/NodeEditModal';
+import DraftGenerator from './modules/DraftGenerator';
 import { isValidTree } from '../utils/script_editor/treeValidator';
 import { createCheckpointManager, DataCacheManager } from '../utils/script_editor/checkpointManager';
 import { createTreeStructureManager } from '../utils/script_editor/treeStructureManager';
 import { TreeLayoutManager } from '../utils/script_editor/index.js';
 
 function ScriptEditor() {
+  // 界面模式控制：'draft' 表示生成初稿模式，'editor' 表示编辑模式
+  const [currentMode, setCurrentMode] = useState('draft');
+  
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(350);
@@ -60,8 +64,43 @@ function ScriptEditor() {
     setCanRedo(status.canRedo);
   };
 
+  // 初始模式检查
+  useEffect(() => {
+    // 如果有缓存数据，直接进入编辑模式
+    if (DataCacheManager.hasCache()) {
+      setCurrentMode('editor');
+    }
+  }, []);
+
+  // 处理初稿确认，进入编辑模式
+  const handleDraftConfirmed = (draftData) => {
+    // 为数据添加自动布局位置（如果没有位置信息的话）
+    const hasPositions = draftData.structure && draftData.structure.some(node => node.position);
+    const dataWithPositions = hasPositions ? draftData : addAutoLayoutPositions(draftData);
+    
+    // 初始化管理器
+    checkpointManager.initialize(dataWithPositions);
+    treeManager.setData(dataWithPositions);
+    setTreeData(dataWithPositions);
+    
+    // 保存到缓存
+    DataCacheManager.saveToCache(dataWithPositions);
+    checkpointManager.updateWorkingData(dataWithPositions);
+    updateUndoRedoState();
+    
+    // 切换到编辑模式
+    setCurrentMode('editor');
+    
+    message.success('初稿已确认，开始编辑模式');
+  };
+
   // 加载初始数据
   useEffect(() => {
+    // 只在编辑模式下加载数据
+    if (currentMode !== 'editor') {
+      return;
+    }
+
     const loadInitialData = async () => {
       try {
         // 尝试从项目API加载twin_pagoda项目
@@ -155,7 +194,7 @@ function ScriptEditor() {
     };
 
     loadInitialData();
-  }, [checkpointManager, treeManager]);
+  }, [currentMode, checkpointManager, treeManager]);
 
   // 处理鼠标调整侧边栏宽度
   const handleMouseDown = useCallback((e) => {
@@ -377,10 +416,24 @@ function ScriptEditor() {
     setNodeEditModalVisible(false);
   };
 
+  // 如果是生成初稿模式，显示初稿生成器
+  if (currentMode === 'draft') {
+    return (
+      <DraftGenerator 
+        onDraftConfirmed={handleDraftConfirmed}
+        onBack={() => {
+          // 可以添加返回逻辑，比如返回到资料管理页面
+        }}
+      />
+    );
+  }
+
+  // 编辑模式下，如果没有数据则显示加载状态
   if (!treeData) {
     return <div>加载中...</div>;
   }
 
+  // 编辑模式的正常界面
   return (
     <>
       <TreeCanvas
