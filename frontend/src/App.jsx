@@ -16,12 +16,6 @@ function App() {
             资料管理
           </button>
           <button 
-            className={`nav-tab ${activeTab === 'generator' ? 'active' : ''}`}
-            onClick={() => setActiveTab('generator')}
-          >
-            结构生成
-          </button>
-          <button 
             className={`nav-tab ${activeTab === 'script' ? 'active' : ''}`}
             onClick={() => setActiveTab('script')}
           >
@@ -38,12 +32,6 @@ function App() {
       
       <div className="main-content">
         {activeTab === 'archive' && <ArchiveManager />}
-        {activeTab === 'generator' && (
-          <div className="placeholder">
-            <h2>结构生成</h2>
-            <p>结构生成功能尚需规划</p>
-          </div>
-        )}
         {activeTab === 'script' && <ScriptEditor />}
         {/* {activeTab === 'review' && (
           <div className="placeholder">
