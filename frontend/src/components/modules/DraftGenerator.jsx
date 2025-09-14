@@ -27,18 +27,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 // 预设的prompt模板
-const DEFAULT_PROMPT = `基于提供的知识库内容，请生成一个结构化的剧本大纲。
-
-要求：
-1. 生成一个树状结构的剧本大纲，包含主要章节和子章节
-2. 每个节点都要有简明的标题和简短的描述
-3. 确保逻辑连贯，故事流畅
-4. 适合AR城市博物馆导览的内容风格
-
-用户补充需求：
-{user_input}
-
-请生成结构化的剧本大纲。`;
+const DEFAULT_PROMPT = `<Placeholder>`;
 
 function DraftGenerator({ onDraftConfirmed, onBack }) {
   // 状态管理
@@ -254,45 +243,11 @@ function DraftGenerator({ onDraftConfirmed, onBack }) {
               </div>
             )}
           </div>
-
-          {/* 底部操作按钮 */}
-          {generatedDraft && (
-            <div style={{ 
-              position: 'absolute', 
-              bottom: 20, 
-              left: 20, 
-              right: 20,
-              textAlign: 'center'
-            }}>
-              <Space size="large">
-                <Button 
-                  type="default" 
-                  icon={<ReloadOutlined />}
-                  onClick={regenerateDraft}
-                  disabled={generating}
-                >
-                  重新生成
-                </Button>
-                <Button 
-                  type="primary" 
-                  icon={<CheckOutlined />}
-                  size="large"
-                  onClick={confirmDraft}
-                  disabled={generating}
-                >
-                  确认初稿，开始编辑
-                </Button>
-              </Space>
-            </div>
-          )}
         </Col>
 
         {/* 右侧：控制面板 */}
         <Col span={8} style={{ height: '100%', padding: '20px', overflowY: 'auto' }}>
-          <Title level={4}>生成剧本初稿</Title>
-          <Paragraph type="secondary">
-            使用GraphRAG技术基于知识库内容生成结构化的剧本大纲
-          </Paragraph>
+          <Title level={4}>生成剧本大纲初稿</Title>
 
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             {/* 知识库选择 */}
@@ -311,47 +266,22 @@ function DraftGenerator({ onDraftConfirmed, onBack }) {
                   <Option key={kb.name} value={kb.name}>
                     <div>
                       <div>{kb.name}</div>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {kb.document_count || 0}个文档切片
-                      </Text>
                     </div>
                   </Option>
                 ))}
               </Select>
-
-              {selectedKB && (
-                <Alert
-                  message={`已选择: ${selectedKB.name}`}
-                  description={`包含${selectedKB.document_count || 0}个文档切片，涵盖${selectedKB.categories?.join('、') || '未知'}类目`}
-                  type="info"
-                  showIcon
-                  style={{ marginTop: 12 }}
-                />
-              )}
             </Card>
 
             {/* Prompt编辑 */}
-            <Card title="编辑生成要求" size="small">
+            <Card title="添加要求" size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div>
-                  <Text strong>用户需求：</Text>
+                  {/* <Text strong>用户需求：</Text> */}
                   <TextArea
-                    placeholder="描述你对剧本的特殊要求，例如：重点突出某个主题、面向特定观众群体等"
+                    placeholder="描述你对剧本的特殊要求，例如：重点突出某个主题、面向特定观众群体等。这些要求将被添加到提示词中。"
                     value={userPrompt}
                     onChange={(e) => setUserPrompt(e.target.value)}
                     rows={3}
-                  />
-                </div>
-
-                <Divider />
-
-                <div>
-                  <Text strong>完整Prompt预览：</Text>
-                  <TextArea
-                    value={fullPrompt}
-                    readOnly
-                    rows={8}
-                    style={{ marginTop: 8, backgroundColor: '#f5f5f5' }}
                   />
                 </div>
               </Space>
@@ -361,7 +291,6 @@ function DraftGenerator({ onDraftConfirmed, onBack }) {
             <Card title="生成控制" size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Button
-                  type="primary"
                   icon={<PlayCircleOutlined />}
                   onClick={generateDraft}
                   disabled={!selectedKB || generating}
@@ -369,7 +298,18 @@ function DraftGenerator({ onDraftConfirmed, onBack }) {
                   size="large"
                   style={{ width: '100%' }}
                 >
-                  {generatedDraft ? '重新生成初稿' : '生成初稿'}
+                  {generatedDraft ? '不满意？再试一次！' : '生成初稿'}
+                </Button>
+
+                <Button 
+                  type="primary" 
+                  icon={<CheckOutlined />}
+                  size="large"
+                  onClick={confirmDraft}
+                  style={{ width: '100%' }}
+                  disabled={generating}
+                >
+                  确认初稿，开始编辑
                 </Button>
 
                 {!selectedKB && (
@@ -378,14 +318,6 @@ function DraftGenerator({ onDraftConfirmed, onBack }) {
                   </Text>
                 )}
               </Space>
-            </Card>
-
-            {/* GraphRAG说明 */}
-            <Card title="GraphRAG技术说明" size="small">
-              <Paragraph style={{ fontSize: '12px', margin: 0 }}>
-                GraphRAG将从知识库中提取结构化信息，结合大语言模型的创作能力，生成逻辑清晰、内容丰富的剧本大纲。
-                生成的初稿可以作为创作的起点，您可以在后续编辑中进行调整和完善。
-              </Paragraph>
             </Card>
           </Space>
         </Col>
