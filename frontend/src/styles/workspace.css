@@ -95,3 +95,11 @@
     margin-left: 0 !important;
   }
 }
+
+/* Script Editor 特殊样式 */
+.script-editor {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}

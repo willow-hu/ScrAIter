@@ -147,6 +147,14 @@ const TreeCanvas = forwardRef(({
 
   // 渲染画布
   useEffect(() => {
+    console.log('TreeCanvas渲染开始:', { 
+      hasRenderer: !!renderer.current, 
+      hasCanvas: !!canvasRef.current,
+      treeDataNodes: treeData?.structure?.length || 0,
+      scale,
+      translate
+    });
+    
     if (!renderer.current) return;
     
     const canvas = canvasRef.current;
@@ -154,6 +162,7 @@ const TreeCanvas = forwardRef(({
     
     // 设置画布尺寸
     const rect = canvas.parentElement.getBoundingClientRect();
+    console.log('Canvas尺寸:', rect.width, 'x', rect.height);
     renderer.current.setSize(rect.width, rect.height);
     
     // 渲染树结构
@@ -164,6 +173,7 @@ const TreeCanvas = forwardRef(({
       translate,
       config
     );
+    console.log('TreeCanvas渲染完成');
   }, [treeData, selectedNode, scale, translate]);
 
   return (

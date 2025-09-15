@@ -10,6 +10,7 @@ import { createTreeStructureManager } from '../../utils/script_editor/treeStruct
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 
 function ScriptEditor() {
+  console.log('ScriptEditor 组件已渲染');
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
@@ -58,6 +59,7 @@ function ScriptEditor() {
 
   // 加载初始数据
   useEffect(() => {
+    console.log('useEffect: 开始加载数据');
     const loadInitialData = async () => {
       try {
         const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree');
@@ -80,6 +82,7 @@ function ScriptEditor() {
             checkpointManager.updateWorkingData(dataWithPositions);
           }
           updateUndoRedoState();
+          console.log('API数据加载成功:', dataWithPositions);
         } else {
           console.log('项目文件不存在，尝试加载fallback文件...');
           const fallbackResponse = await fetch('/flat_anchor_tree.json');
@@ -102,6 +105,7 @@ function ScriptEditor() {
               checkpointManager.updateWorkingData(dataWithPositions);
             }
             updateUndoRedoState();
+            console.log('Fallback数据加载成功:', dataWithPositions);
           } else {
             throw new Error('无法加载树数据');
           }
@@ -135,7 +139,9 @@ function ScriptEditor() {
       }
     };
 
-    loadInitialData();
+    loadInitialData().catch(err => {
+      console.error('loadInitialData failed:', err);
+    });
   }, [checkpointManager, treeManager]);
 
   // 保存修改
@@ -321,11 +327,16 @@ function ScriptEditor() {
   };
 
   if (!treeData) {
-    return <div>加载中...</div>;
+    return <div style={{ 
+      height: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center' 
+    }}>加载中...</div>;
   }
 
   return (
-    <div style={{ position: 'relative', height: '100vh' }}>
+    <div className="script-editor">
       <TreeCanvas
         ref={treeCanvasRef}
         treeData={treeData}
@@ -337,6 +348,7 @@ function ScriptEditor() {
         onAddEdge={addEdge}
         onDeleteEdge={deleteEdge}
         onUpdateNodePosition={updateNodePosition}
+        style={{ width: '100%', height: '100%' }}
       />
       
       {/* 浮动按钮 */}
