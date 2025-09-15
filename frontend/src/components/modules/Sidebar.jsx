@@ -21,7 +21,8 @@ function Sidebar({
   onRedo,
   onReset,
   canUndo = false,
-  canRedo = false
+  canRedo = false,
+  inDrawer = false
 }) {
   const [editingGlobal, setEditingGlobal] = useState(false);
   const [globalForm, setGlobalForm] = useState({});
@@ -101,8 +102,13 @@ function Sidebar({
   };
 
   return (
-    <div className="sidebar" style={{ width: `${width}px` }}>
-      <Title level={4} style={{ marginBottom: '16px', color: '#333' }}>🛠️ 操作面板</Title>
+    <div className="sidebar" style={{ 
+      width: inDrawer ? '100%' : `${width}px`,
+      padding: inDrawer ? '16px' : '20px',
+      height: inDrawer ? 'auto' : '100vh',
+      overflowY: inDrawer ? 'visible' : 'auto'
+    }}>
+      {!inDrawer && <Title level={4} style={{ marginBottom: '16px', color: '#333' }}>🛠️ 操作面板</Title>}
       
       <Space direction="vertical" style={{ width: '100%' }}>
         {/* 操作按钮 */}

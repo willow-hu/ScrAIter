@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { message } from 'antd';
-import TreeCanvas from './modules/TreeCanvas';
-import Sidebar from './modules/Sidebar';
-import NodeEditModal from './modules/NodeEditModal';
-import DraftGenerator from './modules/DraftGenerator';
-import { isValidTree } from '../utils/script_editor/treeValidator';
-import { createCheckpointManager, DataCacheManager } from '../utils/script_editor/checkpointManager';
-import { createTreeStructureManager } from '../utils/script_editor/treeStructureManager';
-import { TreeLayoutManager } from '../utils/script_editor/index.js';
+import { message, Button, Drawer, FloatButton } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
+import TreeCanvas from '../modules/TreeCanvas';
+import Sidebar from '../modules/Sidebar';
+import NodeEditModal from '../modules/NodeEditModal';
+import { isValidTree } from '../../utils/script_editor/treeValidator';
+import { createCheckpointManager, DataCacheManager } from '../../utils/script_editor/checkpointManager';
+import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
+import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 
 function ScriptEditor() {
-  // 界面模式控制：'draft' 表示生成初稿模式，'editor' 表示编辑模式
-  const [currentMode, setCurrentMode] = useState('draft');
-  
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [sidebarWidth, setSidebarWidth] = useState(350);
-  const [isResizing, setIsResizing] = useState(false);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [drawerWidth, setDrawerWidth] = useState(400);
   
   // TreeCanvas ref
   const treeCanvasRef = useRef(null);
@@ -34,13 +31,9 @@ function ScriptEditor() {
   const addAutoLayoutPositions = (data) => {
     if (!data || !data.structure) return data;
     
-    // 创建数据副本
     const dataWithPositions = JSON.parse(JSON.stringify(data));
-    
-    // 计算自动布局位置
     const positions = layoutManager.layoutNodes(dataWithPositions.structure);
     
-    // 为每个节点添加位置信息
     dataWithPositions.structure = dataWithPositions.structure.map(node => ({
       ...node,
       position: positions.get(node.id) || { x: 400, y: 100 }
@@ -53,7 +46,6 @@ function ScriptEditor() {
   const [treeManager] = useState(() => createTreeStructureManager(null, (newData) => {
     setTreeData(newData);
     DataCacheManager.saveToCache(newData);
-    // 更新checkpointManager的工作数据，用于检测未保存的修改
     checkpointManager.updateWorkingData(newData);
   }));
 
@@ -64,62 +56,21 @@ function ScriptEditor() {
     setCanRedo(status.canRedo);
   };
 
-  // 初始模式检查
-  useEffect(() => {
-    // 如果有缓存数据，直接进入编辑模式
-    if (DataCacheManager.hasCache()) {
-      setCurrentMode('editor');
-    }
-  }, []);
-
-  // 处理初稿确认，进入编辑模式
-  const handleDraftConfirmed = (draftData) => {
-    // 为数据添加自动布局位置（如果没有位置信息的话）
-    const hasPositions = draftData.structure && draftData.structure.some(node => node.position);
-    const dataWithPositions = hasPositions ? draftData : addAutoLayoutPositions(draftData);
-    
-    // 初始化管理器
-    checkpointManager.initialize(dataWithPositions);
-    treeManager.setData(dataWithPositions);
-    setTreeData(dataWithPositions);
-    
-    // 保存到缓存
-    DataCacheManager.saveToCache(dataWithPositions);
-    checkpointManager.updateWorkingData(dataWithPositions);
-    updateUndoRedoState();
-    
-    // 切换到编辑模式
-    setCurrentMode('editor');
-    
-    message.success('初稿已确认，开始编辑模式');
-  };
-
   // 加载初始数据
   useEffect(() => {
-    // 只在编辑模式下加载数据
-    if (currentMode !== 'editor') {
-      return;
-    }
-
     const loadInitialData = async () => {
       try {
-        // 尝试从项目API加载twin_pagoda项目
         const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree');
         
         if (response.ok) {
           const data = await response.json();
-          
-          // 为数据添加自动布局位置（如果没有位置信息的话）
           const hasPositions = data.structure && data.structure.some(node => node.position);
           const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
           
-          // 初始化管理器
           checkpointManager.initialize(dataWithPositions);
           treeManager.setData(dataWithPositions);
           
-          // 检查是否有缓存的数据
           if (DataCacheManager.hasCache()) {
-            // 如果有缓存数据则恢复
             const cachedData = DataCacheManager.loadFromCache();
             setTreeData(cachedData);
             treeManager.setData(cachedData);
@@ -130,24 +81,18 @@ function ScriptEditor() {
           }
           updateUndoRedoState();
         } else {
-          // 如果项目API失败，尝试加载public文件夹中的fallback文件
           console.log('项目文件不存在，尝试加载fallback文件...');
           const fallbackResponse = await fetch('/flat_anchor_tree.json');
           
           if (fallbackResponse.ok) {
             const data = await fallbackResponse.json();
-            
-            // 为数据添加自动布局位置（如果没有位置信息的话）
             const hasPositions = data.structure && data.structure.some(node => node.position);
             const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
             
-            // 初始化管理器
             checkpointManager.initialize(dataWithPositions);
             treeManager.setData(dataWithPositions);
             
-            // 检查是否有缓存的数据
             if (DataCacheManager.hasCache()) {
-              // 如果有缓存数据则恢复
               const cachedData = DataCacheManager.loadFromCache();
               setTreeData(cachedData);
               treeManager.setData(cachedData);
@@ -163,7 +108,6 @@ function ScriptEditor() {
         }
       } catch (error) {
         console.error('Failed to load tree data:', error);
-        // 如果加载失败，使用默认数据
         const defaultData = {
           global_context: {
             narrator_role: "讲述者",
@@ -182,9 +126,7 @@ function ScriptEditor() {
           ]
         };
         
-        // 为默认数据添加自动布局位置
         const defaultDataWithPositions = addAutoLayoutPositions(defaultData);
-        
         setTreeData(defaultDataWithPositions);
         checkpointManager.initialize(defaultDataWithPositions);
         treeManager.setData(defaultDataWithPositions);
@@ -194,37 +136,9 @@ function ScriptEditor() {
     };
 
     loadInitialData();
-  }, [currentMode, checkpointManager, treeManager]);
+  }, [checkpointManager, treeManager]);
 
-  // 处理鼠标调整侧边栏宽度
-  const handleMouseDown = useCallback((e) => {
-    setIsResizing(true);
-  }, []);
-
-  const handleMouseMove = useCallback((e) => {
-    if (isResizing) {
-      const newWidth = window.innerWidth - e.clientX;
-      setSidebarWidth(Math.max(300, Math.min(600, newWidth)));
-    }
-  }, [isResizing]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  // 添加事件监听器
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isResizing, handleMouseMove, handleMouseUp]);
-
-  // 保存修改 - 创建新的checkpoint并保存到服务器
+  // 保存修改
   const handleSave = async () => {
     if (!treeData) return;
     
@@ -232,7 +146,6 @@ function ScriptEditor() {
     if (result.success) {
       updateUndoRedoState();
       
-      // 保存到服务器（项目API）
       try {
         const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree', {
           method: 'POST',
@@ -245,7 +158,6 @@ function ScriptEditor() {
         if (response.ok) {
           message.success(`${result.message}`);
         } else {
-          // 如果服务器保存失败，仍然显示本地保存成功，但添加警告
           message.warning(`${result.message}`);
         }
       } catch (error) {
@@ -253,11 +165,9 @@ function ScriptEditor() {
         message.warning(`${result.message}`);
       }
       
-      // 保存到localStorage（本地备份）
       localStorage.setItem('treeData', JSON.stringify(treeData));
       
     } else {
-      // 如果是"已是最新！"的情况，显示信息提示而不是错误提示
       if (result.message === '已是最新！') {
         message.info(result.message);
       } else {
@@ -275,7 +185,6 @@ function ScriptEditor() {
       updateUndoRedoState();
       setSelectedNode(null);
       
-      // 如果是恢复未保存修改，显示相应消息
       if (result.wasUnsavedRevert && result.message) {
         message.info(result.message);
       }
@@ -292,7 +201,6 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      // message.success(result.message);
     } else {
       message.warning(result.message);
     }
@@ -306,7 +214,6 @@ function ScriptEditor() {
       treeManager.setData(result.data);
       updateUndoRedoState();
       setSelectedNode(null);
-      
       message.success(result.message);
     } else {
       message.error(result.message);
@@ -346,7 +253,6 @@ function ScriptEditor() {
     if (!result.success) {
       message.error(result.message);
     } else {
-      // 如果当前选中的节点被更新，同步更新选中节点数据
       if (selectedNode && selectedNode.id === nodeId) {
         const updatedNode = treeManager.getNode(nodeId);
         setSelectedNode(updatedNode);
@@ -368,7 +274,6 @@ function ScriptEditor() {
   const deleteNode = (nodeId) => {
     const result = treeManager.deleteNode(nodeId);
     if (result.success) {
-      // 如果删除的是当前选中的节点，清除选择
       if (selectedNode && selectedNode.id === nodeId) {
         setSelectedNode(null);
       }
@@ -402,7 +307,6 @@ function ScriptEditor() {
     if (!result.success) {
       message.error(result.message);
     }
-
   };
 
   // 处理节点双击编辑
@@ -416,26 +320,12 @@ function ScriptEditor() {
     setNodeEditModalVisible(false);
   };
 
-  // 如果是生成初稿模式，显示初稿生成器
-  if (currentMode === 'draft') {
-    return (
-      <DraftGenerator 
-        onDraftConfirmed={handleDraftConfirmed}
-        onBack={() => {
-          // 可以添加返回逻辑，比如返回到资料管理页面
-        }}
-      />
-    );
-  }
-
-  // 编辑模式下，如果没有数据则显示加载状态
   if (!treeData) {
     return <div>加载中...</div>;
   }
 
-  // 编辑模式的正常界面
   return (
-    <>
+    <div style={{ position: 'relative', height: '100vh' }}>
       <TreeCanvas
         ref={treeCanvasRef}
         treeData={treeData}
@@ -449,26 +339,44 @@ function ScriptEditor() {
         onUpdateNodePosition={updateNodePosition}
       />
       
-      <div 
-        className="resizer" 
-        onMouseDown={handleMouseDown}
-        style={{ cursor: isResizing ? 'col-resize' : 'col-resize' }}
+      {/* 浮动按钮 */}
+      <FloatButton
+        icon={<SettingOutlined />}
+        type="primary"
+        style={{
+          right: 24,
+          bottom: 24,
+        }}
+        onClick={() => setDrawerVisible(true)}
       />
-      
-      <Sidebar
-        width={sidebarWidth}
-        treeData={treeData}
-        selectedNode={selectedNode}
-        onSave={handleSave}
-        onExport={handleExport}
-        onUpdateGlobalContext={updateGlobalContext}
-        onUpdateNode={updateNode}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onReset={handleReset}
-        canUndo={canUndo}
-        canRedo={canRedo}
-      />
+
+      {/* 抽屉 */}
+      <Drawer
+        title="脚本编辑工具"
+        placement="right"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={drawerWidth}
+        styles={{
+          body: { padding: 0 }
+        }}
+      >
+        <Sidebar
+          width={drawerWidth}
+          treeData={treeData}
+          selectedNode={selectedNode}
+          onSave={handleSave}
+          onExport={handleExport}
+          onUpdateGlobalContext={updateGlobalContext}
+          onUpdateNode={updateNode}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onReset={handleReset}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          inDrawer={true}
+        />
+      </Drawer>
 
       {/* 节点编辑模态框 */}
       <NodeEditModal
@@ -478,7 +386,7 @@ function ScriptEditor() {
         onClose={handleCloseNodeEdit}
         onSave={updateNode}
       />
-    </>
+    </div>
   );
 }
 

@@ -1,0 +1,97 @@
+/* Workspace布局样式 */
+
+/* 侧边栏样式 */
+.ant-layout-sider {
+  background: #fff !important;
+  border-right: 1px solid #f0f0f0;
+}
+
+.ant-layout-sider .ant-menu {
+  background: transparent;
+  border: none;
+}
+
+.ant-layout-sider .ant-menu-item {
+  height: 48px;
+  line-height: 48px;
+  margin: 4px 8px;
+  border-radius: 6px;
+  color: #666;
+}
+
+.ant-layout-sider .ant-menu-item:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.ant-layout-sider .ant-menu-item-selected {
+  background-color: #e6e6e6 !important;
+  color: #333 !important;
+}
+
+.ant-layout-sider .ant-menu-item-icon {
+  font-size: 16px;
+  color: inherit;
+}
+
+/* 文件管理页面样式 */
+.file-manager {
+  height: 100vh;
+  background: #fff;
+}
+
+.file-manager .ant-layout-content {
+  background: #fff;
+}
+
+/* 知识库管理页面样式 */
+.knowledge-base-manager {
+  height: 100vh;
+  background: #fff;
+}
+
+.knowledge-base-manager .ant-layout-content {
+  background: #fff;
+}
+
+/* 大纲生成器样式 */
+.outline-generator {
+  height: 100vh;
+  background: #fff;
+}
+
+/* 脚本编辑器样式 */
+.script-editor {
+  height: 100vh;
+  position: relative;
+}
+
+/* 浮动按钮样式调整 */
+.ant-float-btn {
+  right: 24px !important;
+  bottom: 24px !important;
+}
+
+/* 抽屉内的侧边栏样式调整 */
+.ant-drawer .sidebar {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 抽屉标题样式 */
+.ant-drawer-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 响应式处理 */
+@media (max-width: 768px) {
+  .ant-layout-sider {
+    position: fixed !important;
+    z-index: 1000;
+    height: 100vh;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+  }
+}

@@ -1,46 +1,49 @@
-import React, { act, useState } from 'react';
-import ArchiveManager from './components/ArchiveManager';
-import ScriptEditor from './components/ScriptEditor';
+import React, { useState } from 'react';
+import { Layout } from 'antd';
+import Navigation from './components/workspace/Navigation';
+import FileManager from './components/workspace/FileManager';
+import KnowledgeBaseManager from './components/workspace/KnowledgeBaseManager';
+import OutlineGenerator from './components/workspace/OutlineGenerator';
+import ScriptEditor from './components/workspace/ScriptEditor';
+
+const { Content } = Layout;
 
 function App() {
-  const [activeTab, setActiveTab] = useState('archive');
+  const [activeView, setActiveView] = useState('files');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(250);
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'files':
+        return <FileManager />;
+      case 'knowledge-base':
+        return <KnowledgeBaseManager />;
+      case 'outline':
+        return <OutlineGenerator />;
+      case 'script':
+        return <ScriptEditor />;
+      default:
+        return <FileManager />;
+    }
+  };
 
   return (
-    <div className="app">
-      <nav className="navbar">
-        <div className="nav-tabs">
-          <button
-            className={`nav-tab ${activeTab === 'archive' ? 'active' : ''}`}
-            onClick={() => setActiveTab('archive')}
-          >
-            资料管理
-          </button>
-          <button 
-            className={`nav-tab ${activeTab === 'script' ? 'active' : ''}`}
-            onClick={() => setActiveTab('script')}
-          >
-            脚本创作
-          </button>
-          {/* <button 
-            className={`nav-tab ${activeTab === 'review' ? 'active' : ''}`}
-            onClick={() => setActiveTab('review')}
-          >
-            内容校对
-          </button> */}
-        </div>
-      </nav>
-      
-      <div className="main-content">
-        {activeTab === 'archive' && <ArchiveManager />}
-        {activeTab === 'script' && <ScriptEditor />}
-        {/* {activeTab === 'review' && (
-          <div className="placeholder">
-            <h2>内容校对</h2>
-            <p>内容校对功能待开发</p>
-          </div>
-        )} */}
-      </div>
-    </div>
+    <Layout className="app">
+      <Navigation
+        activeView={activeView}
+        onViewChange={setActiveView}
+        collapsed={sidebarCollapsed}
+        onCollapse={setSidebarCollapsed}
+        width={sidebarWidth}
+        onWidthChange={setSidebarWidth}
+      />
+      <Layout style={{ marginLeft: sidebarCollapsed ? 80 : sidebarWidth }}>
+        <Content className="main-content">
+          {renderContent()}
+        </Content>
+      </Layout>
+    </Layout>
   );
 }
 

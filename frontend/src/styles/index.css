@@ -6,6 +6,9 @@
 /* 应用主框架样式 */
 @import './app.css';
 
+/* Workspace布局样式 */
+@import './workspace.css';
+
 /* 脚本编辑器样式 */
 @import './tree-vis.css';
 @import './node-edit-modal.css';
@@ -13,7 +16,6 @@
 @import './draft-generator.css';
 
 /* 资料管理样式 */
-@import './archive-layout.css';
 @import './file-uploader.css';
 @import './file-list.css';
 @import './knowledge-base-builder.css';
