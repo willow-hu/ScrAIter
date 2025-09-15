@@ -94,10 +94,10 @@ function Navigation({
         }}
       >
         <div className="navi-header">
-          <div className="logo">
-            {!collapsed && <span>AI 脚本创作</span>}
+          <div className="logo" style={{ fontSize: '22px' }}>
+            {!collapsed && <span>ScrAIter</span>}
           </div>
-          <Tooltip title={collapsed ? '展开侧边栏' : '折叠侧边栏'} placement="right">
+          <Tooltip placement="right">
             <Button
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
