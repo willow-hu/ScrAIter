@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer } from 'antd';
 import { DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
-import KnowledgeBaseManager from './KnowledgeBaseManager';
+import KnowledgeBaseModifier from './KnowledgeBaseModifier';
 import NodeEditModal from './NodeEditModal';
 
 const { Title, Text } = Typography;
@@ -233,7 +233,7 @@ function Sidebar({
         onClose={() => setKbDrawerVisible(false)}
         open={kbDrawerVisible}
       >
-        <KnowledgeBaseManager onClose={() => setKbDrawerVisible(false)} />
+        <KnowledgeBaseModifier onClose={() => setKbDrawerVisible(false)} />
       </Drawer>
 
       {/* 节点编辑模态框 */}

@@ -21,7 +21,7 @@ import KnowledgeBaseBuilder from './KnowledgeBaseBuilder';
 
 const { Text } = Typography;
 
-function KnowledgeBaseManager({ onClose }) {
+function KnowledgeBaseModifier({ onClose }) {
   const [files, setFiles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -268,4 +268,4 @@ function KnowledgeBaseManager({ onClose }) {
   );
 }
 
-export default KnowledgeBaseManager;
+export default KnowledgeBaseModifier;

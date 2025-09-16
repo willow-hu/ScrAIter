@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { message, Button, Drawer } from 'antd';
-import { SaveOutlined, UndoOutlined, RedoOutlined, ToolOutlined } from '@ant-design/icons';
+import { message, Button, Drawer, Modal, Input, Space, Typography } from 'antd';
+
+const { TextArea } = Input;
+import { 
+  SaveOutlined, 
+  UndoOutlined, 
+  RedoOutlined, 
+  DownloadOutlined, 
+  DatabaseOutlined, 
+  ReloadOutlined, 
+  EditOutlined,
+  ExclamationCircleOutlined 
+} from '@ant-design/icons';
 import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
+import KnowledgeBaseModifier from '../modules/KnowledgeBaseModifier';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createUndoRedoManager } from '../../utils/script_editor/undoRedoManager';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
@@ -17,6 +29,11 @@ function ScriptEditor() {
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(400);
+  
+  // 新增的浮动按钮相关状态
+  const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
+  const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
+  const [projectInfoForm, setProjectInfoForm] = useState({});
   
   // 悬停提示框状态
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -223,6 +240,75 @@ function ScriptEditor() {
     }
   };
 
+  // 新增：处理导出脚本（带验证）
+  const handleExportWithValidation = () => {
+    if (isValidTree(treeData)) {
+      // 如果是有效树结构，直接导出
+      handleExport();
+    } else {
+      // 如果不是有效树结构，显示警告对话框
+      Modal.warning({
+        title: '无法导出',
+        icon: <ExclamationCircleOutlined />,
+        content: (
+          <div>
+            <p>当前图结构不是有效的有向树结构，无法导出。</p>
+            <p>请检查以下问题：</p>
+            <ul style={{ paddingLeft: '20px', margin: '8px 0' }}>
+              <li>是否有且仅有一个根节点（没有父节点的节点）</li>
+              <li>除根节点外，每个节点是否都有且仅有一个父节点</li>
+              <li>是否存在环形引用</li>
+              <li>是否所有节点都连通</li>
+            </ul>
+          </div>
+        ),
+        okText: '知道了',
+        width: 480,
+      });
+    }
+  };
+
+  // 新增：处理重置脚本（带确认）
+  const handleResetWithConfirm = () => {
+    Modal.confirm({
+      title: '重置脚本',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要重置脚本吗？这将放弃所有未保存的更改，回到初始状态。',
+      okText: '确定重置',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk() {
+        handleReset();
+      },
+    });
+  };
+
+  // 新增：打开知识库管理
+  const handleOpenKnowledgeBase = () => {
+    setKbDrawerVisible(true);
+  };
+
+  // 新增：打开项目信息编辑
+  const handleOpenProjectInfo = () => {
+    // 初始化表单数据
+    setProjectInfoForm({ ...treeData.global_context });
+    setProjectInfoModalVisible(true);
+  };
+
+  // 新增：保存项目信息
+  const handleSaveProjectInfo = () => {
+    updateGlobalContext(projectInfoForm);
+    setProjectInfoModalVisible(false);
+    setProjectInfoForm({});
+    message.success('项目信息已更新');
+  };
+
+  // 新增：取消项目信息编辑
+  const handleCancelProjectInfo = () => {
+    setProjectInfoModalVisible(false);
+    setProjectInfoForm({});
+  };
+
   // 更新节点
   const updateNode = (nodeId, updates) => {
     const result = treeManager.updateNode(nodeId, updates);
@@ -343,7 +429,7 @@ function ScriptEditor() {
         position={tooltipPosition}
       />
       
-      {/* 右上角四个浮动按钮 - 水平排列 */}
+      {/* 右上角七个浮动按钮 - 水平排列 */}
       <div className="floating-buttons-container">
         <Button
           shape="circle"
@@ -373,10 +459,33 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          type="primary"
-          icon={<ToolOutlined />}
-          title="更多操作"
-          onClick={() => setDrawerVisible(true)}
+          icon={<DownloadOutlined />}
+          title="导出脚本"
+          onClick={handleExportWithValidation}
+          className="floating-button"
+        />
+
+        <Button
+          shape="circle"
+          icon={<DatabaseOutlined />}
+          title="知识库管理"
+          onClick={handleOpenKnowledgeBase}
+          className="floating-button"
+        />
+
+        <Button
+          shape="circle"
+          icon={<ReloadOutlined />}
+          title="重置脚本"
+          onClick={handleResetWithConfirm}
+          className="floating-button"
+        />
+
+        <Button
+          shape="circle"
+          icon={<EditOutlined />}
+          title="项目信息"
+          onClick={handleOpenProjectInfo}
           className="floating-button"
         />
       </div>
@@ -404,6 +513,17 @@ function ScriptEditor() {
         />
       </Drawer>
 
+      {/* 知识库管理抽屉 */}
+      <Drawer
+        title="知识库管理"
+        placement="left"
+        size="large"
+        onClose={() => setKbDrawerVisible(false)}
+        open={kbDrawerVisible}
+      >
+        <KnowledgeBaseModifier onClose={() => setKbDrawerVisible(false)} />
+      </Drawer>
+
       {/* 节点编辑模态框 */}
       <NodeEditModal
         visible={nodeEditModalVisible}
@@ -412,6 +532,53 @@ function ScriptEditor() {
         onClose={handleCloseNodeEdit}
         onSave={updateNode}
       />
+
+      {/* 项目信息编辑模态框 */}
+      <Modal
+        title="编辑项目信息"
+        open={projectInfoModalVisible}
+        onOk={handleSaveProjectInfo}
+        onCancel={handleCancelProjectInfo}
+        okText="保存"
+        cancelText="取消"
+        width={600}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <Typography.Text strong>景点名称</Typography.Text>
+            <Input
+              value={projectInfoForm.site_name || ''}
+              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, site_name: e.target.value }))}
+              placeholder="输入景点名称"
+            />
+          </div>
+          <div>
+            <Typography.Text strong>讲述者角色</Typography.Text>
+            <Input
+              value={projectInfoForm.narrator_role || ''}
+              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, narrator_role: e.target.value }))}
+              placeholder="输入讲述者角色"
+            />
+          </div>
+          <div>
+            <Typography.Text strong>角色设定</Typography.Text>
+            <TextArea
+              value={projectInfoForm.character_setting || ''}
+              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, character_setting: e.target.value }))}
+              placeholder="输入角色设定"
+              rows={3}
+            />
+          </div>
+          <div>
+            <Typography.Text strong>成就</Typography.Text>
+            <Input
+              value={projectInfoForm.achievement || ''}
+              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, achievement: e.target.value }))}
+              placeholder="输入成就"
+            />
+          </div>
+        </Space>
+      </Modal>
     </div>
   );
 }
