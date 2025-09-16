@@ -13,7 +13,8 @@ const TreeCanvas = forwardRef(({
   selectedNode, 
   onNodeSelect, 
   onNodeEdit, 
-  onAddNode, 
+  onAddNode,
+  onAddChildNode, 
   onDeleteNode, 
   onAddEdge, 
   onDeleteEdge,
@@ -203,20 +204,13 @@ const TreeCanvas = forwardRef(({
           {contextMenu.node ? (
             <>
               <div className="context-menu-item" onClick={() => {
-                const maxId = Math.max(...treeData.structure.map(n => n.id), 0);
-                const newNode = {
-                  id: maxId + 1,
-                  name: "新建节点",
-                  abstract: "",
-                  user: "",
-                  child_ids: [],
+                const nodeOptions = {
                   position: { 
                     x: contextMenu.node.position.x, 
                     y: contextMenu.node.position.y + 150 
                   }
                 };
-                onAddNode(newNode.position);
-                onAddEdge(contextMenu.node.id, newNode.id);
+                onAddChildNode(contextMenu.node.id, nodeOptions);
                 eventHandler.closeContextMenu();
               }}>
                 添加子节点

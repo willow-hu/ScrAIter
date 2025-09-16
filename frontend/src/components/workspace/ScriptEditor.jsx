@@ -238,6 +238,15 @@ function ScriptEditor() {
     }
   };
 
+  // 添加子节点（原子操作）
+  const addChildNode = (parentId, nodeOptions) => {
+    const result = treeManager.addChildNode(parentId, nodeOptions);
+    if (!result.success) {
+      message.error(result.message);
+    }
+    return result;
+  };
+
   // 删除节点
   const deleteNode = (nodeId) => {
     const result = treeManager.deleteNode(nodeId);
@@ -304,6 +313,7 @@ function ScriptEditor() {
         onNodeSelect={setSelectedNode}
         onNodeEdit={handleNodeEdit}
         onAddNode={addNode}
+        onAddChildNode={addChildNode}
         onDeleteNode={deleteNode}
         onAddEdge={addEdge}
         onDeleteEdge={deleteEdge}

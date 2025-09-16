@@ -128,6 +128,59 @@ export class TreeStructureManager {
   }
 
   /**
+   * 添加子节点（原子操作）
+   * 在指定父节点下添加新的子节点，一次操作完成节点创建和边连接
+   * @param {number} parentId - 父节点ID
+   * @param {Object} nodeOptions - 节点选项
+   * @returns {Object} 操作结果
+   */
+  addChildNode(parentId, nodeOptions = {}) {
+    if (!this.data || !this.data.structure) {
+      return { success: false, message: '树结构不存在' };
+    }
+
+    const parentNode = this.data.structure.find(node => node.id === parentId);
+    if (!parentNode) {
+      return { success: false, message: `父节点 ${parentId} 不存在` };
+    }
+
+    // 生成新的节点ID
+    const maxId = Math.max(...this.data.structure.map(n => n.id), 0);
+    const newNodeId = maxId + 1;
+
+    const newNode = {
+      id: newNodeId,
+      name: nodeOptions.name || "新建节点",
+      abstract: nodeOptions.abstract || "",
+      user: nodeOptions.user || "",
+      child_ids: nodeOptions.child_ids || [],
+      position: nodeOptions.position || { x: parentNode.position?.x || 0, y: (parentNode.position?.y || 0) + 150 }
+    };
+
+    // 原子操作：同时添加新节点并建立父子关系
+    const updated = {
+      ...this.data,
+      structure: [
+        ...this.data.structure.map(node => 
+          node.id === parentId 
+            ? { ...node, child_ids: [...(node.child_ids || []), newNodeId] }
+            : node
+        ),
+        newNode
+      ]
+    };
+
+    this.notifyDataChange(updated);
+    return { 
+      success: true, 
+      message: `子节点 ${newNodeId} 已添加到节点 ${parentId}`, 
+      data: updated,
+      newNode,
+      parentId
+    };
+  }
+
+  /**
    * 删除节点
    * @param {number} nodeId - 要删除的节点ID
    * @returns {Object} 操作结果
