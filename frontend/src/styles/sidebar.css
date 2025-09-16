@@ -24,3 +24,45 @@
 .sidebar .ant-card:last-child {
   margin-bottom: 0;
 }
+
+/* 悬浮按钮样式 */
+.floating-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-button:hover:not([disabled]) {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.floating-button:active:not([disabled]) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 禁用状态的悬浮按钮 */
+.floating-button[disabled] {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  cursor: not-allowed;
+}
+
+.floating-button[disabled]:hover {
+  transform: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 悬浮按钮容器 */
+.floating-buttons-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 12px;
+  z-index: 1000;
+}

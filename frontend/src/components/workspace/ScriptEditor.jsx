@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { message, Button, Drawer } from 'antd';
-import { SettingOutlined, SaveOutlined, UndoOutlined, RedoOutlined } from '@ant-design/icons';
+import { SaveOutlined, UndoOutlined, RedoOutlined, ToolOutlined } from '@ant-design/icons';
 import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
@@ -322,27 +322,14 @@ function ScriptEditor() {
       />
       
       {/* 右上角四个浮动按钮 - 水平排列 */}
-      <div style={{
-        position: 'fixed',
-        top: 24,
-        right: 24,
-        display: 'flex',
-        gap: '12px',
-        zIndex: 1000
-      }}>
+      <div className="floating-buttons-container">
         <Button
           shape="circle"
           icon={<UndoOutlined />}
           title="撤销"
           onClick={handleUndo}
           disabled={!canUndo}
-          style={{
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className="floating-button"
         />
         
         <Button
@@ -351,13 +338,7 @@ function ScriptEditor() {
           title="重做"
           onClick={handleRedo}
           disabled={!canRedo}
-          style={{
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className="floating-button"
         />
         
         <Button
@@ -365,28 +346,16 @@ function ScriptEditor() {
           icon={<SaveOutlined />}
           title="保存修改"
           onClick={handleSave}
-          style={{
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className="floating-button"
         />
 
         <Button
           shape="circle"
           type="primary"
-          icon={<SettingOutlined />}
-          title="设置"
+          icon={<ToolOutlined />}
+          title="更多操作"
           onClick={() => setDrawerVisible(true)}
-          style={{
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+          className="floating-button"
         />
       </div>
 
