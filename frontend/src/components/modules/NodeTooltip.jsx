@@ -19,7 +19,6 @@ const NodeTooltip = ({ visible, node, position }) => {
         top: y,
       }}
     >
-      <div className="tooltip-arrow"></div>
       <div className="tooltip-content">
         <div className="tooltip-header">
           <span className="tooltip-id">节点 #{node.id}</span>
