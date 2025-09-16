@@ -8,14 +8,36 @@
   backdrop-filter: blur(8px);
   max-width: 280px;
   min-width: 220px;
+  max-height: 300px;
   pointer-events: none;
   transform: translate(-50%, -100%);
   opacity: 1;
   animation: tooltipFadeIn 0.2s ease-out;
+  overflow: hidden;
 }
 
 .tooltip-content {
   padding: 12px 16px;
+  max-height: 268px;
+  overflow-y: auto;
+}
+
+/* 美化滚动条 */
+.tooltip-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tooltip-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tooltip-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.tooltip-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .tooltip-header {
@@ -63,6 +85,12 @@
   color: #444;
   margin: 0;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tooltip-text-empty {
