@@ -201,7 +201,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
           <Form.Item 
             label="选择类目" 
             name="categories"
-            rules={[{ required: true, message: '请选择至少一个类目' }]}
+            rules={[{ message: '请选择至少一个类目' }]}
           >
             <Select
               mode="multiple"
@@ -231,7 +231,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
               label="知识库名称" 
               name="kbName"
               rules={[
-                { required: true, message: '请输入知识库名称' },
+                { message: '请输入知识库名称' },
                 { pattern: /^[a-zA-Z0-9_-]+$/, message: '知识库名称只能包含字母、数字、下划线和短横线' }
               ]}
             >

@@ -169,7 +169,7 @@ function Sidebar({
         </Space>
 
         {/* 节点信息 */}
-        {selectedNode && (
+        {/* {selectedNode && (
           <Card size="small" title={`📄 #${selectedNode.id} 节点信息`}>
             <Space direction="vertical" style={{ width: '100%' }}>
               <div>
@@ -197,17 +197,9 @@ function Sidebar({
                   {selectedNode.content || '未生成'}
                 </Text>
               </div>
-              {/* <Button 
-                type="primary"
-                icon={<EditOutlined />}
-                onClick={handleEditNode}
-                block
-              >
-                编辑节点内容
-              </Button> */}
             </Space>
           </Card>
-        )}
+        )} */}
         
         {/* 项目信息 */}
         <Card size="small" title="📊 项目信息">
