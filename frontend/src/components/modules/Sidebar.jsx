@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer } from 'antd';
-import { SaveOutlined, DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UndoOutlined, RedoOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import KnowledgeBaseManager from './KnowledgeBaseManager';
 import NodeEditModal from './NodeEditModal';
@@ -11,17 +11,12 @@ const { TextArea } = Input;
 function Sidebar({ 
   width, 
   treeData, 
-  selectedNode, 
-  onSave, 
+  selectedNode,
   onExport, 
   onUpdateGlobalContext, 
   onUpdateNode, 
   onStartEdit,
-  onUndo,
-  onRedo,
   onReset,
-  canUndo = false,
-  canRedo = false,
   inDrawer = false
 }) {
   const [editingGlobal, setEditingGlobal] = useState(false);
@@ -111,17 +106,6 @@ function Sidebar({
       {!inDrawer && <Title level={4} style={{ marginBottom: '16px', color: '#333' }}>🛠️ 操作面板</Title>}
       
       <Space direction="vertical" style={{ width: '100%' }}>
-        {/* 操作按钮 */}
-        <Space direction="vertical" style={{ width: '100%' }}>
-        <Button 
-            // type="primary" 
-            icon={<SaveOutlined />} 
-            onClick={onSave}
-            block
-        >
-            保存修改
-        </Button>
-
         <Button 
             type='primary'
             icon={<DownloadOutlined />} 
@@ -130,26 +114,6 @@ function Sidebar({
         >
             导出脚本
         </Button>   
-
-        {/* 撤销和重做按钮并排 */}
-        <Space.Compact style={{ width: '100%' }}>
-          <Button 
-              icon={<UndoOutlined />} 
-              onClick={onUndo}
-              disabled={!canUndo}
-              style={{ width: '50%' }}
-          >
-              撤销
-          </Button>
-          <Button 
-              icon={<RedoOutlined />} 
-              onClick={onRedo}
-              disabled={!canRedo}
-              style={{ width: '50%' }}
-          >
-              重做
-          </Button>
-        </Space.Compact>
 
         <Button 
             icon={<DatabaseOutlined />} 
@@ -166,44 +130,9 @@ function Sidebar({
         >
             重置脚本
         </Button>
-        </Space>
 
-        {/* 节点信息 */}
-        {/* {selectedNode && (
-          <Card size="small" title={`📄 #${selectedNode.id} 节点信息`}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Text strong>关键词：</Text>
-                <Text>{selectedNode.name || '未设置'}</Text>
-              </div>
-              <div>
-                <Text strong>用户选项：</Text>
-                <Text style={{ fontSize: '14px', color: '#666' }}>
-                  {selectedNode.user || '未设置'}
-                </Text>
-              </div>
-              <div>
-                <Text strong>摘要：</Text>
-                <Text style={{ fontSize: '14px', color: '#666' }}>
-                  {selectedNode.abstract || '未设置'}
-                </Text>
-              </div>
-              <div>
-                <Text strong>内容：</Text>
-                <Text 
-                  style={{ fontSize: '14px', color: '#666' }}
-                  ellipsis={{ tooltip: true }}
-                >
-                  {selectedNode.content || '未生成'}
-                </Text>
-              </div>
-            </Space>
-          </Card>
-        )} */}
-        
         {/* 项目信息 */}
-        <Card size="small" title="📊 项目信息">
-          {editingGlobal ? (
+        <Card size="small" title="📊 项目信息">{editingGlobal ? (
             <Space direction="vertical" style={{ width: '100%' }}>
               <div>
                 <Text strong>景点名称</Text>

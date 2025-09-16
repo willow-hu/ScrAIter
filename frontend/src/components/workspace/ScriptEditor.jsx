@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { message, Button, Drawer, FloatButton } from 'antd';
-import { SettingOutlined } from '@ant-design/icons';
+import { message, Button, Drawer } from 'antd';
+import { SettingOutlined, SaveOutlined, UndoOutlined, RedoOutlined } from '@ant-design/icons';
 import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
@@ -321,16 +321,74 @@ function ScriptEditor() {
         style={{ width: '100%', height: '100%' }}
       />
       
-      {/* 浮动按钮 */}
-      <FloatButton
-        icon={<SettingOutlined />}
-        type="primary"
-        style={{
-          right: 24,
-          bottom: 24,
-        }}
-        onClick={() => setDrawerVisible(true)}
-      />
+      {/* 右上角四个浮动按钮 - 水平排列 */}
+      <div style={{
+        position: 'fixed',
+        top: 24,
+        right: 24,
+        display: 'flex',
+        gap: '12px',
+        zIndex: 1000
+      }}>
+        <Button
+          shape="circle"
+          icon={<UndoOutlined />}
+          title="撤销"
+          onClick={handleUndo}
+          disabled={!canUndo}
+          style={{
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        />
+        
+        <Button
+          shape="circle"
+          icon={<RedoOutlined />}
+          title="重做"
+          onClick={handleRedo}
+          disabled={!canRedo}
+          style={{
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        />
+        
+        <Button
+          shape="circle"
+          icon={<SaveOutlined />}
+          title="保存修改"
+          onClick={handleSave}
+          style={{
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        />
+
+        <Button
+          shape="circle"
+          type="primary"
+          icon={<SettingOutlined />}
+          title="设置"
+          onClick={() => setDrawerVisible(true)}
+          style={{
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        />
+      </div>
 
       {/* 抽屉 */}
       <Drawer
@@ -347,15 +405,10 @@ function ScriptEditor() {
           width={drawerWidth}
           treeData={treeData}
           selectedNode={selectedNode}
-          onSave={handleSave}
           onExport={handleExport}
           onUpdateGlobalContext={updateGlobalContext}
           onUpdateNode={updateNode}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
           onReset={handleReset}
-          canUndo={canUndo}
-          canRedo={canRedo}
           inDrawer={true}
         />
       </Drawer>
