@@ -65,6 +65,11 @@
   line-height: 1.4;
 }
 
+.tooltip-text-empty {
+  color: #999;
+  font-style: italic;
+}
+
 @keyframes tooltipFadeIn {
   from {
     opacity: 0;
@@ -73,31 +78,5 @@
   to {
     opacity: 1;
     transform: translate(-50%, -100%) scale(1);
-  }
-}
-
-/* 深色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .node-tooltip {
-    background: rgba(42, 42, 42, 0.98);
-    border-color: #555;
-    color: #fff;
-  }
-  
-  .tooltip-id {
-    background: #555;
-    color: #ccc;
-  }
-  
-  .tooltip-title {
-    color: #fff;
-  }
-  
-  .tooltip-label {
-    color: #aaa;
-  }
-  
-  .tooltip-text {
-    color: #ddd;
   }
 }

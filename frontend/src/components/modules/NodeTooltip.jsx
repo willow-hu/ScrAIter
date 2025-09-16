@@ -39,21 +39,12 @@ const NodeTooltip = ({ visible, node, position }) => {
           </div>
         )}
         
-        {node.child_ids && node.child_ids.length > 0 && (
-          <div className="tooltip-section">
-            <label className="tooltip-label">子节点:</label>
-            <p className="tooltip-text">
-              {node.child_ids.length} 个子节点 ({node.child_ids.join(', ')})
-            </p>
-          </div>
-        )}
-        
-        {(!node.child_ids || node.child_ids.length === 0) && (
-          <div className="tooltip-section">
-            <label className="tooltip-label">类型:</label>
-            <p className="tooltip-text">叶子节点</p>
-          </div>
-        )}
+        <div className="tooltip-section">
+          <label className="tooltip-label">内容:</label>
+          <p className={`tooltip-text ${!node.content ? 'tooltip-text-empty' : ''}`}>
+            {node.content ? node.content : "未生成"}
+          </p>
+        </div>
       </div>
     </div>
   );

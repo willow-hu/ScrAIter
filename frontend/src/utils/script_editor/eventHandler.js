@@ -13,6 +13,9 @@ export class EventHandler {
     this.dragOffset = { x: 0, y: 0 };
     this.draggedNode = null;
     
+    // 鼠标按下状态
+    this.isMouseDown = false;
+    
     // 上下文菜单状态
     this.contextMenu = null;
     
@@ -58,6 +61,12 @@ export class EventHandler {
    * @param {Function} getNodeScreenPosition - 获取节点屏幕位置的函数
    */
   handleMouseDown(e, getNodeAtPosition, getNodeScreenPosition) {
+    // 设置鼠标按下状态
+    this.isMouseDown = true;
+    
+    // 清除悬停提示框
+    this.clearHover();
+    
     const rect = e.target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -139,6 +148,9 @@ export class EventHandler {
    * 处理鼠标抬起事件
    */
   handleMouseUp() {
+    // 重置鼠标按下状态
+    this.isMouseDown = false;
+    
     this.isDragging = false;
     this.draggedNode = null;
     this.dragOffset = { x: 0, y: 0 };
@@ -177,6 +189,10 @@ export class EventHandler {
    */
   handleContextMenu(e, getNodeAtPosition, getCanvasPositionFromRelative) {
     e.preventDefault();
+    
+    // 清除悬停提示框
+    this.clearHover();
+    
     const rect = e.target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -224,6 +240,12 @@ export class EventHandler {
    * @param {Function} getNodeAtPosition - 获取节点位置的函数
    */
   handleHover(e, getNodeAtPosition) {
+    // 如果鼠标正在被按下（拖拽状态），不显示悬停提示框
+    if (this.isMouseDown) {
+      this.clearHover();
+      return;
+    }
+    
     const rect = e.target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -249,13 +271,16 @@ export class EventHandler {
       // 如果悬停在节点上，设置延迟显示提示框
       if (node) {
         this.hoverTimeout = setTimeout(() => {
-          this.emit('nodeHoverStart', { 
-            node: node, 
-            position: { 
-              x: e.clientX, 
-              y: e.clientY 
-            } 
-          });
+          // 再次检查鼠标是否仍然未按下
+          if (!this.isMouseDown) {
+            this.emit('nodeHoverStart', { 
+              node: node, 
+              position: { 
+                x: e.clientX, 
+                y: e.clientY 
+              } 
+            });
+          }
         }, this.hoverDelay);
       }
     }
