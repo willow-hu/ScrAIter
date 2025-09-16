@@ -474,7 +474,7 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          icon={<Icons.EditOutlined />}
+          icon={<Icons.FileTextOutlined />}
           title="项目信息"
           onClick={handleOpenProjectInfo}
           className="floating-button"
@@ -526,7 +526,7 @@ function ScriptEditor() {
 
       {/* 项目信息编辑模态框 */}
       <Modal
-        title="编辑项目信息"
+        title="项目信息"
         open={projectInfoModalVisible}
         onOk={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}

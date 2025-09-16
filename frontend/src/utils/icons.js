@@ -24,7 +24,6 @@ export {
   CheckOutlined,
   CloseOutlined,
   CopyOutlined,
-  CreateOutlined,
   
   // D
   DatabaseOutlined,
