@@ -19,6 +19,8 @@ const TreeCanvas = forwardRef(({
   onAddEdge, 
   onDeleteEdge,
   onUpdateNodePosition,
+  onNodeHoverStart,
+  onNodeHoverEnd,
   config = SCRIPT_EDITOR_CONFIG  // 接受配置参数，默认使用全局配置
 }, ref) => {
   
@@ -82,7 +84,15 @@ const TreeCanvas = forwardRef(({
       setScale(newTransform.scale);
       setTranslate(newTransform.translate);
     });
-  }, [onNodeSelect, onNodeEdit, onAddEdge, onDeleteEdge, onUpdateNodePosition, scale, translate]);
+    
+    // 悬停事件处理
+    if (onNodeHoverStart) {
+      eventHandler.on('nodeHoverStart', onNodeHoverStart);
+    }
+    if (onNodeHoverEnd) {
+      eventHandler.on('nodeHoverEnd', onNodeHoverEnd);
+    }
+  }, [onNodeSelect, onNodeEdit, onAddEdge, onDeleteEdge, onUpdateNodePosition, onNodeHoverStart, onNodeHoverEnd, scale, translate]);
 
   // 自动布局
   const layoutNodes = () => {
@@ -122,12 +132,17 @@ const TreeCanvas = forwardRef(({
   const handleMouseMove = (e) => {
     eventHandler.handleMouseMove(
       e, 
-      coordinateTransformer.getCanvasPositionFromRelative.bind(coordinateTransformer)
+      coordinateTransformer.getCanvasPositionFromRelative.bind(coordinateTransformer),
+      getNodeAtPosition
     );
   };
 
   const handleMouseUp = () => {
     eventHandler.handleMouseUp();
+  };
+
+  const handleMouseLeave = () => {
+    eventHandler.handleMouseLeave();
   };
 
   const handleWheel = (e) => {
@@ -190,6 +205,7 @@ const TreeCanvas = forwardRef(({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         onWheel={handleWheel}
         onContextMenu={handleContextMenu}
         onDoubleClick={handleDoubleClick}

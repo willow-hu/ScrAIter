@@ -3,6 +3,8 @@
  * 负责处理鼠标交互事件和状态管理
  */
 
+import { SCRIPT_EDITOR_CONFIG } from './config.js';
+
 export class EventHandler {
   constructor() {
     // 拖拽状态
@@ -19,6 +21,11 @@ export class EventHandler {
     
     // 删除边状态
     this.deletingEdge = null;
+    
+    // 悬停状态
+    this.hoveredNode = null;
+    this.hoverTimeout = null;
+    this.hoverDelay = SCRIPT_EDITOR_CONFIG.interaction.hover.delay; // 从配置文件获取延迟时间
     
     // 回调函数
     this.callbacks = {};
@@ -107,8 +114,9 @@ export class EventHandler {
    * 处理鼠标移动事件
    * @param {MouseEvent} e - 鼠标事件
    * @param {Function} getCanvasPositionFromRelative - 坐标转换函数
+   * @param {Function} getNodeAtPosition - 获取节点位置的函数
    */
-  handleMouseMove(e, getCanvasPositionFromRelative) {
+  handleMouseMove(e, getCanvasPositionFromRelative, getNodeAtPosition) {
     if (this.draggedNode) {
       const rect = e.target.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -121,6 +129,9 @@ export class EventHandler {
       const dy = e.clientY - this.dragStart.y;
       this.emit('canvasDrag', { deltaX: dx, deltaY: dy });
       this.dragStart = { x: e.clientX, y: e.clientY };
+    } else {
+      // 处理悬停逻辑
+      this.handleHover(e, getNodeAtPosition);
     }
   }
 
@@ -131,6 +142,13 @@ export class EventHandler {
     this.isDragging = false;
     this.draggedNode = null;
     this.dragOffset = { x: 0, y: 0 };
+  }
+
+  /**
+   * 处理鼠标离开画布事件
+   */
+  handleMouseLeave() {
+    this.clearHover();
   }
 
   /**
@@ -198,6 +216,64 @@ export class EventHandler {
   closeContextMenu() {
     this.contextMenu = null;
     this.emit('contextMenuClose');
+  }
+
+  /**
+   * 处理鼠标悬停逻辑
+   * @param {MouseEvent} e - 鼠标事件
+   * @param {Function} getNodeAtPosition - 获取节点位置的函数
+   */
+  handleHover(e, getNodeAtPosition) {
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const node = getNodeAtPosition(x, y);
+    
+    // 如果悬停节点发生变化
+    if (this.hoveredNode !== node) {
+      // 清除之前的悬停定时器
+      if (this.hoverTimeout) {
+        clearTimeout(this.hoverTimeout);
+        this.hoverTimeout = null;
+      }
+      
+      // 隐藏之前的提示框
+      if (this.hoveredNode) {
+        this.emit('nodeHoverEnd', { node: this.hoveredNode });
+      }
+      
+      // 更新悬停节点
+      this.hoveredNode = node;
+      
+      // 如果悬停在节点上，设置延迟显示提示框
+      if (node) {
+        this.hoverTimeout = setTimeout(() => {
+          this.emit('nodeHoverStart', { 
+            node: node, 
+            position: { 
+              x: e.clientX, 
+              y: e.clientY 
+            } 
+          });
+        }, this.hoverDelay);
+      }
+    }
+  }
+
+  /**
+   * 清除悬停状态
+   */
+  clearHover() {
+    if (this.hoverTimeout) {
+      clearTimeout(this.hoverTimeout);
+      this.hoverTimeout = null;
+    }
+    
+    if (this.hoveredNode) {
+      this.emit('nodeHoverEnd', { node: this.hoveredNode });
+      this.hoveredNode = null;
+    }
   }
 
   /**

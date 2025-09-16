@@ -4,6 +4,7 @@ import { SaveOutlined, UndoOutlined, RedoOutlined, ToolOutlined } from '@ant-des
 import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
+import NodeTooltip from '../modules/NodeTooltip';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createUndoRedoManager } from '../../utils/script_editor/undoRedoManager';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
@@ -16,6 +17,11 @@ function ScriptEditor() {
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(400);
+  
+  // 悬停提示框状态
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipNode, setTooltipNode] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   
   // TreeCanvas ref
   const treeCanvasRef = useRef(null);
@@ -318,7 +324,23 @@ function ScriptEditor() {
         onAddEdge={addEdge}
         onDeleteEdge={deleteEdge}
         onUpdateNodePosition={updateNodePosition}
+        onNodeHoverStart={({ node, position }) => {
+          setTooltipNode(node);
+          setTooltipPosition(position);
+          setTooltipVisible(true);
+        }}
+        onNodeHoverEnd={() => {
+          setTooltipVisible(false);
+          setTooltipNode(null);
+        }}
         style={{ width: '100%', height: '100%' }}
+      />
+      
+      {/* 节点悬停提示框 */}
+      <NodeTooltip
+        visible={tooltipVisible}
+        node={tooltipNode}
+        position={tooltipPosition}
       />
       
       {/* 右上角四个浮动按钮 - 水平排列 */}

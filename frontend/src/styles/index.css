@@ -12,6 +12,7 @@
 /* 脚本编辑器样式 */
 @import './tree-vis.css';
 @import './node-edit-modal.css';
+@import './node-tooltip.css';
 @import './sidebar.css';
 @import './draft-generator.css';
 

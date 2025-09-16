@@ -87,5 +87,11 @@ export const SCRIPT_EDITOR_CONFIG = {
       minScale: 0.1,        // 最小缩放比例
       maxScale: 3,          // 最大缩放比例
     },
+    
+    // 悬停配置
+    hover: {
+      delay: 500,           // 悬停延迟时间（毫秒）
+      tolerance: 5,         // 鼠标移动容忍度（像素）
+    },
   },
 };
