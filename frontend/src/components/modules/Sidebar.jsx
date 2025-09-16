@@ -131,7 +131,7 @@ function Sidebar({
             导出脚本
         </Button>   
 
-        {/* 撤销和回做按钮并排 */}
+        {/* 撤销和重做按钮并排 */}
         <Space.Compact style={{ width: '100%' }}>
           <Button 
               icon={<UndoOutlined />} 
@@ -139,7 +139,7 @@ function Sidebar({
               disabled={!canUndo}
               style={{ width: '50%' }}
           >
-              回退到上一版
+              撤销
           </Button>
           <Button 
               icon={<RedoOutlined />} 
@@ -147,7 +147,7 @@ function Sidebar({
               disabled={!canRedo}
               style={{ width: '50%' }}
           >
-              前进到下一版
+              重做
           </Button>
         </Space.Compact>
 
