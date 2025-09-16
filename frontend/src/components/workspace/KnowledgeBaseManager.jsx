@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Modal, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '../../utils/icons';
 import KnowledgeBaseBuilder from '../modules/KnowledgeBaseBuilder';
 import KnowledgeBasesList from '../modules/KnowledgeBasesList';
 import { fetchFiles, fetchCategories } from '../../utils/archive_manager';

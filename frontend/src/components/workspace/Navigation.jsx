@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { Layout, Menu, Button, Tooltip } from 'antd';
 import {
-  FileOutlined,
+  FileTextOutlined,
   DatabaseOutlined,
   NodeIndexOutlined,
   EditOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined
-} from '@ant-design/icons';
+} from '../../utils/icons';
 
 const { Sider } = Layout;
 
@@ -24,7 +24,7 @@ function Navigation({
   const menuItems = [
     {
       key: 'files',
-      icon: <FileOutlined />,
+      icon: <FileTextOutlined />,
       label: '文件管理',
     },
     {

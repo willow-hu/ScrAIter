@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, Empty } from 'antd';
-import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { LeftOutlined, RightOutlined } from '../../utils/icons';
 
 const { Text, Paragraph } = Typography;
 

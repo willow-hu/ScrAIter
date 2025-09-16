@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Select, message, Collapse, Empty, Tooltip, Space, Modal } from 'antd';
-import { DeleteOutlined, FolderOutlined, FileTextOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { DeleteOutlined, FolderOutlined, FileTextOutlined, FileExcelOutlined } from '../../utils/icons';
 import { 
   fetchSourceTags,
   getSourceTagConfig,

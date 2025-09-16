@@ -2,16 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { message, Button, Drawer, Modal, Input, Space, Typography } from 'antd';
 
 const { TextArea } = Input;
-import { 
-  SaveOutlined, 
-  UndoOutlined, 
-  RedoOutlined, 
-  DownloadOutlined, 
-  DatabaseOutlined, 
-  ReloadOutlined, 
-  EditOutlined,
-  ExclamationCircleOutlined 
-} from '@ant-design/icons';
+import * as Icons from '../../utils/icons';
 import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
@@ -249,7 +240,7 @@ function ScriptEditor() {
       // 如果不是有效树结构，显示警告对话框
       Modal.warning({
         title: '无法导出',
-        icon: <ExclamationCircleOutlined />,
+        icon: <Icons.ExclamationCircleOutlined />,
         content: (
           <div>
             <p>当前图结构不是有效的有向树结构，无法导出。</p>
@@ -272,7 +263,7 @@ function ScriptEditor() {
   const handleResetWithConfirm = () => {
     Modal.confirm({
       title: '重置脚本',
-      icon: <ExclamationCircleOutlined />,
+      icon: <Icons.ExclamationCircleOutlined />,
       content: '确定要重置脚本吗？这将放弃所有未保存的更改，回到初始状态。',
       okText: '确定重置',
       cancelText: '取消',
@@ -433,7 +424,7 @@ function ScriptEditor() {
       <div className="floating-buttons-container">
         <Button
           shape="circle"
-          icon={<UndoOutlined />}
+          icon={<Icons.UndoOutlined />}
           title="撤销"
           onClick={handleUndo}
           disabled={!canUndo}
@@ -442,7 +433,7 @@ function ScriptEditor() {
         
         <Button
           shape="circle"
-          icon={<RedoOutlined />}
+          icon={<Icons.RedoOutlined />}
           title="重做"
           onClick={handleRedo}
           disabled={!canRedo}
@@ -451,7 +442,7 @@ function ScriptEditor() {
         
         <Button
           shape="circle"
-          icon={<SaveOutlined />}
+          icon={<Icons.SaveOutlined />}
           title="保存修改"
           onClick={handleSave}
           className="floating-button"
@@ -459,7 +450,7 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          icon={<DownloadOutlined />}
+          icon={<Icons.DownloadOutlined />}
           title="导出脚本"
           onClick={handleExportWithValidation}
           className="floating-button"
@@ -467,7 +458,7 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          icon={<DatabaseOutlined />}
+          icon={<Icons.DatabaseOutlined />}
           title="知识库管理"
           onClick={handleOpenKnowledgeBase}
           className="floating-button"
@@ -475,7 +466,7 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          icon={<ReloadOutlined />}
+          icon={<Icons.ReloadOutlined />}
           title="重置脚本"
           onClick={handleResetWithConfirm}
           className="floating-button"
@@ -483,7 +474,7 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          icon={<EditOutlined />}
+          icon={<Icons.EditOutlined />}
           title="项目信息"
           onClick={handleOpenProjectInfo}
           className="floating-button"

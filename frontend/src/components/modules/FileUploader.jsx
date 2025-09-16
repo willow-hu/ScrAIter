@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Button, Input, Select, Space, message, Modal, Divider } from 'antd';
-import { InboxOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { InboxOutlined, PlusOutlined, UploadOutlined } from '../../utils/icons';
 import { 
   FILE_TYPES, 
   SUPPORTED_FORMATS, 

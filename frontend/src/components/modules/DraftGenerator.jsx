@@ -18,7 +18,7 @@ import {
   EditOutlined,
   CheckOutlined,
   ReloadOutlined 
-} from '@ant-design/icons';
+} from '../../utils/icons';
 import TreeCanvas from './TreeCanvas';
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 

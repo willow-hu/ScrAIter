@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message } from 'antd';
-import { SaveOutlined, RobotOutlined } from '@ant-design/icons';
+import { SaveOutlined, RobotOutlined } from '../../utils/icons';
 import ReferencePanel from './ReferencePanel';
 
 const { Title, Text } = Typography;

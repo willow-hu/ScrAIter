@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Empty, Tooltip, Space, Modal } from 'antd';
-import { DeleteOutlined, NodeIndexOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { DeleteOutlined, NodeIndexOutlined, DatabaseOutlined } from '../../utils/icons';
 import { 
   fetchKnowledgeBases,
   deleteKnowledgeBase,

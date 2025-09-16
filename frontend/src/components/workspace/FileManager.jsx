@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Modal, message } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
+import { UploadOutlined } from '../../utils/icons';
 import FileUploader from '../modules/FileUploader';
 import FilesList from '../modules/FilesList';
 import { fetchFiles, fetchCategories } from '../../utils/archive_manager';

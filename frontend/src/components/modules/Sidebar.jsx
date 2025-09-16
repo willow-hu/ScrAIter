@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer } from 'antd';
-import { DownloadOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
+import * as Icons from '../../utils/icons';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import KnowledgeBaseModifier from './KnowledgeBaseModifier';
 import NodeEditModal from './NodeEditModal';
@@ -57,7 +57,7 @@ function Sidebar({
   const handleReset = () => {
     Modal.confirm({
       title: '重置脚本',
-      icon: <ExclamationCircleOutlined />,
+      icon: <Icons.ExclamationCircleOutlined />,
       content: '确定要重置脚本吗？这将放弃所有未保存的更改，回到初始状态。',
       okText: '确定重置',
       cancelText: '取消',
@@ -77,7 +77,7 @@ function Sidebar({
       // 如果不是有效树结构，显示警告对话框
       Modal.warning({
         title: '无法导出',
-        icon: <ExclamationCircleOutlined />,
+        icon: <Icons.ExclamationCircleOutlined />,
         content: (
           <div>
             <p>当前图结构不是有效的有向树结构，无法导出。</p>
@@ -108,7 +108,7 @@ function Sidebar({
       <Space direction="vertical" style={{ width: '100%' }}>
         <Button 
             type='primary'
-            icon={<DownloadOutlined />} 
+            icon={<Icons.DownloadOutlined />} 
             onClick={handleExport}
             block
         >
@@ -116,7 +116,7 @@ function Sidebar({
         </Button>   
 
         <Button 
-            icon={<DatabaseOutlined />} 
+            icon={<Icons.DatabaseOutlined />} 
             onClick={() => setKbDrawerVisible(true)}
             block
         >
@@ -124,7 +124,7 @@ function Sidebar({
         </Button>
         
         <Button 
-            icon={<ReloadOutlined />} 
+            icon={<Icons.ReloadOutlined />} 
             onClick={handleReset}
             block
         >
@@ -198,7 +198,7 @@ function Sidebar({
               </div>
               <Button
                 type="primary"
-                icon={<EditOutlined />}
+                icon={<Icons.EditOutlined />}
                 onClick={startEditingGlobal}
                 block
               >

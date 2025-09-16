@@ -14,7 +14,7 @@ import {
 import { 
   UploadOutlined,
   SyncOutlined
-} from '@ant-design/icons';
+} from '../../utils/icons';
 import FilesList from './FilesList';
 import FileUploader from './FileUploader';
 import KnowledgeBaseBuilder from './KnowledgeBaseBuilder';

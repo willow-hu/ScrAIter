@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button, Select, Space, Progress, Alert, Input, Form, Divider, message, Modal } from 'antd';
-import { PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, StopOutlined } from '../../utils/icons';
 import { KNOWLEDGE_BASE_CONFIG, getFlattenedConfig } from '../../config/knowledgeBaseConfig';
 import {
   calculateSelectedStats,
