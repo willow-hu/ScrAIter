@@ -21,7 +21,6 @@
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
   background-color: #f5f5f5;
   color: #333;
@@ -151,24 +150,3 @@ body {
 .ant-card-loading {
   overflow: hidden;
 }
-
-/* 响应式Card样式 */
-/* @media (max-width: 768px) {
-  .ant-card-head {
-    padding: 0 12px;
-    min-height: 44px;
-  }
-  
-  .ant-card-body {
-    padding: 16px 12px;
-  }
-  
-  .ant-card-small .ant-card-head {
-    padding: 0 12px;
-    min-height: 36px;
-  }
-  
-  .ant-card-small .ant-card-body {
-    padding: 12px;
-  }
-} */

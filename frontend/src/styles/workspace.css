@@ -61,16 +61,3 @@
   position: relative;
   overflow: hidden;
 }
-
-/* 响应式处理 */
-@media (max-width: 768px) {
-  .ant-layout-sider {
-    position: fixed !important;
-    z-index: 1000;
-    height: 100vh;
-  }
-  
-  .main-content {
-    margin-left: 0 !important;
-  }
-}

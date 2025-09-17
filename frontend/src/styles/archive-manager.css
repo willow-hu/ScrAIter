@@ -56,14 +56,3 @@
 .archive-section-header h4 {
   margin: 0;
 }
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .archive-content {
-    padding: 16px;
-  }
-  
-  .archive-section {
-    margin-bottom: 24px;
-  }
-}
