@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { message, Button, Modal } from 'antd';
 
 import * as Icons from '../../utils/icons';
@@ -11,7 +11,6 @@ import { createTreeStructureManager } from '../../utils/script_editor/treeStruct
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 
 function ScriptEditor() {
-  console.log('ScriptEditor 组件已渲染');
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
@@ -53,7 +52,6 @@ function ScriptEditor() {
 
   // 加载初始数据
   useEffect(() => {
-    console.log('useEffect: 开始加载数据');
     const loadInitialData = async () => {
       try {
         const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree');
@@ -65,9 +63,7 @@ function ScriptEditor() {
           
           treeManager.setData(dataWithPositions);
           setTreeData(dataWithPositions);
-          console.log('API数据加载成功:', dataWithPositions);
         } else {
-          console.log('项目文件不存在，尝试加载fallback文件...');
           const fallbackResponse = await fetch('/flat_anchor_tree.json');
           
           if (fallbackResponse.ok) {
@@ -77,7 +73,6 @@ function ScriptEditor() {
             
             treeManager.setData(dataWithPositions);
             setTreeData(dataWithPositions);
-            console.log('Fallback数据加载成功:', dataWithPositions);
           } else {
             throw new Error('无法加载树数据');
           }
@@ -140,7 +135,7 @@ function ScriptEditor() {
   // 导出JSON
   const handleExport = () => {
     if (!isValidTree(treeData)) {
-      alert('当前图结构不是有效的树结构，无法导出！请检查是否存在环或未连通的节点。');
+      message.error('当前图结构不是有效的树结构，无法导出！请检查是否存在环或未连通的节点。');
       return;
     }
 
