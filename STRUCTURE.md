@@ -7,16 +7,23 @@ src/
 ├── App.jsx                                 # 主应用组件
 ├── main.jsx                               # 入口文件
 ├── components/                            # 组件目录
-│   └── tree_editor/                       # 树结构编辑器模块
-│       ├── TreeEditor.jsx                 # 主编辑器组件
-│       ├── TreeCanvas.jsx                 # 画布组件
-│       └── Sidebar.jsx                    # 侧边栏组件
+│   └── workspace/                         # 工作区模块
+│       ├── Navigation.jsx                 # 导航组件
+│       ├── ArchiveManager.jsx            # 资料管理组件
+│       ├── ScriptEditor.jsx              # 脚本编辑器组件
+│       └── modules/                       # 子模块
+│           ├── TreeCanvas.jsx            # 画布组件
+│           ├── NodeEditModal.jsx         # 节点编辑模态框
+│           ├── NodeTooltip.jsx          # 节点悬停提示
+│           └── ProjectInfoModal.jsx     # 项目信息模态框
 └── styles/                                # 样式目录
     ├── index.css                          # 主样式文件（导入所有样式）
     ├── global.css                         # 全局基础样式
     ├── app.css                            # 应用主框架样式
-    ├── tree-editor.css                    # 树结构编辑器样式
-    └── structure-generator.css             # 结构生成器样式（预留）
+    ├── workspace.css                      # 工作区样式
+    ├── tree-vis.css                       # 树结构可视化样式
+    ├── floating-button.css               # 浮动按钮样式
+    └── node-edit-modal.css               # 节点编辑模态框样式
 ```
 
 ## 模块化说明

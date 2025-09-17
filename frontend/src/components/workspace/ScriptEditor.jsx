@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { message, Button, Drawer, Modal } from 'antd';
+import { message, Button, Modal } from 'antd';
 
 import * as Icons from '../../utils/icons';
 import TreeCanvas from '../modules/TreeCanvas';
-import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
 import ProjectInfoModal from '../modules/ProjectInfoModal';
@@ -17,8 +16,6 @@ function ScriptEditor() {
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [drawerWidth, setDrawerWidth] = useState(400);
   
   // 新增的浮动按钮相关状态
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
@@ -488,29 +485,6 @@ function ScriptEditor() {
           className="floating-button"
         />
       </div>
-
-      {/* 抽屉 */}
-      <Drawer
-        title="脚本编辑工具"
-        placement="right"
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
-        width={drawerWidth}
-        styles={{
-          body: { padding: 0 }
-        }}
-      >
-        <Sidebar
-          width={drawerWidth}
-          treeData={treeData}
-          selectedNode={selectedNode}
-          onExport={handleExport}
-          onUpdateGlobalContext={updateGlobalContext}
-          onUpdateNode={updateNode}
-          onReset={handleReset}
-          inDrawer={true}
-        />
-      </Drawer>
 
       {/* 节点编辑模态框 */}
       <NodeEditModal

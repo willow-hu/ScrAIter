@@ -66,18 +66,6 @@
   position: relative;
 }
 
-/* 浮动按钮样式调整 */
-.ant-float-btn {
-  right: 24px !important;
-  bottom: 24px !important;
-}
-
-/* 抽屉内的侧边栏样式调整 */
-.ant-drawer .sidebar {
-  height: 100%;
-  overflow-y: auto;
-}
-
 /* 抽屉标题样式 */
 .ant-drawer-header {
   border-bottom: 1px solid #f0f0f0;

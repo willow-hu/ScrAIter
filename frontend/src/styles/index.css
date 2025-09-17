@@ -13,7 +13,7 @@
 @import './tree-vis.css';
 @import './node-edit-modal.css';
 @import './node-tooltip.css';
-@import './sidebar.css';
+@import './floating-button.css';
 
 /* 资料管理样式 */
 @import './archive-manager.css';
