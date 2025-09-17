@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, Space, Card, Typography, Input, Divider, message, Modal, Drawer } from 'antd';
 import * as Icons from '../../utils/icons';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
-import KnowledgeBaseModifier from './KnowledgeBaseModifier';
 import NodeEditModal from './NodeEditModal';
 
 const { Title, Text } = Typography;
@@ -21,7 +20,6 @@ function Sidebar({
 }) {
   const [editingGlobal, setEditingGlobal] = useState(false);
   const [globalForm, setGlobalForm] = useState({});
-  const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
 
   // 开始编辑全局信息
@@ -114,14 +112,6 @@ function Sidebar({
         >
             导出脚本
         </Button>   
-
-        <Button 
-            icon={<Icons.DatabaseOutlined />} 
-            onClick={() => setKbDrawerVisible(true)}
-            block
-        >
-            知识库管理
-        </Button>
         
         <Button 
             icon={<Icons.ReloadOutlined />} 
@@ -218,23 +208,11 @@ function Sidebar({
                 <li>双击节点以修改节点详细信息</li>
                 <li>右键节点以获取更多操作选项</li>
                 <li>空白区域右击可添加新节点</li>
-                <li>若您需要修改知识库，可进入知识库管理界面添加、编辑、删除知识库条目</li>
               </ol>
             </Text>
           </Card>
         )}
       </Space>
-
-      {/* 知识库管理抽屉 */}
-      <Drawer
-        title="知识库管理"
-        placement="left"
-        size="large"
-        onClose={() => setKbDrawerVisible(false)}
-        open={kbDrawerVisible}
-      >
-        <KnowledgeBaseModifier onClose={() => setKbDrawerVisible(false)} />
-      </Drawer>
 
       {/* 节点编辑模态框 */}
       <NodeEditModal

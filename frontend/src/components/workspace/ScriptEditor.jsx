@@ -6,7 +6,6 @@ import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
-import KnowledgeBaseModifier from '../modules/KnowledgeBaseModifier';
 import ProjectInfoModal from '../modules/ProjectInfoModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createUndoRedoManager } from '../../utils/script_editor/undoRedoManager';
@@ -22,7 +21,6 @@ function ScriptEditor() {
   const [drawerWidth, setDrawerWidth] = useState(400);
   
   // 新增的浮动按钮相关状态
-  const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   
@@ -274,11 +272,6 @@ function ScriptEditor() {
     });
   };
 
-  // 新增：打开知识库管理
-  const handleOpenKnowledgeBase = () => {
-    setKbDrawerVisible(true);
-  };
-
   // 新增：打开项目信息编辑
   const handleOpenProjectInfo = () => {
     setProjectInfoModalVisible(true);
@@ -517,17 +510,6 @@ function ScriptEditor() {
           onReset={handleReset}
           inDrawer={true}
         />
-      </Drawer>
-
-      {/* 知识库管理抽屉 */}
-      <Drawer
-        title="知识库管理"
-        placement="left"
-        size="large"
-        onClose={() => setKbDrawerVisible(false)}
-        open={kbDrawerVisible}
-      >
-        <KnowledgeBaseModifier onClose={() => setKbDrawerVisible(false)} />
       </Drawer>
 
       {/* 节点编辑模态框 */}
