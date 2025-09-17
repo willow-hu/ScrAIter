@@ -140,11 +140,29 @@ class RAGService:
             script_file_name = f"{kb_name}_script.json"
             script_file_path = os.path.join(kb_projects_dir, script_file_name)
             
-            # 构建文件内容
-            script_data = {
-                "global_context": global_context,
-                "structure": []  # 暂时置空，等待GraphRAG实现
-            }
+            # 检查文件是否已存在，如果存在则只更新structure字段
+            if os.path.exists(script_file_path):
+                try:
+                    with open(script_file_path, 'r', encoding='utf-8') as f:
+                        existing_data = json.load(f)
+                    
+                    # 保留现有的global_context，只更新structure
+                    script_data = {
+                        "global_context": existing_data.get("global_context", global_context),
+                        "structure": []  # 暂时置空，等待GraphRAG实现
+                    }
+                except (json.JSONDecodeError, Exception):
+                    # 如果文件损坏，创建新的
+                    script_data = {
+                        "global_context": global_context,
+                        "structure": []  # 暂时置空，等待GraphRAG实现
+                    }
+            else:
+                # 文件不存在，创建新的
+                script_data = {
+                    "global_context": global_context,
+                    "structure": []  # 暂时置空，等待GraphRAG实现
+                }
             
             # 保存文件
             with open(script_file_path, 'w', encoding='utf-8') as f:
@@ -163,7 +181,7 @@ class RAGService:
                 "generation_id": generation_id,
                 "structure": script_data["structure"],
                 "global_context": script_data["global_context"],
-                "message": f"已在 shared/projects/{kb_name}/ 目录下创建 {script_file_name} 文件",
+                "message": f"已在 shared/projects/{kb_name}/ 目录下创建/更新 {script_file_name} 文件",
                 "file_path": script_file_path
             }
             

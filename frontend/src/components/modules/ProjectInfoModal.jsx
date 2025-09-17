@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Space, Typography, Input, Select, message } from 'antd';
+import { Modal, Space, Typography, Input } from 'antd';
 
 const { TextArea } = Input;
 
@@ -10,8 +10,6 @@ function ProjectInfoModal({
   onCancel 
 }) {
   const [form, setForm] = useState({});
-  const [knowledgeBases, setKnowledgeBases] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   // 当modal打开时，初始化表单数据
   useEffect(() => {
@@ -19,39 +17,6 @@ function ProjectInfoModal({
       setForm({ ...projectInfo });
     }
   }, [visible, projectInfo]);
-
-  // 加载知识库列表
-  useEffect(() => {
-    if (visible) {
-      loadKnowledgeBases();
-    }
-  }, [visible]);
-
-  // 加载知识库列表
-  const loadKnowledgeBases = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('http://localhost:8000/api/v1/knowledge-base/list');
-      if (!response.ok) {
-        throw new Error('获取知识库列表失败');
-      }
-      const result = await response.json();
-      
-      // 转换为数组格式
-      const kbArray = Object.keys(result.knowledge_bases || {}).map(name => ({
-        name,
-        ...result.knowledge_bases[name]
-      }));
-      
-      setKnowledgeBases(kbArray);
-    } catch (error) {
-      console.error('加载知识库列表失败:', error);
-      message.error('加载知识库列表失败');
-      setKnowledgeBases([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 处理保存
   const handleSave = () => {
@@ -81,23 +46,6 @@ function ProjectInfoModal({
       destroyOnHidden={true}
     >
       <Space direction="vertical" style={{ width: '100%' }}>
-        <div>
-          <Typography.Text strong>知识库</Typography.Text>
-          <Select
-            style={{ width: '100%' }}
-            placeholder="选择一个知识库"
-            value={form.knowledge_base_name || form.knowledge_base}
-            onChange={(value) => handleFieldChange('knowledge_base_name', value)}
-            loading={loading}
-            allowClear
-          >
-            {knowledgeBases.map(kb => (
-              <Select.Option key={kb.name} value={kb.name}>
-                {kb.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </div>
         <div>
           <Typography.Text strong>景点名称</Typography.Text>
           <Input

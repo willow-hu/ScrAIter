@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { message, Button, Modal } from 'antd';
+import { message, Button, Modal, Select } from 'antd';
 
 import * as Icons from '../../utils/icons';
 import TreeCanvas from '../modules/TreeCanvas';
@@ -15,6 +15,11 @@ function ScriptEditor() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
   
+  // 知识库相关状态
+  const [selectedKnowledgeBase, setSelectedKnowledgeBase] = useState(null);
+  const [knowledgeBases, setKnowledgeBases] = useState([]);
+  const [loadingKnowledgeBases, setLoadingKnowledgeBases] = useState(false);
+  
   // 新增的浮动按钮相关状态
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
@@ -29,6 +34,63 @@ function ScriptEditor() {
   
   // 布局管理器
   const [layoutManager] = useState(() => new TreeLayoutManager());
+
+  // 加载知识库列表
+  const loadKnowledgeBases = async () => {
+    setLoadingKnowledgeBases(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/knowledge-base/list');
+      if (!response.ok) {
+        throw new Error('获取知识库列表失败');
+      }
+      const result = await response.json();
+      
+      // 转换为数组格式
+      const kbArray = Object.keys(result.knowledge_bases || {}).map(name => ({
+        name,
+        ...result.knowledge_bases[name]
+      }));
+      
+      setKnowledgeBases(kbArray);
+      
+      // 如果还没有选择知识库且有可用的知识库，选择第一个
+      if (!selectedKnowledgeBase && kbArray.length > 0) {
+        setSelectedKnowledgeBase(kbArray[0].name);
+      }
+    } catch (error) {
+      console.error('加载知识库列表失败:', error);
+      message.error('加载知识库列表失败');
+      setKnowledgeBases([]);
+    } finally {
+      setLoadingKnowledgeBases(false);
+    }
+  };
+
+  // 获取当前知识库名称的辅助函数
+  const getCurrentKnowledgeBaseName = () => {
+    return selectedKnowledgeBase;
+  };
+
+  // 验证数据完整性
+  const validateDataIntegrity = (data) => {
+    if (!data) {
+      return { valid: false, message: '数据为空' };
+    }
+    
+    if (!data.global_context) {
+      return { valid: false, message: '缺少项目信息(global_context)' };
+    }
+    
+    if (!data.structure) {
+      return { valid: false, message: '缺少剧本结构(structure)' };
+    }
+    
+    if (!Array.isArray(data.structure)) {
+      return { valid: false, message: '剧本结构必须是数组格式' };
+    }
+    
+    return { valid: true, message: '数据完整' };
+  };
 
   // 为树数据添加自动布局位置
   const addAutoLayoutPositions = (data) => {
@@ -50,85 +112,153 @@ function ScriptEditor() {
     setTreeData(newData);
   }));
 
-  // 加载初始数据
+  // 加载知识库列表
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree');
+    loadKnowledgeBases();
+  }, []);
+
+  // 当选择的知识库变化时，加载对应的数据
+  useEffect(() => {
+    const loadKnowledgeBaseData = async () => {
+      if (!selectedKnowledgeBase) {
+        // 如果没有选择知识库，创建空白结构
+        const emptyData = {
+          global_context: {
+            narrator_role: "",
+            site_name: "",
+            character_setting: ""
+          },
+          structure: []
+        };
         
-        if (response.ok) {
-          const data = await response.json();
-          const hasPositions = data.structure && data.structure.some(node => node.position);
-          const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
+        const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
+        setTreeData(emptyDataWithPositions);
+        treeManager.setData(emptyDataWithPositions);
+        return;
+      }
+      
+      try {
+        // 尝试加载对应知识库的script数据
+        const scriptResponse = await fetch(`http://localhost:8000/api/v1/projects/${selectedKnowledgeBase}/script`);
+        
+        if (scriptResponse.ok) {
+          const scriptData = await scriptResponse.json();
+          
+          // 移除knowledge_base_name字段（如果存在）
+          if (scriptData.global_context && 'knowledge_base_name' in scriptData.global_context) {
+            delete scriptData.global_context.knowledge_base_name;
+          }
+          
+          const hasPositions = scriptData.structure && scriptData.structure.some(node => node.position);
+          const dataWithPositions = hasPositions ? scriptData : addAutoLayoutPositions(scriptData);
           
           treeManager.setData(dataWithPositions);
           setTreeData(dataWithPositions);
-        } else {
-          const fallbackResponse = await fetch('/flat_anchor_tree.json');
-          
-          if (fallbackResponse.ok) {
-            const data = await fallbackResponse.json();
-            const hasPositions = data.structure && data.structure.some(node => node.position);
-            const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
-            
-            treeManager.setData(dataWithPositions);
-            setTreeData(dataWithPositions);
-          } else {
-            throw new Error('无法加载树数据');
-          }
+          return;
         }
-      } catch (error) {
-        console.error('Failed to load tree data:', error);
-        const defaultData = {
+        
+        // 如果script数据不存在，创建空白数据并保存
+        const emptyData = {
           global_context: {
-            narrator_role: "讲述者",
-            site_name: "景点名称",
-            character_setting: "角色设定",
-            achievement: "成就"
+            narrator_role: "",
+            site_name: "",
+            character_setting: ""
           },
-          structure: [
-            {
-              id: 1,
-              name: "根节点",
-              abstract: "这是根节点的摘要",
-              user: "用户选项",
-              child_ids: []
-            }
-          ]
+          structure: []
         };
         
-        const defaultDataWithPositions = addAutoLayoutPositions(defaultData);
-        setTreeData(defaultDataWithPositions);
-        treeManager.setData(defaultDataWithPositions);
+        // 自动创建script.json文件
+        const createResponse = await fetch(`http://localhost:8000/api/v1/projects/${selectedKnowledgeBase}/script`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(emptyData)
+        });
+        
+        if (createResponse.ok) {
+          console.log(`已为知识库 "${selectedKnowledgeBase}" 创建空白script.json文件`);
+        }
+        
+        const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
+        setTreeData(emptyDataWithPositions);
+        treeManager.setData(emptyDataWithPositions);
+        
+      } catch (error) {
+        console.error('Failed to load knowledge base data:', error);
+        // 出错时也创建空白数据
+        const emptyData = {
+          global_context: {
+            narrator_role: "",
+            site_name: "",
+            character_setting: ""
+          },
+          structure: []
+        };
+        
+        const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
+        setTreeData(emptyDataWithPositions);
+        treeManager.setData(emptyDataWithPositions);
       }
     };
 
-    loadInitialData().catch(err => {
-      console.error('loadInitialData failed:', err);
+    loadKnowledgeBaseData().catch(err => {
+      console.error('loadKnowledgeBaseData failed:', err);
     });
-  }, [treeManager]);
+  }, [selectedKnowledgeBase, treeManager]);
 
   // 保存修改
   const handleSave = async () => {
-    if (!treeData) return;
+    if (!treeData) {
+      message.error('没有数据可以保存');
+      return;
+    }
+    
+    // 验证数据完整性
+    const validation = validateDataIntegrity(treeData);
+    if (!validation.valid) {
+      message.error(`数据验证失败: ${validation.message}`);
+      return;
+    }
     
     try {
-      const response = await fetch('http://localhost:8000/api/v1/projects/twin_pagoda/tree', {
+      // 获取当前的知识库名称
+      const kbName = getCurrentKnowledgeBaseName();
+      
+      if (!kbName) {
+        message.error('请先选择知识库');
+        return;
+      }
+      
+      // 构建完整的保存数据，确保包含global_context和structure，不包含knowledge_base_name
+      const saveData = {
+        global_context: {
+          narrator_role: treeData.global_context.narrator_role || "",
+          site_name: treeData.global_context.site_name || "",
+          character_setting: treeData.global_context.character_setting || "",
+          other_requirements: treeData.global_context.other_requirements || ""
+        },
+        structure: treeData.structure || []
+      };
+      
+      // 保存为script数据
+      const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(treeData)
+        body: JSON.stringify(saveData)
       });
       
       if (response.ok) {
-        message.success('保存成功');
+        message.success(`保存成功！已保存到知识库 "${kbName}" 的脚本文件中`);
       } else {
-        message.error('保存到服务器失败');
+        const errorData = await response.json();
+        message.error(`保存失败: ${errorData.detail || '未知错误'}`);
       }
     } catch (error) {
       console.error('保存到服务器失败:', error);
-      message.error('保存失败');
+      message.error('保存失败: 网络错误或服务器不可用');
     }
   };
 
@@ -187,19 +317,26 @@ function ScriptEditor() {
 
   // 新增：重置到默认状态
   const handleReset = () => {
+    const currentKbName = getCurrentKnowledgeBaseName();
+    
+    if (!currentKbName) {
+      message.error('请先选择知识库');
+      return;
+    }
+    
     const defaultData = {
       global_context: {
         narrator_role: "讲述者",
         site_name: "景点名称",
-        character_setting: "角色设定",
-        background_information: "背景信息",
-        knowledge_base_name: "twin_pagoda"
+        character_setting: "角色设定"
       },
       structure: [
         {
           id: 'root',
           type: 'root',
-          title: '根节点',
+          name: '根节点',
+          abstract: '这是根节点的摘要',
+          user: '用户选项',
           content: '',
           position: { x: 400, y: 50 },
           child_ids: []
@@ -235,10 +372,47 @@ function ScriptEditor() {
   };
 
   // 新增：保存项目信息
-  const handleSaveProjectInfo = (projectInfoData) => {
-    updateGlobalContext(projectInfoData);
-    setProjectInfoModalVisible(false);
-    message.success('项目信息已更新');
+  const handleSaveProjectInfo = async (projectInfoData) => {
+    try {
+      // 更新本地数据
+      updateGlobalContext(projectInfoData);
+      setProjectInfoModalVisible(false);
+      message.success('项目信息已更新');
+      
+      // 自动保存到服务器
+      const kbName = getCurrentKnowledgeBaseName();
+      if (kbName && kbName.trim()) {
+        // 构建保存数据，不包含knowledge_base_name
+        const saveData = {
+          global_context: {
+            narrator_role: projectInfoData.narrator_role || "",
+            site_name: projectInfoData.site_name || "",
+            character_setting: projectInfoData.character_setting || "",
+            other_requirements: projectInfoData.other_requirements || ""
+          },
+          structure: treeData?.structure || []
+        };
+        
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(saveData)
+        });
+        
+        if (response.ok) {
+          message.success('项目信息已更新并保存');
+        } else {
+          message.warning('项目信息已更新，但自动保存失败，请手动点击保存按钮');
+        }
+      }
+      
+    } catch (error) {
+      console.error('保存项目信息失败:', error);
+      message.success('项目信息已更新');
+      message.warning('自动保存失败，请手动点击保存按钮');
+    }
   };
 
   // 新增：取消项目信息编辑
@@ -248,59 +422,78 @@ function ScriptEditor() {
 
   // 新增：生成大纲（GraphRAG）
   const handleGenerateOutline = async () => {
-    try {
-      message.info('正在生成大纲，请稍候...');
-      
-      // 检查项目信息和知识库名称
-      const globalContext = treeData?.global_context;
-      if (!globalContext) {
-        message.error('请先设置项目信息');
-        return;
-      }
-      
-      const knowledgeBaseName = globalContext.knowledge_base_name;
-      if (!knowledgeBaseName || !knowledgeBaseName.trim()) {
-        message.error('请在项目信息中选择知识库');
-        return;
-      }
-      
-      // 调用后端API生成大纲
-      const response = await fetch('http://localhost:8000/api/v1/generate/structure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          kb_name: knowledgeBaseName.trim(),
-          global_context: globalContext
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '生成大纲失败');
-      }
-      
-      const result = await response.json();
-      message.success('大纲生成成功！');
-      
-      // 可选：更新当前树结构为生成的结构
-      if (result.structure && result.structure.length > 0) {
-        const newTreeData = {
-          global_context: result.global_context || globalContext,
-          structure: result.structure
-        };
-        const newDataWithPositions = addAutoLayoutPositions(newTreeData);
-        setTreeData(newDataWithPositions);
-        treeManager.setData(newDataWithPositions);
-        setSelectedNode(null);
-        message.info('已加载生成的大纲结构');
-      }
-      
-    } catch (error) {
-      console.error('生成大纲失败:', error);
-      message.error(error.message || '生成大纲失败');
+    // 检查知识库选择
+    const knowledgeBaseName = getCurrentKnowledgeBaseName();
+    if (!knowledgeBaseName || !knowledgeBaseName.trim()) {
+      message.error('请先选择知识库');
+      return;
     }
+    
+    // 检查项目信息
+    const globalContext = treeData?.global_context;
+    if (!globalContext) {
+      message.error('请先设置项目信息');
+      setProjectInfoModalVisible(true); // 自动打开项目信息编辑
+      return;
+    }
+
+    // 显示确认对话框
+    Modal.confirm({
+      title: '操作确认',
+      icon: <Icons.ExclamationCircleOutlined />,
+      content: '此操作将覆盖现有的内容，确定要重新生成吗？',
+      okText: '确定生成',
+      cancelText: '取消',
+      okType: 'primary',
+      onOk: async () => {
+        try {
+          message.info('正在生成大纲，请稍候...');
+          
+          // 调用后端API生成大纲
+          const response = await fetch('http://localhost:8000/api/v1/generate/structure', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              kb_name: knowledgeBaseName.trim(),
+              global_context: globalContext
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || '生成大纲失败');
+          }
+          
+          const result = await response.json();
+          message.success('大纲生成成功！');
+          
+          // 可选：更新当前树结构为生成的结构
+          if (result.structure && result.structure.length > 0) {
+            const newTreeData = {
+              global_context: result.global_context || globalContext,
+              structure: result.structure
+            };
+            
+            // 移除knowledge_base_name字段（如果存在）
+            if (newTreeData.global_context && 'knowledge_base_name' in newTreeData.global_context) {
+              delete newTreeData.global_context.knowledge_base_name;
+            }
+            
+            const newDataWithPositions = addAutoLayoutPositions(newTreeData);
+            setTreeData(newDataWithPositions);
+            treeManager.setData(newDataWithPositions);
+            setSelectedNode(null);
+            message.info('已加载生成的大纲结构');
+          }
+          
+        } catch (error) {
+          console.error('生成大纲失败:', error);
+          message.error(error.message || '生成大纲失败');
+        }
+      }
+    });
   };
 
   // 新增：显示使用说明
@@ -397,6 +590,41 @@ function ScriptEditor() {
 
   return (
     <div className="script-editor">
+      {/* 左上角知识库选择器 */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        zIndex: 1000,
+        background: 'rgba(255, 255, 255, 0.95)',
+        padding: '6px 10px',
+        borderRadius: '6px',
+        border: '1px solid #d9d9d9',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        <span style={{ fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>
+          知识库:
+        </span>
+        <Select
+          style={{ width: 150 }}
+          placeholder="选择知识库"
+          value={selectedKnowledgeBase}
+          onChange={setSelectedKnowledgeBase}
+          loading={loadingKnowledgeBases}
+          allowClear={false}
+          size="small"
+        >
+          {knowledgeBases.map(kb => (
+            <Select.Option key={kb.name} value={kb.name}>
+              {kb.name}
+            </Select.Option>
+          ))}
+        </Select>
+      </div>
+
       <TreeCanvas
         ref={treeCanvasRef}
         treeData={treeData}
@@ -510,16 +738,31 @@ function ScriptEditor() {
       >
         <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
           <ol>
-            <li>在项目信息中设置景点信息和选择知识库</li>
-            <li>使用GraphRAG生成初始大纲结构</li>
-            <li>拖动树节点以移动位置</li>
-            <li>单击节点以选中，查看节点信息</li>
-            <li>双击节点以修改节点详细信息</li>
-            <li>右键节点以获取更多操作选项</li>
-            <li>空白区域右击可添加新节点</li>
-            <li>可随时保存修改或导出完整脚本</li>
-            <li>重置按钮可恢复到GraphRAG生成的原始结构</li>
+            <li><strong>选择知识库</strong>：使用左上角的知识库选择下拉框选择要使用的知识库</li>
+            <li><strong>设置项目信息</strong>：点击项目信息按钮，设置景点信息和角色设定</li>
+            <li><strong>生成大纲</strong>：使用GraphRAG生成初始大纲结构</li>
+            <li><strong>编辑节点</strong>：
+              <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
+                <li>拖动树节点以移动位置</li>
+                <li>单击节点以选中，查看节点信息</li>
+                <li>双击节点以修改节点详细信息</li>
+                <li>右键节点以获取更多操作选项</li>
+              </ul>
+            </li>
+            <li><strong>添加节点</strong>：空白区域右击可添加新节点</li>
+            <li><strong>数据同步</strong>：
+              <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
+                <li>项目信息会自动同步到JSON的global_context</li>
+                <li>剧本结构会自动同步到JSON的structure</li>
+                <li>点击保存按钮将数据保存到对应知识库的script.json</li>
+              </ul>
+            </li>
+            <li><strong>导出功能</strong>：可随时导出完整脚本文件</li>
+            <li><strong>重置功能</strong>：重置按钮可恢复到GraphRAG生成的原始结构</li>
           </ol>
+          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '6px', fontSize: '13px' }}>
+            <strong>💡 提示：</strong>使用左上角的知识库选择器切换不同的项目，系统会自动加载对应的数据。
+          </div>
         </div>
       </Modal>
     </div>

@@ -93,20 +93,9 @@ class ScriptFileService:
             self.ensure_project_dir(project_name)
             file_path = self.get_script_file_path(project_name)
             
-            # 添加元数据
-            output_data = {
-                "metadata": {
-                    "project_name": project_name,
-                    "created_time": datetime.now().isoformat(),
-                    "last_modified": datetime.now().isoformat(),
-                    "step": "content_generation",
-                    "version": "1.0"
-                },
-                **script_data
-            }
-            
+            # 直接保存脚本数据，不添加metadata
             with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(output_data, f, ensure_ascii=False, indent=2)
+                json.dump(script_data, f, ensure_ascii=False, indent=2)
             
             return True
         except Exception as e:
@@ -122,10 +111,6 @@ class ScriptFileService:
             
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            
-            # 更新最后访问时间
-            if "metadata" in data:
-                data["metadata"]["last_accessed"] = datetime.now().isoformat()
             
             return data
         except Exception as e:
