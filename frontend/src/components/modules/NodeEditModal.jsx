@@ -141,7 +141,7 @@ function NodeEditModal({
     // 更新节点数据
     onSave(node.id, updateData);
     
-    message.success('节点保存成功');
+    message.success('保存成功');
     // 注意：这里不调用 onClose()，保持模态框打开
   };
 
