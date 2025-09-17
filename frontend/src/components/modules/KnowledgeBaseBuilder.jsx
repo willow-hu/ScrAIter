@@ -68,24 +68,16 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
   // 开始构建知识库
   const handleBuild = async () => {
     try {
-      // 验证表单 - 重建模式只需验证类目
-      const fieldsToValidate = isRebuild ? ['categories'] : ['categories', 'kbName'];
+      // 验证表单
+      const values = await form.validateFields();
       
-      let values;
-      if (isRebuild) {
-        // 重建模式：使用现有知识库名称和选择的类目
-        values = {
-          categories: selectedCategories,
-          kbName: kbName
-        };
-        // 只验证类目
-        if (selectedCategories.length === 0) {
-          message.error('请选择至少一个类目');
-          return;
-        }
-      } else {
-        // 新建模式：验证完整表单
-        values = await form.validateFields(fieldsToValidate);
+      // 确保使用最新的selectedCategories状态
+      const categoriesToUse = isRebuild ? selectedCategories : values.categories;
+      const nameToUse = isRebuild ? kbName : values.kbName;
+      
+      if (!categoriesToUse || categoriesToUse.length === 0) {
+        message.error('请选择至少一个类目');
+        return;
       }
       
       if (!canBuild) {
@@ -96,19 +88,17 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
       // 加载已有知识库列表来检查名称冲突（仅新建模式需要）
       if (!isRebuild) {
         await loadKnowledgeBases();
-      }
-      
-      // 检查知识库名称是否已存在（重建模式跳过此检查）
-      if (!isRebuild) {
-        const nameExists = isKnowledgeBaseNameExists(values.kbName, existingKBs);
+        
+        // 检查知识库名称是否已存在
+        const nameExists = isKnowledgeBaseNameExists(nameToUse, existingKBs);
         if (nameExists) {
-          message.error(`知识库 "${values.kbName}" 已存在，请使用其他名称`);
+          message.error(`知识库 "${nameToUse}" 已存在，请使用其他名称`);
           return;
         }
       }
       
       // 直接开始构建
-      await startBuild(values.kbName);
+      await startBuild(nameToUse);
     } catch (error) {
       // 表单验证失败
       console.error('构建知识库失败:', error);
@@ -201,12 +191,16 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
           <Form.Item 
             label="选择类目" 
             name="categories"
-            rules={[{ message: '请选择至少一个类目' }]}
+            rules={[{ required: true, message: '请选择至少一个类目' }]}
           >
             <Select
               mode="multiple"
               value={selectedCategories}
-              onChange={setSelectedCategories}
+              onChange={(value) => {
+                setSelectedCategories(value);
+                // 同步更新表单字段
+                form.setFieldValue('categories', value);
+              }}
               placeholder="选择一个或多个类目"
               style={{ width: '100%' }}
               maxTagCount={3}
@@ -231,14 +225,18 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
               label="知识库名称" 
               name="kbName"
               rules={[
-                { message: '请输入知识库名称' },
+                { required: true, message: '请输入知识库名称' },
                 { pattern: /^[a-zA-Z0-9_-]+$/, message: '知识库名称只能包含字母、数字、下划线和短横线' }
               ]}
             >
               <Input 
                 placeholder="例：twin_pagoda" 
                 value={kbName}
-                onChange={(e) => setKbName(e.target.value)}
+                onChange={(e) => {
+                  setKbName(e.target.value);
+                  // 同步更新表单字段
+                  form.setFieldValue('kbName', e.target.value);
+                }}
               />
             </Form.Item>
           )}
