@@ -395,7 +395,7 @@ function ScriptEditor() {
         position={tooltipPosition}
       />
       
-      {/* 右上角六个浮动按钮 - 水平排列 */}
+      {/* 右上角浮动按钮 - 水平排列 */}
       <div className="floating-buttons-container">
         <Button
           shape="circle"
@@ -408,7 +408,7 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.NodeIndexOutlined />}
-          title="生成大纲（GraphRAG）"
+          title="生成大纲"
           onClick={handleGenerateOutline}
           className="floating-button"
         />
