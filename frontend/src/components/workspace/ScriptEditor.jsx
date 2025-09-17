@@ -24,6 +24,7 @@ function ScriptEditor() {
   // 新增的浮动按钮相关状态
   const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
+  const [usageModalVisible, setUsageModalVisible] = useState(false);
   
   // 悬停提示框状态
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -295,6 +296,35 @@ function ScriptEditor() {
     setProjectInfoModalVisible(false);
   };
 
+  // 新增：生成大纲（GraphRAG）
+  const handleGenerateOutline = async () => {
+    try {
+      message.info('正在生成大纲，请稍候...');
+      // TODO: 实现GraphRAG大纲生成API调用
+      // const response = await fetch('http://localhost:8000/api/v1/generate/structure', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     knowledge_base: treeData?.global_context?.knowledge_base,
+      //     requirements: treeData?.global_context?.other_requirements
+      //   })
+      // });
+      // const result = await response.json();
+      
+      message.warning('GraphRAG大纲生成功能暂未实现，请等待后端开发完成');
+    } catch (error) {
+      console.error('生成大纲失败:', error);
+      message.error('生成大纲失败');
+    }
+  };
+
+  // 新增：显示使用说明
+  const handleShowUsage = () => {
+    setUsageModalVisible(true);
+  };
+
   // 更新节点
   const updateNode = (nodeId, updates) => {
     const result = treeManager.updateNode(nodeId, updates);
@@ -415,23 +445,21 @@ function ScriptEditor() {
         position={tooltipPosition}
       />
       
-      {/* 右上角七个浮动按钮 - 水平排列 */}
+      {/* 右上角六个浮动按钮 - 水平排列 */}
       <div className="floating-buttons-container">
         <Button
           shape="circle"
-          icon={<Icons.UndoOutlined />}
-          title="撤销"
-          onClick={handleUndo}
-          disabled={!canUndo}
+          icon={<Icons.FileTextOutlined />}
+          title="项目信息"
+          onClick={handleOpenProjectInfo}
           className="floating-button"
         />
         
         <Button
           shape="circle"
-          icon={<Icons.RedoOutlined />}
-          title="重做"
-          onClick={handleRedo}
-          disabled={!canRedo}
+          icon={<Icons.NodeIndexOutlined />}
+          title="生成大纲（GraphRAG）"
+          onClick={handleGenerateOutline}
           className="floating-button"
         />
         
@@ -451,27 +479,19 @@ function ScriptEditor() {
           className="floating-button"
         />
 
-        {/* <Button
-          shape="circle"
-          icon={<Icons.DatabaseOutlined />}
-          title="知识库管理"
-          onClick={handleOpenKnowledgeBase}
-          className="floating-button"
-        /> */}
-
         <Button
           shape="circle"
           icon={<Icons.ReloadOutlined />}
-          title="重置脚本"
+          title="重置为GraphRAG生成的结构"
           onClick={handleResetWithConfirm}
           className="floating-button"
         />
 
         <Button
           shape="circle"
-          icon={<Icons.FileTextOutlined />}
-          title="项目信息"
-          onClick={handleOpenProjectInfo}
+          icon={<Icons.QuestionCircleOutlined />}
+          title="使用说明"
+          onClick={handleShowUsage}
           className="floating-button"
         />
       </div>
@@ -526,6 +546,33 @@ function ScriptEditor() {
         onSave={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}
       />
+
+      {/* 使用说明模态框 */}
+      <Modal
+        title="使用说明"
+        open={usageModalVisible}
+        onCancel={() => setUsageModalVisible(false)}
+        footer={[
+          <Button key="ok" type="primary" onClick={() => setUsageModalVisible(false)}>
+            知道了
+          </Button>
+        ]}
+        width={600}
+      >
+        <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
+          <ol>
+            <li>在项目信息中设置景点信息和选择知识库</li>
+            <li>使用GraphRAG生成初始大纲结构</li>
+            <li>拖动树节点以移动位置</li>
+            <li>单击节点以选中，查看节点信息</li>
+            <li>双击节点以修改节点详细信息</li>
+            <li>右键节点以获取更多操作选项</li>
+            <li>空白区域右击可添加新节点</li>
+            <li>可随时保存修改或导出完整脚本</li>
+            <li>重置按钮可恢复到GraphRAG生成的原始结构</li>
+          </ol>
+        </div>
+      </Modal>
     </div>
   );
 }
