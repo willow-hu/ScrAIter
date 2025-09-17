@@ -7,7 +7,6 @@ import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
 import ProjectInfoModal from '../modules/ProjectInfoModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
-import { createUndoRedoManager } from '../../utils/script_editor/undoRedoManager';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 
@@ -29,11 +28,6 @@ function ScriptEditor() {
   // TreeCanvas ref
   const treeCanvasRef = useRef(null);
   
-  // 撤销/重做管理器
-  const [undoRedoManager] = useState(() => createUndoRedoManager());
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-
   // 布局管理器
   const [layoutManager] = useState(() => new TreeLayoutManager());
 
@@ -55,16 +49,7 @@ function ScriptEditor() {
   // 树结构管理器
   const [treeManager] = useState(() => createTreeStructureManager(null, (newData) => {
     setTreeData(newData);
-    // 自动记录到历史（会自动忽略只有位置变化的情况）
-    undoRedoManager.pushState(newData);
-    updateUndoRedoState();
   }));
-
-  // 更新撤销/重做按钮状态
-  const updateUndoRedoState = () => {
-    setCanUndo(undoRedoManager.canUndo());
-    setCanRedo(undoRedoManager.canRedo());
-  };
 
   // 加载初始数据
   useEffect(() => {
@@ -78,10 +63,8 @@ function ScriptEditor() {
           const hasPositions = data.structure && data.structure.some(node => node.position);
           const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
           
-          undoRedoManager.initialize(dataWithPositions);
           treeManager.setData(dataWithPositions);
           setTreeData(dataWithPositions);
-          updateUndoRedoState();
           console.log('API数据加载成功:', dataWithPositions);
         } else {
           console.log('项目文件不存在，尝试加载fallback文件...');
@@ -92,10 +75,8 @@ function ScriptEditor() {
             const hasPositions = data.structure && data.structure.some(node => node.position);
             const dataWithPositions = hasPositions ? data : addAutoLayoutPositions(data);
             
-            undoRedoManager.initialize(dataWithPositions);
             treeManager.setData(dataWithPositions);
             setTreeData(dataWithPositions);
-            updateUndoRedoState();
             console.log('Fallback数据加载成功:', dataWithPositions);
           } else {
             throw new Error('无法加载树数据');
@@ -123,16 +104,14 @@ function ScriptEditor() {
         
         const defaultDataWithPositions = addAutoLayoutPositions(defaultData);
         setTreeData(defaultDataWithPositions);
-        undoRedoManager.initialize(defaultDataWithPositions);
         treeManager.setData(defaultDataWithPositions);
-        updateUndoRedoState();
       }
     };
 
     loadInitialData().catch(err => {
       console.error('loadInitialData failed:', err);
     });
-  }, [undoRedoManager, treeManager]);
+  }, [treeManager]);
 
   // 保存修改
   const handleSave = async () => {
@@ -155,49 +134,6 @@ function ScriptEditor() {
     } catch (error) {
       console.error('保存到服务器失败:', error);
       message.error('保存失败');
-    }
-  };
-
-  // 撤销操作
-  const handleUndo = () => {
-    const result = undoRedoManager.undo();
-    if (result.success) {
-      setTreeData(result.data);
-      treeManager.setData(result.data);
-      updateUndoRedoState();
-      setSelectedNode(null);
-    } else {
-      message.warning('无法撤销');
-    }
-  };
-
-  // 重做操作
-  const handleRedo = () => {
-    const result = undoRedoManager.redo();
-    if (result.success) {
-      setTreeData(result.data);
-      treeManager.setData(result.data);
-      updateUndoRedoState();
-      setSelectedNode(null);
-    } else {
-      message.warning('无法重做');
-    }
-  };
-
-  // 重置到初始状态
-  const handleReset = () => {
-    if (undoRedoManager.history && undoRedoManager.history.length > 0) {
-      // 重置为初始数据
-      const firstState = undoRedoManager.history[0];
-      undoRedoManager.clear();
-      undoRedoManager.initialize(firstState);
-      setTreeData(firstState);
-      treeManager.setData(firstState);
-      updateUndoRedoState();
-      setSelectedNode(null);
-      message.success('已重置到初始状态');
-    } else {
-      message.error('无法重置');
     }
   };
 
@@ -252,6 +188,35 @@ function ScriptEditor() {
         width: 480,
       });
     }
+  };
+
+  // 新增：重置到默认状态
+  const handleReset = () => {
+    const defaultData = {
+      global_context: {
+        narrator_role: "讲述者",
+        site_name: "景点名称",
+        character_setting: "角色设定",
+        background_information: "背景信息",
+        knowledge_base_name: "twin_pagoda"
+      },
+      structure: [
+        {
+          id: 'root',
+          type: 'root',
+          title: '根节点',
+          content: '',
+          position: { x: 400, y: 50 },
+          child_ids: []
+        }
+      ]
+    };
+    
+    const defaultDataWithPositions = addAutoLayoutPositions(defaultData);
+    setTreeData(defaultDataWithPositions);
+    treeManager.setData(defaultDataWithPositions);
+    setSelectedNode(null);
+    message.success('已重置到初始状态');
   };
 
   // 新增：处理重置脚本（带确认）

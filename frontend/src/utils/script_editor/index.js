@@ -10,7 +10,6 @@ export { EventHandler } from './eventHandler.js';
 export { CollisionDetector } from './collisionDetector.js';
 export { CSSHelper } from './cssHelper.js';
 export { SCRIPT_EDITOR_CONFIG } from './config.js';
-export { UndoRedoManager, createUndoRedoManager } from './undoRedoManager.js';
 
 // 导出树遍历相关工具
 export * from './treeTraversal.js';
