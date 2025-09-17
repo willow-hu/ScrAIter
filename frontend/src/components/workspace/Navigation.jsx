@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import { Layout, Menu, Button, Tooltip } from 'antd';
 import {
   DatabaseOutlined,
-  NodeIndexOutlined,
   EditOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined
@@ -25,11 +24,6 @@ function Navigation({
       key: 'data',
       icon: <DatabaseOutlined />,
       label: '资料管理',
-    },
-    {
-      key: 'outline',
-      icon: <NodeIndexOutlined />,
-      label: '生成大纲',
     },
     {
       key: 'script',

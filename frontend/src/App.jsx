@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Layout } from 'antd';
 import Navigation from './components/workspace/Navigation';
 import ArchiveManager from './components/workspace/ArchiveManager';
-import OutlineGenerator from './components/workspace/OutlineGenerator';
 import ScriptEditor from './components/workspace/ScriptEditor';
 
 const { Content } = Layout;
@@ -16,8 +15,6 @@ function App() {
     switch (activeView) {
       case 'data':
         return <ArchiveManager />;
-      case 'outline':
-        return <OutlineGenerator />;
       case 'script':
         return <ScriptEditor />;
       default:

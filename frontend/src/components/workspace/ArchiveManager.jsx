@@ -119,7 +119,7 @@ function ArchiveManager() {
         }}
       >
         {/* 页面标题 */}
-        <Title level={3} style={{ margin: '0 0 24px 0' }}>资料管理</Title>
+        {/* <Title level={3} style={{ margin: '0 0 24px 0' }}>资料管理</Title> */}
 
         {/* 知识库管理区域 */}
         <div className="archive-section">
