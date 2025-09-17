@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { message, Button, Drawer, Modal, Input, Space, Typography } from 'antd';
+import { message, Button, Drawer, Modal } from 'antd';
 
-const { TextArea } = Input;
 import * as Icons from '../../utils/icons';
 import TreeCanvas from '../modules/TreeCanvas';
 import Sidebar from '../modules/Sidebar';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
 import KnowledgeBaseModifier from '../modules/KnowledgeBaseModifier';
+import ProjectInfoModal from '../modules/ProjectInfoModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createUndoRedoManager } from '../../utils/script_editor/undoRedoManager';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
@@ -24,7 +24,6 @@ function ScriptEditor() {
   // 新增的浮动按钮相关状态
   const [kbDrawerVisible, setKbDrawerVisible] = useState(false);
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
-  const [projectInfoForm, setProjectInfoForm] = useState({});
   
   // 悬停提示框状态
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -281,23 +280,19 @@ function ScriptEditor() {
 
   // 新增：打开项目信息编辑
   const handleOpenProjectInfo = () => {
-    // 初始化表单数据
-    setProjectInfoForm({ ...treeData.global_context });
     setProjectInfoModalVisible(true);
   };
 
   // 新增：保存项目信息
-  const handleSaveProjectInfo = () => {
-    updateGlobalContext(projectInfoForm);
+  const handleSaveProjectInfo = (projectInfoData) => {
+    updateGlobalContext(projectInfoData);
     setProjectInfoModalVisible(false);
-    setProjectInfoForm({});
     message.success('项目信息已更新');
   };
 
   // 新增：取消项目信息编辑
   const handleCancelProjectInfo = () => {
     setProjectInfoModalVisible(false);
-    setProjectInfoForm({});
   };
 
   // 更新节点
@@ -456,13 +451,13 @@ function ScriptEditor() {
           className="floating-button"
         />
 
-        <Button
+        {/* <Button
           shape="circle"
           icon={<Icons.DatabaseOutlined />}
           title="知识库管理"
           onClick={handleOpenKnowledgeBase}
           className="floating-button"
-        />
+        /> */}
 
         <Button
           shape="circle"
@@ -525,51 +520,12 @@ function ScriptEditor() {
       />
 
       {/* 项目信息编辑模态框 */}
-      <Modal
-        title="项目信息"
-        open={projectInfoModalVisible}
-        onOk={handleSaveProjectInfo}
+      <ProjectInfoModal
+        visible={projectInfoModalVisible}
+        projectInfo={treeData?.global_context}
+        onSave={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}
-        okText="保存"
-        cancelText="取消"
-        width={600}
-      >
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <div>
-            <Typography.Text strong>景点名称</Typography.Text>
-            <Input
-              value={projectInfoForm.site_name || ''}
-              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, site_name: e.target.value }))}
-              placeholder="输入景点名称"
-            />
-          </div>
-          <div>
-            <Typography.Text strong>讲述者角色</Typography.Text>
-            <Input
-              value={projectInfoForm.narrator_role || ''}
-              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, narrator_role: e.target.value }))}
-              placeholder="输入讲述者角色"
-            />
-          </div>
-          <div>
-            <Typography.Text strong>角色设定</Typography.Text>
-            <TextArea
-              value={projectInfoForm.character_setting || ''}
-              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, character_setting: e.target.value }))}
-              placeholder="输入角色设定"
-              rows={3}
-            />
-          </div>
-          <div>
-            <Typography.Text strong>成就</Typography.Text>
-            <Input
-              value={projectInfoForm.achievement || ''}
-              onChange={(e) => setProjectInfoForm(prev => ({ ...prev, achievement: e.target.value }))}
-              placeholder="输入成就"
-            />
-          </div>
-        </Space>
-      </Modal>
+      />
     </div>
   );
 }
