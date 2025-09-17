@@ -27,16 +27,3 @@ export const fetchCategories = async () => {
     return { categories: [] };
   }
 };
-
-/**
- * 统一的错误处理函数
- * @param {Error} error - 错误对象
- * @param {string} operation - 操作名称
- */
-export const handleApiError = (error, operation = '操作') => {
-  console.error(`${operation}失败:`, error);
-  return {
-    success: false,
-    message: `${operation}失败: ${error.message}`
-  };
-};
