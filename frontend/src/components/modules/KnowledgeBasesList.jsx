@@ -86,7 +86,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
       title: '知识库名称',
       dataIndex: 'name',
       key: 'name',
-      width: '20%',
+      width: '25%',
       render: (text, record) => (
         <Space>
           <DatabaseOutlined style={{ color: '#1890ff' }} />
@@ -99,7 +99,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
       title: '类目',
       dataIndex: 'categories',
       key: 'categories',
-      width: '10%',
+      width: '20%',
       render: (categories) => (
         <Space wrap>
           {(categories || []).map(category => (
@@ -152,9 +152,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
               icon={<DeleteOutlined />}
               onClick={() => handleDelete(record)}
               loading={deleting[record.name]}
-            >
-              删除
-            </Button>
+            />
           </Tooltip>
         </Space>
       ),

@@ -17,6 +17,7 @@
 @import './draft-generator.css';
 
 /* 资料管理样式 */
+@import './archive-manager.css';
 @import './file-uploader.css';
 @import './file-list.css';
 @import './knowledge-base-builder.css';

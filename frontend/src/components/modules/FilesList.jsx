@@ -115,7 +115,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '类型',
       dataIndex: 'file_type',
       key: 'file_type',
-      width: '10%',
+      width: '15%',
       render: (type) => (
         <Tag color='default'>
           {type === 'structured' ? '结构化' : '非结构化'}
@@ -126,7 +126,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       title: '可信度',
       dataIndex: 'source_tag',
       key: 'source_tag',
-      width: '10%',
+      width: '15%',
       render: (tag, record) => {
         const isUpdating = updating[record.relative_path];
         
@@ -155,7 +155,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
     {
       title: '操作',
       key: 'actions',
-      width: '5%',
+      width: '10%',
       render: (_, record) => (
         <Tooltip title="删除文件">
           <Button

@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Layout, Menu, Button, Tooltip } from 'antd';
 import {
-  FileTextOutlined,
   DatabaseOutlined,
   NodeIndexOutlined,
   EditOutlined,
@@ -23,14 +22,9 @@ function Navigation({
 
   const menuItems = [
     {
-      key: 'files',
-      icon: <FileTextOutlined />,
-      label: '文件管理',
-    },
-    {
-      key: 'knowledge-base',
+      key: 'data',
       icon: <DatabaseOutlined />,
-      label: '知识库管理',
+      label: '资料管理',
     },
     {
       key: 'outline',
