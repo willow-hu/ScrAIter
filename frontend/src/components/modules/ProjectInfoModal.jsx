@@ -86,8 +86,8 @@ function ProjectInfoModal({
           <Select
             style={{ width: '100%' }}
             placeholder="选择一个知识库"
-            value={form.knowledge_base}
-            onChange={(value) => handleFieldChange('knowledge_base', value)}
+            value={form.knowledge_base_name || form.knowledge_base}
+            onChange={(value) => handleFieldChange('knowledge_base_name', value)}
             loading={loading}
             allowClear
           >

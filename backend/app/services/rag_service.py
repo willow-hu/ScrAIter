@@ -123,55 +123,49 @@ class RAGService:
             print(f"RAG检索失败: {e}")
             return "", []
     
-    def generate_script_structure(self, project_name: Optional[str] = None) -> Dict[str, Any]:
+    def generate_script_structure(self, kb_name: str, global_context: Dict[str, Any]) -> Dict[str, Any]:
         """生成剧本结构"""
         generation_id = str(uuid.uuid4())
         
         try:
-            # 如果指定了项目名，尝试从项目文件加载
-            if project_name:
-                tree_data = script_file_service.load_tree_structure(project_name)
-                if tree_data:
-                    # 记录生成历史
-                    history_record = GenerationHistory(
-                        generation_id=generation_id,
-                        timestamp=datetime.now(),
-                        generation_type="structure",
-                        success=True
-                    )
-                    self.generation_history.append(history_record)
-                    
-                    return {
-                        "generation_id": generation_id,
-                        "structure": tree_data.get("structure", []),
-                        "global_context": tree_data.get("global_context", {}),
-                        "message": f"从项目 '{project_name}' 加载剧本结构成功"
-                    }
+            # 确保shared/projects目录存在
+            projects_base_dir = os.path.join(settings.SHARED_DIR, "projects")
+            os.makedirs(projects_base_dir, exist_ok=True)
             
-            # 如果没有项目或项目文件不存在，尝试从遗留配置加载
-            legacy_path = os.path.join(self.configs_path, "structure", "twin_pagoda", "anchor_tree.json")
-            if os.path.exists(legacy_path):
-                with open(legacy_path, 'r', encoding='utf-8') as f:
-                    anchor_tree = json.load(f)
-                
-                # 记录生成历史
-                history_record = GenerationHistory(
-                    generation_id=generation_id,
-                    timestamp=datetime.now(),
-                    generation_type="structure",
-                    success=True
-                )
-                self.generation_history.append(history_record)
-                
-                return {
-                    "generation_id": generation_id,
-                    "structure": anchor_tree["structure"],
-                    "global_context": anchor_tree["global_context"],
-                    "message": "从遗留配置加载剧本结构成功"
-                }
+            # 创建知识库名称的子文件夹
+            kb_projects_dir = os.path.join(projects_base_dir, kb_name)
+            os.makedirs(kb_projects_dir, exist_ok=True)
             
-            # 如果都没有，返回错误
-            raise FileNotFoundError("没有找到可用的剧本结构文件")
+            # 创建JSON文件
+            script_file_name = f"{kb_name}_script.json"
+            script_file_path = os.path.join(kb_projects_dir, script_file_name)
+            
+            # 构建文件内容
+            script_data = {
+                "global_context": global_context,
+                "structure": []  # 暂时置空，等待GraphRAG实现
+            }
+            
+            # 保存文件
+            with open(script_file_path, 'w', encoding='utf-8') as f:
+                json.dump(script_data, f, ensure_ascii=False, indent=2)
+            
+            # 记录生成历史
+            history_record = GenerationHistory(
+                generation_id=generation_id,
+                timestamp=datetime.now(),
+                generation_type="structure",
+                success=True
+            )
+            self.generation_history.append(history_record)
+            
+            return {
+                "generation_id": generation_id,
+                "structure": script_data["structure"],
+                "global_context": script_data["global_context"],
+                "message": f"已在 shared/projects/{kb_name}/ 目录下创建 {script_file_name} 文件",
+                "file_path": script_file_path
+            }
             
         except Exception as e:
             # 记录失败

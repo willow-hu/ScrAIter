@@ -14,20 +14,26 @@ from app.services.rag_service import rag_service
 router = APIRouter()
 
 @router.post("/generate/structure")
-async def generate_structure(project_name: Optional[str] = None):
+async def generate_structure(request: dict):
     """
     生成剧本结构
-    输入：可选的项目名称
+    输入：知识库名称和全局上下文
     输出：树形结构JSON
     """
     try:
-        result = rag_service.generate_script_structure(project_name)
+        kb_name = request.get('kb_name')
+        global_context = request.get('global_context', {})
+        
+        if not kb_name or not kb_name.strip():
+            raise HTTPException(status_code=400, detail="知识库名称不能为空")
+        
+        result = rag_service.generate_script_structure(kb_name.strip(), global_context)
         return JSONResponse(
             status_code=200,
             content=result
         )
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=f"配置文件未找到: {str(e)}")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"生成剧本结构失败: {str(e)}")
 

@@ -250,23 +250,56 @@ function ScriptEditor() {
   const handleGenerateOutline = async () => {
     try {
       message.info('正在生成大纲，请稍候...');
-      // TODO: 实现GraphRAG大纲生成API调用
-      // const response = await fetch('http://localhost:8000/api/v1/generate/structure', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     knowledge_base: treeData?.global_context?.knowledge_base,
-      //     requirements: treeData?.global_context?.other_requirements
-      //   })
-      // });
-      // const result = await response.json();
       
-      message.warning('GraphRAG大纲生成功能暂未实现，请等待后端开发完成');
+      // 检查项目信息和知识库名称
+      const globalContext = treeData?.global_context;
+      if (!globalContext) {
+        message.error('请先设置项目信息');
+        return;
+      }
+      
+      const knowledgeBaseName = globalContext.knowledge_base_name;
+      if (!knowledgeBaseName || !knowledgeBaseName.trim()) {
+        message.error('请在项目信息中选择知识库');
+        return;
+      }
+      
+      // 调用后端API生成大纲
+      const response = await fetch('http://localhost:8000/api/v1/generate/structure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          kb_name: knowledgeBaseName.trim(),
+          global_context: globalContext
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '生成大纲失败');
+      }
+      
+      const result = await response.json();
+      message.success('大纲生成成功！');
+      
+      // 可选：更新当前树结构为生成的结构
+      if (result.structure && result.structure.length > 0) {
+        const newTreeData = {
+          global_context: result.global_context || globalContext,
+          structure: result.structure
+        };
+        const newDataWithPositions = addAutoLayoutPositions(newTreeData);
+        setTreeData(newDataWithPositions);
+        treeManager.setData(newDataWithPositions);
+        setSelectedNode(null);
+        message.info('已加载生成的大纲结构');
+      }
+      
     } catch (error) {
       console.error('生成大纲失败:', error);
-      message.error('生成大纲失败');
+      message.error(error.message || '生成大纲失败');
     }
   };
 
