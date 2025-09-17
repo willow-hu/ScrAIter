@@ -10,4 +10,3 @@ export { EventHandler } from './eventHandler.js';
 export { CollisionDetector } from './collisionDetector.js';
 export { CSSHelper } from './cssHelper.js';
 export { SCRIPT_EDITOR_CONFIG } from './config.js';
-export { saveScriptToServer, validateDataIntegrity } from './saveJson.js';

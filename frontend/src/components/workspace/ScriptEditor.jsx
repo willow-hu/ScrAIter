@@ -8,7 +8,7 @@ import NodeTooltip from '../modules/NodeTooltip';
 import ProjectInfoModal from '../modules/ProjectInfoModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
-import { TreeLayoutManager, saveScriptToServer, validateDataIntegrity } from '../../utils/script_editor/index.js';
+import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 
 function ScriptEditor() {
   const [treeData, setTreeData] = useState(null);
@@ -69,6 +69,27 @@ function ScriptEditor() {
   // 获取当前知识库名称的辅助函数
   const getCurrentKnowledgeBaseName = () => {
     return selectedKnowledgeBase;
+  };
+
+  // 验证数据完整性
+  const validateDataIntegrity = (data) => {
+    if (!data) {
+      return { valid: false, message: '数据为空' };
+    }
+    
+    if (!data.global_context) {
+      return { valid: false, message: '缺少项目信息(global_context)' };
+    }
+    
+    if (!data.structure) {
+      return { valid: false, message: '缺少剧本结构(structure)' };
+    }
+    
+    if (!Array.isArray(data.structure)) {
+      return { valid: false, message: '剧本结构必须是数组格式' };
+    }
+    
+    return { valid: true, message: '数据完整' };
   };
 
   // 为树数据添加自动布局位置
@@ -188,6 +209,11 @@ function ScriptEditor() {
 
   // 保存修改
   const handleSave = async () => {
+    if (!treeData) {
+      message.error('没有数据可以保存');
+      return;
+    }
+    
     // 验证数据完整性
     const validation = validateDataIntegrity(treeData);
     if (!validation.valid) {
@@ -195,11 +221,45 @@ function ScriptEditor() {
       return;
     }
     
-    // 获取当前的知识库名称
-    const kbName = getCurrentKnowledgeBaseName();
-    
-    // 使用通用保存函数，显示成功消息
-    await saveScriptToServer(kbName, treeData, true);
+    try {
+      // 获取当前的知识库名称
+      const kbName = getCurrentKnowledgeBaseName();
+      
+      if (!kbName) {
+        message.error('请先选择知识库');
+        return;
+      }
+      
+      // 构建完整的保存数据，确保包含global_context和structure，不包含knowledge_base_name
+      const saveData = {
+        global_context: {
+          narrator_role: treeData.global_context.narrator_role || "",
+          site_name: treeData.global_context.site_name || "",
+          character_setting: treeData.global_context.character_setting || "",
+          other_requirements: treeData.global_context.other_requirements || ""
+        },
+        structure: treeData.structure || []
+      };
+      
+      // 保存为script数据
+      const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(saveData)
+      });
+      
+      if (response.ok) {
+        message.success(`保存成功！已保存到知识库 "${kbName}" 的脚本文件中`);
+      } else {
+        const errorData = await response.json();
+        message.error(`保存失败: ${errorData.detail || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('保存到服务器失败:', error);
+      message.error('保存失败: 网络错误或服务器不可用');
+    }
   };
 
   // 导出JSON
@@ -321,23 +381,31 @@ function ScriptEditor() {
       
       // 自动保存到服务器
       const kbName = getCurrentKnowledgeBaseName();
-      
-      // 构建更新后的数据结构
-      const updatedTreeData = {
-        ...treeData,
-        global_context: {
-          narrator_role: projectInfoData.narrator_role || "",
-          site_name: projectInfoData.site_name || "",
-          character_setting: projectInfoData.character_setting || "",
-          other_requirements: projectInfoData.other_requirements || ""
+      if (kbName && kbName.trim()) {
+        // 构建保存数据，不包含knowledge_base_name
+        const saveData = {
+          global_context: {
+            narrator_role: projectInfoData.narrator_role || "",
+            site_name: projectInfoData.site_name || "",
+            character_setting: projectInfoData.character_setting || "",
+            other_requirements: projectInfoData.other_requirements || ""
+          },
+          structure: treeData?.structure || []
+        };
+        
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(saveData)
+        });
+        
+        if (response.ok) {
+          message.success('项目信息已更新并保存');
+        } else {
+          message.warning('项目信息已更新，但自动保存失败，请手动点击保存按钮');
         }
-      };
-      
-      const success = await saveScriptToServer(kbName, updatedTreeData, false);
-      if (success) {
-        message.success('项目信息已更新并保存');
-      } else {
-        message.warning('项目信息已更新，但自动保存失败，请手动点击保存按钮');
       }
       
     } catch (error) {
@@ -444,9 +512,35 @@ function ScriptEditor() {
         setSelectedNode(updatedNode);
       }
       
-      // 自动保存到服务器（静默保存，不显示成功消息）
-      const kbName = getCurrentKnowledgeBaseName();
-      await saveScriptToServer(kbName, treeData, false);
+      // 自动保存到服务器
+      try {
+        const kbName = getCurrentKnowledgeBaseName();
+        if (kbName && treeData) {
+          const saveData = {
+            global_context: {
+              narrator_role: treeData.global_context.narrator_role || "",
+              site_name: treeData.global_context.site_name || "",
+              character_setting: treeData.global_context.character_setting || "",
+              other_requirements: treeData.global_context.other_requirements || ""
+            },
+            structure: treeData.structure || []
+          };
+          
+          const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(saveData)
+          });
+          
+          if (!response.ok) {
+            console.error('自动保存失败');
+          }
+        }
+      } catch (error) {
+        console.error('自动保存出错:', error);
+      }
     }
   };
 
