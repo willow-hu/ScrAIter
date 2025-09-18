@@ -96,8 +96,6 @@ function NodeEditModal({
         lastGenerationId: result.generation_id
       };
       onSave(node.id, updateData);
-      
-      message.success('内容生成成功');
     } catch (error) {
       console.error('生成内容失败:', error);
       message.error('生成内容失败');

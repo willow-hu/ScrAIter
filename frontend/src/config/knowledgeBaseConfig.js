@@ -6,8 +6,8 @@
 export const KNOWLEDGE_BASE_CONFIG = {  
   // 文本处理参数
   textProcessing: {
-    chunk_size: 300,           // 文本分块大小
-    chunk_overlap: 80,        // 分块重叠大小
+    chunk_size: 500,           // 文本分块大小
+    chunk_overlap: 50,        // 分块重叠大小
     chunking_method: "recursive" // 分块方法
   },
   
