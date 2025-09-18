@@ -35,10 +35,12 @@ function NodeEditModal({
         content: node.content || ''
       });
       
-      // 加载已保存的参考资料
+      // 加载已保存的参考资料 - 添加调试日志
       if (node.ragSources && Array.isArray(node.ragSources)) {
+        console.log('加载节点的参考资料:', node.ragSources.length, '个');
         setRagSources(node.ragSources);
       } else {
+        console.log('节点没有参考资料，清空状态');
         setRagSources([]);
       }
       
@@ -94,6 +96,7 @@ function NodeEditModal({
       
       let fullContent = '';
       let currentGenerationId = null;
+      let currentRagSources = []; // 使用局部变量跟踪RAG源
       let buffer = '';
 
       try {
@@ -129,7 +132,8 @@ function NodeEditModal({
                       break;
                       
                     case 'rag_sources':
-                      setRagSources(data.sources || []);
+                      currentRagSources = data.sources || [];
+                      setRagSources(currentRagSources);
                       break;
                       
                     case 'content':
@@ -149,16 +153,22 @@ function NodeEditModal({
                         content: fullContent
                       }));
                       
-                      // 自动保存节点
+                      // 自动保存节点 - 使用局部变量确保RAG源不会丢失
                       const updateData = {
                         name: nodeForm.name,
                         abstract: nodeForm.abstract,
                         user: nodeForm.user,
                         content: fullContent,
-                        ragSources: ragSources.length > 0 ? ragSources : undefined,
+                        ragSources: currentRagSources.length > 0 ? currentRagSources : undefined,
                         lastGenerationId: currentGenerationId
                       };
+                      
+                      console.log('保存节点数据，包含参考资料:', currentRagSources.length, '个');
                       onSave(node.id, updateData);
+                      
+                      // 确保状态也更新到最新值
+                      setRagSources(currentRagSources);
+                      setLastGenerationId(currentGenerationId);
                       
                       setGenerating(false);
                       setAbortController(null);
