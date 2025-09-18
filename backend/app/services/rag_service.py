@@ -49,6 +49,11 @@ class RAGService:
         
         # 默认知识库名称
         self.default_kb_name = "twin_pagoda"
+        
+        # 索引缓存 - 新增
+        self.index_cache: Dict[str, Any] = {}
+        self.retriever_cache: Dict[str, Any] = {}
+        print("🚀 RAG服务初始化完成，已启用索引缓存机制")
     
     def set_default_knowledge_base(self, kb_name: str):
         """设置默认知识库"""
@@ -81,21 +86,28 @@ class RAGService:
         chunk_cnt: int = 3
     ) -> Tuple[str, List[RAGSource]]:
         """检索相关知识片段"""
+        kb_name = kb_name or self.default_kb_name
+        
         try:
-            # 使用指定的知识库，如果没有指定则使用默认的
-            kb_name = kb_name or self.default_kb_name
             db_path = os.path.join(self.kb_path, "VectorStore", kb_name)
             
             if not os.path.exists(db_path):
-                print(f"知识库不存在: {db_path}")
                 return "", []
             
-            # 加载索引
-            storage_context = StorageContext.from_defaults(persist_dir=db_path)
-            index = load_index_from_storage(storage_context)
+            # 检查缓存中是否有对应的检索器
+            if kb_name in self.retriever_cache:
+                retriever = self.retriever_cache[kb_name]
+            else:
+                # 加载索引
+                storage_context = StorageContext.from_defaults(persist_dir=db_path)
+                index = load_index_from_storage(storage_context)
+                
+                # 创建检索器并缓存
+                retriever = index.as_retriever(similarity_top_k=20)
+                self.index_cache[kb_name] = index
+                self.retriever_cache[kb_name] = retriever
             
             # 检索
-            retriever = index.as_retriever(similarity_top_k=20)
             retrieved_nodes = retriever.retrieve(query)
             
             # 重排序
@@ -106,7 +118,7 @@ class RAGService:
             context_str = ""
             rag_sources = []
             
-            for node in ranked_nodes:
+            for i, node in enumerate(ranked_nodes):
                 # 确保score不为None
                 node_score = getattr(node, 'score', 0.0) or 0.0
                 if node_score >= similarity_threshold:
@@ -234,6 +246,7 @@ class RAGService:
                 )
             except KeyError as e:
                 print(f"❌ 提示词模板有误，请检查: {e}")
+                raise e
 
             # 调用大模型
             completion = self.client.chat.completions.create(
@@ -300,6 +313,28 @@ class RAGService:
             total_count=len(sorted_history)
         )
     
+    def clear_cache(self, kb_name: Optional[str] = None):
+        """清理索引缓存"""
+        if kb_name:
+            # 清理指定知识库的缓存
+            if kb_name in self.index_cache:
+                del self.index_cache[kb_name]
+            if kb_name in self.retriever_cache:
+                del self.retriever_cache[kb_name]
+            print(f"🧹 已清理知识库缓存: {kb_name}")
+        else:
+            # 清理所有缓存
+            self.index_cache.clear()
+            self.retriever_cache.clear()
+            print("🧹 已清理所有索引缓存")
+
+    def get_cache_status(self) -> Dict[str, Any]:
+        """获取缓存状态"""
+        return {
+            "cached_knowledge_bases": list(self.index_cache.keys()),
+            "cache_count": len(self.index_cache)
+        }
+
     def get_rag_sources(self, generation_id: str) -> Optional[RAGSourcesResponse]:
         """获取指定生成ID的RAG检索片段"""
         if generation_id not in self.rag_sources_cache:

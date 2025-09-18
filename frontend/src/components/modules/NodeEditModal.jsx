@@ -112,17 +112,18 @@ function NodeEditModal({
     
     try {
       const response = await fetch(`http://localhost:8000/api/v1/rag/sources/${generationId}`);
+      
       if (!response.ok) {
-        throw new Error('获取参考资料失败');
+        throw new Error(`获取参考资料失败: ${response.status} ${response.statusText}`);
       }
       
       const result = await response.json();
       const sources = result.sources || [];
       setRagSources(sources);
-      return sources; // 返回加载的参考资料
+      return sources;
     } catch (error) {
       console.error('获取参考资料失败:', error);
-      message.error('获取参考资料失败');
+      message.error(`获取参考资料失败: ${error.message}`);
       return [];
     }
   };
