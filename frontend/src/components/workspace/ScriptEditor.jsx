@@ -251,7 +251,7 @@ function ScriptEditor() {
       });
       
       if (response.ok) {
-        message.success(`保存成功！已保存到知识库 "${kbName}" 的脚本文件中`);
+        message.success(`保存成功！`);
       } else {
         const errorData = await response.json();
         message.error(`保存失败: ${errorData.detail || '未知错误'}`);

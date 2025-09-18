@@ -6,7 +6,7 @@ import os
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, AsyncGenerator
 from openai import OpenAI
 from llama_index.core import StorageContext, load_index_from_storage, Settings
 from llama_index.embeddings.dashscope import (
@@ -298,6 +298,101 @@ class RAGService:
             )
             self.generation_history.append(history_record)
             raise e
+
+    async def generate_node_content_stream(
+        self, 
+        node_info: Dict[str, Any], 
+        global_context: Dict[str, Any],
+        kb_name: Optional[str] = None,
+        similarity_threshold: float = 0.2,
+        chunk_cnt: int = 5
+    ) -> AsyncGenerator[str, None]:
+        """流式生成节点内容"""
+        generation_id = str(uuid.uuid4())
+        node_name = node_info.get("name", "unknown")
+        
+        try:
+            # 发送开始事件
+            yield f"data: {json.dumps({'type': 'start', 'generation_id': generation_id})}\n\n"
+            
+            # 加载提示词模板
+            prompt_template = self.load_prompt_template()
+            
+            # RAG检索
+            user_query = node_info.get("user", node_info.get("abstract", ""))
+            context_knowledge, rag_sources = self.retrieve_relevant_chunks(
+                user_query, 
+                kb_name=kb_name,
+                similarity_threshold=similarity_threshold,
+                chunk_cnt=chunk_cnt
+            )
+            
+            # 缓存RAG源
+            self.rag_sources_cache[generation_id] = rag_sources
+            
+            # 发送RAG源信息
+            yield f"data: {json.dumps({'type': 'rag_sources', 'sources': [{'text': src.text, 'score': src.score, 'source_file': src.source_file} for src in rag_sources]})}\n\n"
+            
+            # 构建最终提示词
+            try:
+                filled_prompt = prompt_template.format(
+                    global_context=json.dumps(global_context, ensure_ascii=False, indent=2),
+                    node_info=json.dumps(node_info, ensure_ascii=False, indent=2),
+                    context=context_knowledge
+                )
+            except KeyError as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': f'提示词模板有误: {str(e)}'})}\n\n"
+                return
+
+            # 流式调用大模型
+            stream = self.client.chat.completions.create(
+                model="qwen-max",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "你是一位经验丰富的交互剧情游戏设计师，严格按照要求生成对话脚本。"
+                    },
+                    {"role": "user", "content": filled_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=512,
+                stream=True
+            )
+            
+            full_content = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None:
+                    content_chunk = chunk.choices[0].delta.content
+                    full_content += content_chunk
+                    yield f"data: {json.dumps({'type': 'content', 'chunk': content_chunk})}\n\n"
+            
+            # 记录成功历史
+            history_record = GenerationHistory(
+                generation_id=generation_id,
+                timestamp=datetime.now(),
+                generation_type="node_content",
+                node_name=node_name,
+                success=True
+            )
+            self.generation_history.append(history_record)
+            
+            # 发送完成事件
+            yield f"data: {json.dumps({'type': 'complete', 'generation_id': generation_id, 'full_content': full_content})}\n\n"
+            
+        except Exception as e:
+            # 记录失败历史
+            history_record = GenerationHistory(
+                generation_id=generation_id,
+                timestamp=datetime.now(),
+                generation_type="node_content",
+                node_name=node_name,
+                success=False,
+                error_message=str(e)
+            )
+            self.generation_history.append(history_record)
+            
+            # 发送错误事件
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
     
     def get_generation_history(self) -> GenerationHistoryResponse:
         """获取生成历史"""

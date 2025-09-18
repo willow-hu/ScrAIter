@@ -23,6 +23,7 @@ function NodeEditModal({
   const [generating, setGenerating] = useState(false);
   const [ragSources, setRagSources] = useState([]);
   const [lastGenerationId, setLastGenerationId] = useState(null);
+  const [abortController, setAbortController] = useState(null); // 用于取消请求
 
   // 当节点变化时更新表单
   useEffect(() => {
@@ -55,51 +56,152 @@ function NodeEditModal({
     if (!node || !treeData) return;
     
     setGenerating(true);
+    setNodeForm(prev => ({ ...prev, content: '' })); // 清空现有内容
+    setRagSources([]); // 清空现有参考资料
+    
+    // 创建取消控制器
+    const controller = new AbortController();
+    setAbortController(controller);
+    
     try {
-      const response = await fetch('http://localhost:8000/api/v1/generate/node-content', {
+      // 构建请求数据
+      const requestData = {
+        node_info: {
+          name: nodeForm.name,
+          abstract: nodeForm.abstract,
+          user: nodeForm.user,
+          id: node.id
+        },
+        global_context: treeData.global_context
+      };
+
+      // 使用fetch进行流式接收
+      const response = await fetch('http://localhost:8000/api/v1/generate/node-content-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          node_info: {
-            name: nodeForm.name,
-            abstract: nodeForm.abstract,
-            user: nodeForm.user,
-            id: node.id
-          },
-          global_context: treeData.global_context
-        })
+        body: JSON.stringify(requestData),
+        signal: controller.signal // 支持取消
       });
-      
+
       if (!response.ok) {
-        throw new Error('生成内容失败');
+        throw new Error(`服务器错误: ${response.status} ${response.statusText}`);
       }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
       
-      const result = await response.json();
-      
-      // 更新内容
-      setNodeForm(prev => ({
-        ...prev,
-        content: result.content
-      }));
-      
-      // 保存生成ID并自动加载参考资料
-      setLastGenerationId(result.generation_id);
-      const sources = await loadReferences(result.generation_id);
-      
-      // 自动保存节点（包含新生成的内容和参考资料）
-      const updateData = {
-        ...nodeForm,
-        content: result.content,
-        ragSources: sources && sources.length > 0 ? sources : undefined,
-        lastGenerationId: result.generation_id
-      };
-      onSave(node.id, updateData);
+      let fullContent = '';
+      let currentGenerationId = null;
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            break;
+          }
+          
+          // 解码数据块
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          
+          // 处理完整的事件
+          const events = buffer.split('\n\n');
+          buffer = events.pop() || ''; // 保留不完整的事件
+          
+          for (const event of events) {
+            if (event.trim() === '') continue;
+            
+            // 解析SSE格式的数据
+            const lines = event.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.substring(6));
+                  
+                  switch (data.type) {
+                    case 'start':
+                      currentGenerationId = data.generation_id;
+                      setLastGenerationId(currentGenerationId);
+                      break;
+                      
+                    case 'rag_sources':
+                      setRagSources(data.sources || []);
+                      break;
+                      
+                    case 'content':
+                      fullContent += data.chunk;
+                      setNodeForm(prev => ({
+                        ...prev,
+                        content: fullContent
+                      }));
+                      break;
+                      
+                    case 'complete':
+                      // 生成完成
+                      currentGenerationId = data.generation_id;
+                      fullContent = data.full_content;
+                      setNodeForm(prev => ({
+                        ...prev,
+                        content: fullContent
+                      }));
+                      
+                      // 自动保存节点
+                      const updateData = {
+                        name: nodeForm.name,
+                        abstract: nodeForm.abstract,
+                        user: nodeForm.user,
+                        content: fullContent,
+                        ragSources: ragSources.length > 0 ? ragSources : undefined,
+                        lastGenerationId: currentGenerationId
+                      };
+                      onSave(node.id, updateData);
+                      
+                      setGenerating(false);
+                      setAbortController(null);
+                      return;
+                      
+                    case 'error':
+                      console.error('生成错误:', data.message);
+                      message.error(`生成内容失败: ${data.message}`);
+                      setGenerating(false);
+                      setAbortController(null);
+                      return;
+                      
+                    default:
+                      console.log('未知事件类型:', data.type);
+                  }
+                } catch (parseError) {
+                  console.error('解析流式数据失败:', parseError, 'Line:', line);
+                }
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
     } catch (error) {
-      console.error('生成内容失败:', error);
-      message.error('生成内容失败');
-    } finally {
+      if (error.name === 'AbortError') {
+        message.info('已取消生成');
+      } else {
+        console.error('流式生成失败:', error);
+        message.error(`生成内容失败: ${error.message}`);
+      }
+      setGenerating(false);
+      setAbortController(null);
+    }
+  };
+
+  // 取消生成
+  const cancelGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
       setGenerating(false);
     }
   };
@@ -220,19 +322,31 @@ function NodeEditModal({
               {/* 操作按钮 */}
               <div className="node-edit-actions">
                 <Space>
-                  <Button 
-                    type="primary"
-                    className="node-edit-generate-btn"
-                    icon={<RobotOutlined />}
-                    onClick={generateContent}
-                    loading={generating}
-                  >
-                    生成内容
-                  </Button>
+                  {generating ? (
+                    <Button 
+                      type="default"
+                      danger
+                      onClick={cancelGeneration}
+                      className="node-edit-cancel-btn"
+                    >
+                      取消生成
+                    </Button>
+                  ) : (
+                    <Button 
+                      type="primary"
+                      className="node-edit-generate-btn"
+                      icon={<RobotOutlined />}
+                      onClick={generateContent}
+                      loading={generating}
+                    >
+                      生成内容
+                    </Button>
+                  )}
                   
                   <Button 
                     icon={<SaveOutlined />}
                     onClick={handleSave}
+                    disabled={generating}
                   >
                     保存
                   </Button>

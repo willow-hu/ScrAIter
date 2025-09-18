@@ -3,7 +3,7 @@ RAG生成API端点
 """
 from typing import Optional
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.models.rag_models import (
     GenerateStructureRequest, GenerateNodeContentRequest,
@@ -63,6 +63,45 @@ async def generate_node_content(request: GenerateNodeContentRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"生成节点内容失败: {str(e)}")
+
+@router.post("/generate/node-content-stream")
+async def generate_node_content_stream(request: GenerateNodeContentRequest):
+    """
+    流式生成节点内容 (Server-Sent Events)
+    输入：节点信息、项目全局信息、可选的知识库名称
+    输出：流式数据
+    """
+    try:
+        if not request.node_info:
+            raise HTTPException(status_code=400, detail="节点信息不能为空")
+        
+        if not request.global_context:
+            raise HTTPException(status_code=400, detail="全局上下文不能为空")
+        
+        async def generate():
+            async for chunk in rag_service.generate_node_content_stream(
+                node_info=request.node_info,
+                global_context=request.global_context,
+                kb_name=request.kb_name
+            ):
+                yield chunk
+        
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "*"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"流式生成节点内容失败: {str(e)}")
 
 @router.get("/generate/history", response_model=GenerationHistoryResponse)
 async def get_generation_history():
