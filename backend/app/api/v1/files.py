@@ -34,7 +34,7 @@ async def get_source_tags():
                 "tags": [
                     {"value": "literature", "label": "文献资料", "color": "blue"},
                     {"value": "encyclopedia", "label": "百科知识", "color": "green"},
-                    {"value": "blog", "label": "博客文章", "color": "orange"},
+                    {"value": "blog", "label": "网络文章", "color": "orange"},
                     {"value": "news", "label": "新闻报道", "color": "purple"},
                     {"value": "official", "label": "官方资料", "color": "red"},
                     {"value": "other", "label": "其他来源", "color": "default"}

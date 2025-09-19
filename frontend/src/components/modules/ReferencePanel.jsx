@@ -1,6 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, Empty } from 'antd';
 import { LeftOutlined, RightOutlined } from '../../utils/icons';
+
+// 预设类型颜色映射
+const typeColorMap = {
+  '文献': '#52c41a',
+  '百科': '#1890ff',
+  '新闻': '#faad14',
+  '博客': '#eb2f96',
+  // 可继续扩展
+};
 
 const { Text, Paragraph } = Typography;
 
@@ -58,10 +68,25 @@ function ReferencePanel({ sources = [], loading = false }) {
           <div className="reference-panel-source">
             <Text type="secondary" className="reference-panel-source-text">
               来源：{currentSource.source_file || '未知文件'}
+              {currentSource.type && (
+                <span
+                  className="reference-type-tag"
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: 8,
+                    padding: '0 8px',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: '#fff',
+                    background: typeColorMap[currentSource.type] || '#888',
+                    verticalAlign: 'middle',
+                  }}
+                >
+                  {currentSource.type}
+                </span>
+              )}
             </Text>
-            {/* <Text type="secondary" className="reference-panel-source-text">
-              类别：
-            </Text> */}
             <br />
             <Text type="secondary" className="reference-panel-source-text">
               相关度：{(currentSource.score * 100).toFixed(1)}%
