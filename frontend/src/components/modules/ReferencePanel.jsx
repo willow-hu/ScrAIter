@@ -1,26 +1,75 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Typography, Empty } from 'antd';
+import { Card, Button, Space, Typography, Empty, Tag } from 'antd';
 import { LeftOutlined, RightOutlined } from '../../utils/icons';
-
-// 预设类型颜色映射
-const typeColorMap = {
-  '文献': '#52c41a',
-  '百科': '#1890ff',
-  '新闻': '#faad14',
-  '博客': '#eb2f96',
-  // 可继续扩展
-};
+import { fetchSourceTags, getSourceTagConfig } from '../../utils/archive_manager';
 
 const { Text, Paragraph } = Typography;
 
 function ReferencePanel({ sources = [], loading = false }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [sourceTags, setSourceTags] = useState([]);
+  const [filesMetadata, setFilesMetadata] = useState({});
+  
+  // 获取标签配置
+  useEffect(() => {
+    const loadSourceTags = async () => {
+      try {
+        const tags = await fetchSourceTags();
+        setSourceTags(tags);
+      } catch (error) {
+        console.error('获取标签配置失败:', error);
+      }
+    };
+    
+    loadSourceTags();
+  }, []);
+
+  // 获取文件元数据（包含标签信息）
+  useEffect(() => {
+    const loadFilesMetadata = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/files');
+        if (response.ok) {
+          const filesData = await response.json();
+          const metadata = {};
+          filesData.files.forEach(file => {
+            metadata[file.filename] = {
+              source_tag: file.source_tag,
+              category: file.category,
+              file_type: file.file_type
+            };
+          });
+          setFilesMetadata(metadata);
+        }
+      } catch (error) {
+        console.error('获取文件元数据失败:', error);
+      }
+    };
+
+    loadFilesMetadata();
+  }, []);
   
   // 当sources变化时重置索引
   useEffect(() => {
     setCurrentIndex(0);
   }, [sources]);
+
+  // 获取文件的标签信息
+  const getFileTagInfo = (sourceFile) => {
+    if (!sourceFile || !filesMetadata[sourceFile]) {
+      return null;
+    }
+    
+    const fileMetadata = filesMetadata[sourceFile];
+    const sourceTag = fileMetadata.source_tag;
+    
+    if (!sourceTag) {
+      return null;
+    }
+    
+    return getSourceTagConfig(sourceTag, sourceTags);
+  };
 
   // 如果没有数据，显示空状态
   if (!sources || sources.length === 0) {
@@ -68,24 +117,18 @@ function ReferencePanel({ sources = [], loading = false }) {
           <div className="reference-panel-source">
             <Text type="secondary" className="reference-panel-source-text">
               来源：{currentSource.source_file || '未知文件'}
-              {currentSource.type && (
-                <span
-                  className="reference-type-tag"
-                  style={{
-                    display: 'inline-block',
-                    marginLeft: 8,
-                    padding: '0 8px',
-                    borderRadius: 4,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: '#fff',
-                    background: typeColorMap[currentSource.type] || '#888',
-                    verticalAlign: 'middle',
-                  }}
-                >
-                  {currentSource.type}
-                </span>
-              )}
+              {(() => {
+                const tagInfo = getFileTagInfo(currentSource.source_file);
+                return tagInfo ? (
+                  <Tag 
+                    color={tagInfo.color}
+                    size="small"
+                    className="reference-source-tag"
+                  >
+                    {tagInfo.label}
+                  </Tag>
+                ) : null;
+              })()}
             </Text>
             <br />
             <Text type="secondary" className="reference-panel-source-text">
