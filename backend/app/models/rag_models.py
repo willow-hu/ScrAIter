@@ -15,6 +15,7 @@ class GenerateNodeContentRequest(BaseModel):
     node_info: Dict[str, Any]  # 节点信息
     global_context: Dict[str, Any]  # 项目全局信息
     kb_name: Optional[str] = None  # 知识库名称，可选
+    word_count: Optional[int] = 180  # 目标字数，默认180字
 
 class GeneratedContent(BaseModel):
     """生成的内容"""

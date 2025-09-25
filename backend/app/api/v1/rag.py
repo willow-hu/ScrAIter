@@ -54,7 +54,8 @@ async def generate_node_content(request: GenerateNodeContentRequest):
         result = rag_service.generate_node_content(
             node_info=request.node_info,
             global_context=request.global_context,
-            kb_name=request.kb_name
+            kb_name=request.kb_name,
+            word_count=request.word_count
         )
         
         return result
@@ -82,7 +83,8 @@ async def generate_node_content_stream(request: GenerateNodeContentRequest):
             async for chunk in rag_service.generate_node_content_stream(
                 node_info=request.node_info,
                 global_context=request.global_context,
-                kb_name=request.kb_name
+                kb_name=request.kb_name,
+                word_count=request.word_count
             ):
                 yield chunk
         

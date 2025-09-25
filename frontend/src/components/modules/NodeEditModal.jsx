@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Row, Col, Card, Button, Input, Typography, Space, message } from 'antd';
+import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider } from 'antd';
 import { SaveOutlined, RobotOutlined } from '../../utils/icons';
 import ReferencePanel from './ReferencePanel';
 
@@ -24,6 +24,7 @@ function NodeEditModal({
   const [ragSources, setRagSources] = useState([]);
   const [lastGenerationId, setLastGenerationId] = useState(null);
   const [abortController, setAbortController] = useState(null); // 用于取消请求
+  const [wordCount, setWordCount] = useState(180); // 默认字数设置
 
   // 当节点变化时更新表单
   useEffect(() => {
@@ -74,7 +75,8 @@ function NodeEditModal({
           user: nodeForm.user,
           id: node.id
         },
-        global_context: treeData.global_context
+        global_context: treeData.global_context,
+        word_count: wordCount // 添加字数参数
       };
 
       // 使用fetch进行流式接收
@@ -315,6 +317,46 @@ function NodeEditModal({
                   placeholder="输入节点摘要"
                   rows={2}
                 />
+              </div>
+
+              {/* 字数控制滑块 */}
+              <div className="node-edit-form-item">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text className="node-edit-form-label" strong>
+                    字数
+                  </Text>
+                  <Text style={{ fontSize: '12px', color: '#666', fontWeight: 'bold' }}>
+                    {wordCount}±10字
+                  </Text>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px' }}>
+                  <Text style={{ fontSize: '12px', color: '#999', minWidth: '30px' }}>50</Text>
+                  <div style={{ width: '200px' }}>
+                    <Slider
+                      min={50}
+                      max={300}
+                      step={10}
+                      value={wordCount}
+                      onChange={setWordCount}
+                      tooltip={{
+                        formatter: (value) => `${value}`
+                      }}
+                      styles={{
+                        rail: {
+                          backgroundColor: '#f0f0f0',
+                          height: '6px',
+                          borderRadius: '3px'
+                        },
+                        track: {
+                          backgroundColor: '#1890ff',
+                          height: '6px',
+                          borderRadius: '3px'
+                        }
+                      }}
+                    />
+                  </div>
+                  <Text style={{ fontSize: '12px', color: '#999', minWidth: '30px', textAlign: 'right' }}>300</Text>
+                </div>
               </div>
 
               <div className="node-edit-form-item" style={{ flex: 1 }}>

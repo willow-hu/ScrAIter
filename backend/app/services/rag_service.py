@@ -67,6 +67,22 @@ class RAGService:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             return f.read().strip()
     
+    def get_dynamic_prompt_template(self, word_count: int = 180, prompt_file: str = "generate_script.txt") -> str:
+        """获取动态字数的提示词模板"""
+        base_template = self.load_prompt_template(prompt_file)
+        
+        # 计算字数范围
+        min_words = word_count - 10
+        max_words = word_count + 10
+        
+        # 生成字数要求句子
+        length_requirement = f"内容长度控制在{min_words}到{max_words}字之间，精炼有力，避免冗余描述。"
+        
+        # 直接替换{length}占位符
+        modified_template = base_template.replace("{length}", length_requirement)
+        
+        return modified_template
+    
     def load_anchor_tree(self) -> Dict[str, Any]:
         """加载锚点树结构"""
         # 默认使用twin_pagoda主题
@@ -215,15 +231,16 @@ class RAGService:
         global_context: Dict[str, Any],
         kb_name: Optional[str] = None,
         similarity_threshold: float = 0.2,
-        chunk_cnt: int = 5
+        chunk_cnt: int = 5,
+        word_count: int = 180
     ) -> GeneratedContent:
         """生成节点内容"""
         generation_id = str(uuid.uuid4())
         node_name = node_info.get("name", "unknown")
         
         try:
-            # 加载提示词模板
-            prompt_template = self.load_prompt_template()
+            # 加载动态字数的提示词模板
+            prompt_template = self.get_dynamic_prompt_template(word_count)
             
             # RAG检索
             user_query = node_info.get("user", node_info.get("abstract", ""))
@@ -305,7 +322,8 @@ class RAGService:
         global_context: Dict[str, Any],
         kb_name: Optional[str] = None,
         similarity_threshold: float = 0.2,
-        chunk_cnt: int = 5
+        chunk_cnt: int = 5,
+        word_count: int = 180
     ) -> AsyncGenerator[str, None]:
         """流式生成节点内容"""
         generation_id = str(uuid.uuid4())
@@ -315,8 +333,8 @@ class RAGService:
             # 发送开始事件
             yield f"data: {json.dumps({'type': 'start', 'generation_id': generation_id})}\n\n"
             
-            # 加载提示词模板
-            prompt_template = self.load_prompt_template()
+            # 加载动态字数的提示词模板
+            prompt_template = self.get_dynamic_prompt_template(word_count)
             
             # RAG检索
             user_query = node_info.get("user", node_info.get("abstract", ""))
