@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { message, Button, Modal, Select } from 'antd';
 
 import * as Icons from '../../utils/icons';
-import '../../styles/export-modal.css';
 import TreeCanvas from '../modules/TreeCanvas';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
 import ProjectInfoModal from '../modules/ProjectInfoModal';
+import UsageModal from '../modules/UsageModal';
+import ExportModal from '../modules/ExportModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
@@ -809,87 +810,17 @@ function ScriptEditor() {
       />
 
       {/* 使用说明模态框 */}
-      <Modal
-        title="使用说明"
-        open={usageModalVisible}
-        onCancel={() => setUsageModalVisible(false)}
-        footer={[
-          <Button key="ok" type="primary" onClick={() => setUsageModalVisible(false)}>
-            知道了
-          </Button>
-        ]}
-        width={600}
-      >
-        <div style={{ fontSize: '14px', lineHeight: '1.8' }}>
-          <ol>
-            <li><strong>选择知识库</strong>：使用左上角的知识库选择下拉框选择要使用的知识库</li>
-            <li><strong>设置项目信息</strong>：点击项目信息按钮，设置景点信息和角色设定</li>
-            <li><strong>生成大纲</strong>：使用GraphRAG生成初始大纲结构</li>
-            <li><strong>编辑节点</strong>：
-              <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
-                <li>拖动树节点以移动位置</li>
-                <li>单击节点以选中，查看节点信息</li>
-                <li>双击节点以修改节点详细信息</li>
-                <li>右键节点以获取更多操作选项</li>
-              </ul>
-            </li>
-            <li><strong>添加节点</strong>：空白区域右击可添加新节点</li>
-            <li><strong>数据同步</strong>：
-              <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
-                <li>项目信息会自动同步到JSON的global_context</li>
-                <li>剧本结构会自动同步到JSON的structure</li>
-                <li>点击保存按钮将数据保存到对应知识库的script.json</li>
-              </ul>
-            </li>
-            <li><strong>导出功能</strong>：可随时导出完整脚本文件</li>
-            <li><strong>重置功能</strong>：重置按钮可恢复到GraphRAG生成的原始结构</li>
-          </ol>
-          <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '6px', fontSize: '13px' }}>
-            <strong>💡 提示：</strong>使用左上角的知识库选择器切换不同的项目，系统会自动加载对应的数据。
-          </div>
-        </div>
-      </Modal>
+      <UsageModal
+        visible={usageModalVisible}
+        onClose={() => setUsageModalVisible(false)}
+      />
 
       {/* 导出选项模态框 */}
-      <Modal
-        title="选择导出格式"
-        open={exportModalVisible}
-        onCancel={() => setExportModalVisible(false)}
-        footer={null}
-        width={500}
-      >
-        <div className="export-modal-content">
-          <div className="export-options">
-            <Button
-              onClick={() => {
-                setExportModalVisible(false);
-                handleExportByFormat('json_only');
-              }}
-              className="export-option-button"
-            >
-              <div>
-                <div className="export-option-title">仅导出JSON脚本</div>
-              </div>
-            </Button>
-            
-            <Button
-              onClick={() => {
-                setExportModalVisible(false);
-                handleExportByFormat('full_package');
-              }}
-              className="export-option-button"
-            >
-              <div>
-                <div className="export-option-title">导出完整资源包</div>
-              </div>
-            </Button>
-          </div>
-          
-          <div className="export-tip">
-            💡 选择"导出完整包"以获得包含所有资源的完整项目文件。
-          </div>
-        </div>
-      </Modal>
+      <ExportModal
+        visible={exportModalVisible}
+        onClose={() => setExportModalVisible(false)}
+        onExport={handleExportByFormat}
+      />
     </div>
   );
 }
