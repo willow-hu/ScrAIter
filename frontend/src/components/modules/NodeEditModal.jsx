@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider } from 'antd';
-import { SaveOutlined, RobotOutlined } from '../../utils/icons';
+import { SaveOutlined, RobotOutlined, PictureOutlined } from '../../utils/icons';
 import ReferencePanel from './ReferencePanel';
+import BackgroundImageModal from './BackgroundImageModal';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -25,6 +26,8 @@ function NodeEditModal({
   const [lastGenerationId, setLastGenerationId] = useState(null);
   const [abortController, setAbortController] = useState(null); // 用于取消请求
   const [wordCount, setWordCount] = useState(180); // 默认字数设置
+  const [backgroundImage, setBackgroundImage] = useState(null); // 背景图文件名
+  const [backgroundModalVisible, setBackgroundModalVisible] = useState(false); // 背景图选择弹窗
 
   // 当节点变化时更新表单
   useEffect(() => {
@@ -35,6 +38,9 @@ function NodeEditModal({
         user: node.user || '',
         content: node.content || ''
       });
+      
+      // 加载背景图
+      setBackgroundImage(node.background_image || null);
       
       // 加载已保存的参考资料 - 添加调试日志
       if (node.ragSources && Array.isArray(node.ragSources)) {
@@ -244,9 +250,10 @@ function NodeEditModal({
   const handleSave = () => {
     if (!node) return;
     
-    // 构建更新数据，包含参考资料
+    // 构建更新数据，包含参考资料和背景图
     const updateData = {
       ...nodeForm,
+      background_image: backgroundImage || undefined, // 只在有背景图时保存
       ragSources: ragSources.length > 0 ? ragSources : undefined, // 只在有参考资料时保存
       lastGenerationId: lastGenerationId || undefined // 只在有生成ID时保存
     };
@@ -263,11 +270,31 @@ function NodeEditModal({
     onClose();
   };
 
+  // 处理背景图选择
+  const handleBackgroundImageSelect = (filename) => {
+    setBackgroundImage(filename);
+    // 自动保存背景图设置
+    if (node) {
+      const updateData = {
+        ...nodeForm,
+        background_image: filename || undefined
+      };
+      onSave(node.id, updateData);
+    }
+  };
+
+  // 获取当前知识库名称
+  const getCurrentKnowledgeBaseName = () => {
+    // 从treeData的全局上下文中获取，或者从其他地方获取知识库名称
+    // 这里需要根据实际的数据结构来调整
+    return window.location.pathname.includes('twin_pagoda') ? 'twin_pagoda' : 'default';
+  };
+
   if (!node) return null;
 
   return (
     <Modal
-      title={`节点 #${node.id}: ${node.name || '未命名'}`}
+      title={`场景 #${node.id}`}
       open={visible}
       onCancel={handleCancel}
       width={1200}
@@ -279,7 +306,7 @@ function NodeEditModal({
         {/* 左侧：节点编辑区域 */}
         <Col span={14}>
           <Card 
-            title="节点编辑"
+            title={`编辑内容`}
             size="small"
             className="panel node-edit-panel"
             styles={{
@@ -373,36 +400,47 @@ function NodeEditModal({
 
               {/* 操作按钮 */}
               <div className="node-edit-actions">
-                <Space>
-                  {generating ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  <Space>
+                    {generating ? (
+                      <Button 
+                        type="default"
+                        danger
+                        onClick={cancelGeneration}
+                        className="node-edit-cancel-btn"
+                      >
+                        取消生成
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary"
+                        className="node-edit-generate-btn"
+                        icon={<RobotOutlined />}
+                        onClick={generateContent}
+                        loading={generating}
+                      >
+                        生成内容
+                      </Button>
+                    )}
+                    
                     <Button 
-                      type="default"
-                      danger
-                      onClick={cancelGeneration}
-                      className="node-edit-cancel-btn"
+                      icon={<SaveOutlined />}
+                      onClick={handleSave}
+                      disabled={generating}
                     >
-                      取消生成
+                      保存
                     </Button>
-                  ) : (
-                    <Button 
-                      type="primary"
-                      className="node-edit-generate-btn"
-                      icon={<RobotOutlined />}
-                      onClick={generateContent}
-                      loading={generating}
-                    >
-                      生成内容
-                    </Button>
-                  )}
+                  </Space>
                   
                   <Button 
-                    icon={<SaveOutlined />}
-                    onClick={handleSave}
+                    icon={<PictureOutlined />}
+                    onClick={() => setBackgroundModalVisible(true)}
                     disabled={generating}
+                    title={backgroundImage ? `当前背景：${backgroundImage}` : '设置背景图'}
                   >
-                    保存
+                    设置背景图
                   </Button>
-                </Space>
+                </div>
               </div>
             </div>
           </Card>
@@ -416,6 +454,15 @@ function NodeEditModal({
           />
         </Col>
       </Row>
+
+      {/* 背景图选择弹窗 */}
+      <BackgroundImageModal
+        visible={backgroundModalVisible}
+        onClose={() => setBackgroundModalVisible(false)}
+        onSelect={handleBackgroundImageSelect}
+        knowledgeBaseName={getCurrentKnowledgeBaseName()}
+        currentBackgroundImage={backgroundImage}
+      />
     </Modal>
   );
 }
