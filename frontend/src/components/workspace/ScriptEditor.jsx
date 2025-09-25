@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { message, Button, Modal, Select } from 'antd';
 
 import * as Icons from '../../utils/icons';
+import '../../styles/export-modal.css';
 import TreeCanvas from '../modules/TreeCanvas';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
@@ -23,6 +24,7 @@ function ScriptEditor() {
   // 新增的浮动按钮相关状态
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
   
   // 悬停提示框状态
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -290,8 +292,8 @@ function ScriptEditor() {
   // 新增：处理导出脚本（带验证）
   const handleExportWithValidation = () => {
     if (isValidTree(treeData)) {
-      // 如果是有效树结构，直接导出
-      handleExport();
+      // 如果是有效树结构，显示导出选项对话框
+      setExportModalVisible(true);
     } else {
       // 如果不是有效树结构，显示警告对话框
       Modal.warning({
@@ -312,6 +314,58 @@ function ScriptEditor() {
         okText: '知道了',
         width: 480,
       });
+    }
+  };
+
+  // 处理导出（根据格式选择）
+  const handleExportByFormat = async (format) => {
+    const kbName = getCurrentKnowledgeBaseName();
+    if (!kbName) {
+      message.error('请先选择知识库');
+      return;
+    }
+
+    if (format === 'json_only') {
+      // 仅导出JSON（原有逻辑）
+      handleExport();
+    } else if (format === 'full_package') {
+      // 导出完整包
+      try {
+        message.info('正在创建导出包，请稍候...');
+        
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/export`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            format: 'full_package',
+            include_images: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || '导出失败');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.download_url) {
+          // 创建下载链接
+          const link = document.createElement('a');
+          link.href = `http://localhost:8000/api/v1/projects/${kbName}/download?file_path=${encodeURIComponent(result.download_url)}`;
+          link.download = '';
+          link.click();
+          
+          message.success(result.message);
+        } else {
+          throw new Error(result.message || '导出失败');
+        }
+      } catch (error) {
+        console.error('导出失败:', error);
+        message.error(error.message || '导出失败');
+      }
     }
   };
 
@@ -792,6 +846,47 @@ function ScriptEditor() {
           </ol>
           <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '6px', fontSize: '13px' }}>
             <strong>💡 提示：</strong>使用左上角的知识库选择器切换不同的项目，系统会自动加载对应的数据。
+          </div>
+        </div>
+      </Modal>
+
+      {/* 导出选项模态框 */}
+      <Modal
+        title="选择导出格式"
+        open={exportModalVisible}
+        onCancel={() => setExportModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <div className="export-modal-content">
+          <div className="export-options">
+            <Button
+              onClick={() => {
+                setExportModalVisible(false);
+                handleExportByFormat('json_only');
+              }}
+              className="export-option-button"
+            >
+              <div>
+                <div className="export-option-title">仅导出JSON脚本</div>
+              </div>
+            </Button>
+            
+            <Button
+              onClick={() => {
+                setExportModalVisible(false);
+                handleExportByFormat('full_package');
+              }}
+              className="export-option-button"
+            >
+              <div>
+                <div className="export-option-title">导出完整资源包</div>
+              </div>
+            </Button>
+          </div>
+          
+          <div className="export-tip">
+            💡 选择"导出完整包"以获得包含所有资源的完整项目文件。
           </div>
         </div>
       </Modal>
