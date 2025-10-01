@@ -67,9 +67,16 @@ def test_api_endpoints():
                 "parent_summary": ""
             },
             "global_context": {
-                "narrator_role": "你是苏州罗汉院的住持慧远禅师",
+                "character_list": [
+                    {
+                        "name": "慧远禅师",
+                        "description": "苏州罗汉院的住持",
+                        "tone": "语气成熟、沧桑，而又亲切、吸引人",
+                        "avatar": ""
+                    }
+                ],
                 "site_name": "罗汉院双塔及正殿遗址",
-                "overall_tone": "语气成熟、沧桑，而又亲切、吸引人"
+                "other_requirements": ""
             }
         }
         

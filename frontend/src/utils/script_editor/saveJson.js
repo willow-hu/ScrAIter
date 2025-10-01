@@ -30,9 +30,8 @@ export async function saveScriptToServer(knowledgeBaseName, treeData, showMessag
     // 构建保存数据，确保包含global_context和structure，不包含knowledge_base_name
     const saveData = {
       global_context: {
-        narrator_role: treeData.global_context?.narrator_role || "",
+        character_list: treeData.global_context?.character_list || [],
         site_name: treeData.global_context?.site_name || "",
-        character_setting: treeData.global_context?.character_setting || "",
         other_requirements: treeData.global_context?.other_requirements || ""
       },
       structure: treeData.structure || []

@@ -127,9 +127,9 @@ function ScriptEditor() {
         // 如果没有选择知识库，创建空白结构
         const emptyData = {
           global_context: {
-            narrator_role: "",
+            character_list: [],
             site_name: "",
-            character_setting: ""
+            other_requirements: ""
           },
           structure: []
         };
@@ -163,9 +163,9 @@ function ScriptEditor() {
         // 如果script数据不存在，创建空白数据并保存
         const emptyData = {
           global_context: {
-            narrator_role: "",
+            character_list: [],
             site_name: "",
-            character_setting: ""
+            other_requirements: ""
           },
           structure: []
         };
@@ -192,9 +192,9 @@ function ScriptEditor() {
         // 出错时也创建空白数据
         const emptyData = {
           global_context: {
-            narrator_role: "",
+            character_list: [],
             site_name: "",
-            character_setting: ""
+            other_requirements: ""
           },
           structure: []
         };
@@ -236,9 +236,8 @@ function ScriptEditor() {
       // 构建完整的保存数据，确保包含global_context和structure，不包含knowledge_base_name
       const saveData = {
         global_context: {
-          narrator_role: treeData.global_context.narrator_role || "",
+          character_list: treeData.global_context.character_list || [],
           site_name: treeData.global_context.site_name || "",
-          character_setting: treeData.global_context.character_setting || "",
           other_requirements: treeData.global_context.other_requirements || ""
         },
         structure: treeData.structure || []
@@ -381,9 +380,16 @@ function ScriptEditor() {
     
     const defaultData = {
       global_context: {
-        narrator_role: "讲述者",
+        character_list: [
+          {
+            name: "讲述者",
+            description: "默认角色设定",
+            tone: "友好、知识渊博",
+            avatar: ""
+          }
+        ],
         site_name: "景点名称",
-        character_setting: "角色设定"
+        other_requirements: ""
       },
       structure: [
         {
@@ -440,9 +446,8 @@ function ScriptEditor() {
         // 构建保存数据，不包含knowledge_base_name
         const saveData = {
           global_context: {
-            narrator_role: projectInfoData.narrator_role || "",
+            character_list: projectInfoData.character_list || [],
             site_name: projectInfoData.site_name || "",
-            character_setting: projectInfoData.character_setting || "",
             other_requirements: projectInfoData.other_requirements || ""
           },
           structure: treeData?.structure || []
@@ -573,9 +578,8 @@ function ScriptEditor() {
         if (kbName && treeData) {
           const saveData = {
             global_context: {
-              narrator_role: treeData.global_context.narrator_role || "",
+              character_list: treeData.global_context.character_list || [],
               site_name: treeData.global_context.site_name || "",
-              character_setting: treeData.global_context.character_setting || "",
               other_requirements: treeData.global_context.other_requirements || ""
             },
             structure: treeData.structure || []
