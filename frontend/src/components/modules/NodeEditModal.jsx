@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider } from 'antd';
-import { SaveOutlined, RobotOutlined, PictureOutlined } from '../../utils/icons';
+import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider, Select } from 'antd';
+import { SaveOutlined, RobotOutlined, PictureOutlined, UserOutlined } from '../../utils/icons';
 import ReferencePanel from './ReferencePanel';
 import BackgroundImageModal from './BackgroundImageModal';
 
@@ -18,7 +18,8 @@ function NodeEditModal({
     name: '',
     abstract: '',
     user: '',
-    content: ''
+    content: '',
+    character: '' // 新增：选中的角色名称
   });
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -36,7 +37,8 @@ function NodeEditModal({
         name: node.name || '',
         abstract: node.abstract || '',
         user: node.user || '',
-        content: node.content || ''
+        content: node.content || '',
+        character: node.character || '' // 加载节点的角色选择
       });
       
       // 加载背景图
@@ -79,7 +81,8 @@ function NodeEditModal({
           name: nodeForm.name,
           abstract: nodeForm.abstract,
           user: nodeForm.user,
-          id: node.id
+          id: node.id,
+          character: nodeForm.character // 添加选中的角色
         },
         global_context: treeData.global_context,
         word_count: wordCount // 添加字数参数
@@ -167,6 +170,7 @@ function NodeEditModal({
                         abstract: nodeForm.abstract,
                         user: nodeForm.user,
                         content: fullContent,
+                        character: nodeForm.character || undefined, // 保存角色选择
                         ragSources: currentRagSources.length > 0 ? currentRagSources : undefined,
                         lastGenerationId: currentGenerationId
                       };
@@ -253,6 +257,7 @@ function NodeEditModal({
     // 构建更新数据，包含参考资料和背景图
     const updateData = {
       ...nodeForm,
+      character: nodeForm.character || undefined, // 保存角色选择
       background_image: backgroundImage || undefined, // 只在有背景图时保存
       ragSources: ragSources.length > 0 ? ragSources : undefined, // 只在有参考资料时保存
       lastGenerationId: lastGenerationId || undefined // 只在有生成ID时保存
@@ -344,6 +349,40 @@ function NodeEditModal({
                   placeholder="输入节点摘要"
                   rows={2}
                 />
+              </div>
+
+              {/* 角色选择 */}
+              <div className="node-edit-form-item">
+                <Text className="node-edit-form-label" strong>讲述者角色</Text>
+                <Select
+                  className="node-edit-form-input"
+                  value={nodeForm.character}
+                  onChange={(value) => setNodeForm(prev => ({ ...prev, character: value }))}
+                  placeholder="选择讲述者角色（可选）"
+                  allowClear
+                  style={{ width: '100%' }}
+                >
+                  {(treeData?.global_context?.character_list || []).map(character => (
+                    <Select.Option key={character.name} value={character.name}>
+                      <Space>
+                        {/* <UserOutlined /> */}
+                        <span>{character.name}</span>
+                        {/* <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {character.tone}
+                        </Text> */}
+                      </Space>
+                    </Select.Option>
+                  ))}
+                </Select>
+                {/* {nodeForm.character && (
+                  <div style={{ marginTop: 4, fontSize: '12px', color: '#666' }}>
+                    {(() => {
+                      const selectedChar = (treeData?.global_context?.character_list || [])
+                        .find(char => char.name === nodeForm.character);
+                      return selectedChar ? selectedChar.description : '';
+                    })()}
+                  </div>
+                )} */}
               </div>
 
               {/* 字数控制滑块 */}

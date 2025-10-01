@@ -809,6 +809,7 @@ function ScriptEditor() {
       <ProjectInfoModal
         visible={projectInfoModalVisible}
         projectInfo={treeData?.global_context}
+        projectName={selectedKnowledgeBase}
         onSave={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}
       />
