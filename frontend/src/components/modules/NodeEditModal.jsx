@@ -351,77 +351,65 @@ function NodeEditModal({
                 />
               </div>
 
-              {/* 角色选择 */}
+              {/* 角色选择和字数控制 - 同一行 */}
               <div className="node-edit-form-item">
-                <Text className="node-edit-form-label" strong>讲述者角色</Text>
-                <Select
-                  className="node-edit-form-input"
-                  value={nodeForm.character}
-                  onChange={(value) => setNodeForm(prev => ({ ...prev, character: value }))}
-                  placeholder="选择讲述者角色（可选）"
-                  allowClear
-                  style={{ width: '100%' }}
-                >
-                  {(treeData?.global_context?.character_list || []).map(character => (
-                    <Select.Option key={character.name} value={character.name}>
-                      <Space>
-                        {/* <UserOutlined /> */}
-                        <span>{character.name}</span>
-                        {/* <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {character.tone}
-                        </Text> */}
-                      </Space>
-                    </Select.Option>
-                  ))}
-                </Select>
-                {/* {nodeForm.character && (
-                  <div style={{ marginTop: 4, fontSize: '12px', color: '#666' }}>
-                    {(() => {
-                      const selectedChar = (treeData?.global_context?.character_list || [])
-                        .find(char => char.name === nodeForm.character);
-                      return selectedChar ? selectedChar.description : '';
-                    })()}
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                  {/* 左侧：角色选择 */}
+                  <div style={{ flex: '1', minWidth: '200px' }}>
+                    <Text className="node-edit-form-label" strong>讲述者角色</Text>
+                    <Select
+                      value={nodeForm.character}
+                      onChange={(value) => setNodeForm(prev => ({ ...prev, character: value }))}
+                      placeholder="选择角色（可选）"
+                      allowClear
+                      style={{ width: '100%' }}
+                      size="small"
+                    >
+                      {(treeData?.global_context?.character_list || []).map(character => (
+                        <Select.Option key={character.name} value={character.name}>
+                          <span>{character.name}</span>
+                        </Select.Option>
+                      ))}
+                    </Select>
                   </div>
-                )} */}
-              </div>
 
-              {/* 字数控制滑块 */}
-              <div className="node-edit-form-item">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text className="node-edit-form-label" strong>
-                    字数
-                  </Text>
-                  <Text style={{ fontSize: '12px', color: '#666', fontWeight: 'bold' }}>
-                    {wordCount}±10字
-                  </Text>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px' }}>
-                  <Text style={{ fontSize: '12px', color: '#999', minWidth: '30px' }}>50</Text>
-                  <div style={{ width: '200px' }}>
-                    <Slider
-                      min={50}
-                      max={300}
-                      step={10}
-                      value={wordCount}
-                      onChange={setWordCount}
-                      tooltip={{
-                        formatter: (value) => `${value}`
-                      }}
-                      styles={{
-                        rail: {
-                          backgroundColor: '#f0f0f0',
-                          height: '6px',
-                          borderRadius: '3px'
-                        },
-                        track: {
-                          backgroundColor: '#1890ff',
-                          height: '6px',
-                          borderRadius: '3px'
-                        }
-                      }}
-                    />
+                  {/* 右侧：字数控制 */}
+                  <div style={{ flex: '1', minWidth: '200px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <Text className="node-edit-form-label" strong>字数</Text>
+                      <Text style={{ fontSize: '12px', color: '#666', fontWeight: 'bold' }}>
+                        {wordCount}±10字
+                      </Text>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Text style={{ fontSize: '12px', color: '#999', minWidth: '25px' }}>50</Text>
+                      <div style={{ flex: 1 }}>
+                        <Slider
+                          min={50}
+                          max={300}
+                          step={10}
+                          value={wordCount}
+                          onChange={setWordCount}
+                          tooltip={{
+                            formatter: (value) => `${value}`
+                          }}
+                          styles={{
+                            rail: {
+                              backgroundColor: '#f0f0f0',
+                              height: '6px',
+                              borderRadius: '3px'
+                            },
+                            track: {
+                              backgroundColor: '#1890ff',
+                              height: '6px',
+                              borderRadius: '3px'
+                            }
+                          }}
+                        />
+                      </div>
+                      <Text style={{ fontSize: '12px', color: '#999', minWidth: '25px', textAlign: 'right' }}>300</Text>
+                    </div>
                   </div>
-                  <Text style={{ fontSize: '12px', color: '#999', minWidth: '30px', textAlign: 'right' }}>300</Text>
                 </div>
               </div>
 
