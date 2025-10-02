@@ -59,7 +59,7 @@ class RAGService:
         """设置默认知识库"""
         self.default_kb_name = kb_name
     
-    def load_prompt_template(self, prompt_file: str = "generate_script.txt") -> str:
+    def load_prompt_template(self, prompt_file: str = "rag_role.prompt.md") -> str:
         """加载提示词模板"""
         assert os.path.exists(self.prompts_path), "提示词文件不存在！"
         prompt_path = os.path.join(self.prompts_path, prompt_file)
@@ -67,7 +67,7 @@ class RAGService:
         with open(prompt_path, 'r', encoding='utf-8') as f:
             return f.read().strip()
     
-    def get_dynamic_prompt_template(self, word_count: int = 180, prompt_file: str = "generate_script.txt") -> str:
+    def get_dynamic_prompt_template(self, word_count: int = 180, prompt_file: str = "rag_role.prompt.md") -> str:
         """获取动态字数的提示词模板"""
         base_template = self.load_prompt_template(prompt_file)
         
@@ -82,6 +82,42 @@ class RAGService:
         modified_template = base_template.replace("{length}", length_requirement)
         
         return modified_template
+    
+    def fill_prompt_template(self, template: str, node_info: Dict[str, Any], global_context: Dict[str, Any], context: str) -> str:
+        """填充提示词模板中的占位符"""
+        filled_template = template
+        
+        # 填充节点信息字段
+        filled_template = filled_template.replace("{abstract}", node_info.get("abstract", ""))
+        filled_template = filled_template.replace("{user}", node_info.get("user", ""))
+        filled_template = filled_template.replace("{context}", context)
+        
+        # 处理角色信息
+        character_name = node_info.get("character", "")
+        if character_name:
+            # 从角色列表中查找对应角色
+            character_list = global_context.get("character_list", [])
+            selected_character = None
+            
+            for character in character_list:
+                if character.get("name") == character_name:
+                    selected_character = character
+                    break
+            
+            if selected_character:
+                filled_template = filled_template.replace("{character_name}", selected_character.get("name", ""))
+                filled_template = filled_template.replace("{description}", selected_character.get("description", ""))
+                filled_template = filled_template.replace("{tone}", selected_character.get("tone", ""))
+            else:
+                # 如果找不到对应角色，抛出错误
+                raise ValueError(f"找不到指定的角色: '{character_name}'。请检查角色列表中是否存在该角色。")
+        else:
+            # 如果没有指定角色，使用默认值
+            filled_template = filled_template.replace("{character_name}", "讲述者")
+            filled_template = filled_template.replace("{description}", "知识渊博的导游")
+            filled_template = filled_template.replace("{tone}", "友好、专业")
+        
+        return filled_template
     
     def load_anchor_tree(self) -> Dict[str, Any]:
         """加载锚点树结构"""
@@ -256,23 +292,23 @@ class RAGService:
             
             # 构建最终提示词
             try:
-                filled_prompt = prompt_template.format(
-                    global_context=json.dumps(global_context, ensure_ascii=False, indent=2),
-                    node_info=json.dumps(node_info, ensure_ascii=False, indent=2),
+                filled_prompt = self.fill_prompt_template(
+                    template=prompt_template,
+                    node_info=node_info,
+                    global_context=global_context,
                     context=context_knowledge
                 )
-            except KeyError as e:
-                print(f"❌ 提示词模板有误，请检查: {e}")
+            except ValueError as e:
+                print(f"❌ 角色检索失败: {e}")
+                raise e
+            except Exception as e:
+                print(f"❌ 提示词模板填充失败: {e}")
                 raise e
 
             # 调用大模型
             completion = self.client.chat.completions.create(
                 model="qwen-max",
                 messages=[
-                    {
-                        "role": "system", 
-                        "content": "你是一位经验丰富的交互剧情游戏设计师，严格按照要求生成对话脚本。"
-                    },
                     {"role": "user", "content": filled_prompt}
                 ],
                 temperature=0.7,
@@ -353,23 +389,23 @@ class RAGService:
             
             # 构建最终提示词
             try:
-                filled_prompt = prompt_template.format(
-                    global_context=json.dumps(global_context, ensure_ascii=False, indent=2),
-                    node_info=json.dumps(node_info, ensure_ascii=False, indent=2),
+                filled_prompt = self.fill_prompt_template(
+                    template=prompt_template,
+                    node_info=node_info,
+                    global_context=global_context,
                     context=context_knowledge
                 )
-            except KeyError as e:
-                yield f"data: {json.dumps({'type': 'error', 'message': f'提示词模板有误: {str(e)}'})}\n\n"
+            except ValueError as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                return
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': f'提示词模板填充失败: {str(e)}'})}\n\n"
                 return
 
             # 流式调用大模型
             stream = self.client.chat.completions.create(
                 model="qwen-max",
                 messages=[
-                    {
-                        "role": "system", 
-                        "content": "你是一位经验丰富的交互剧情游戏设计师，严格按照要求生成对话脚本。"
-                    },
                     {"role": "user", "content": filled_prompt}
                 ],
                 temperature=0.7,

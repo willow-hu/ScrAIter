@@ -64,13 +64,13 @@ def test_api_endpoints():
                 "name": "景点简介",
                 "abstract": "罗汉院双塔与正殿遗址的历史地位、建造背景与整体价值概述",
                 "user": "这里是什么地方？能给我介绍一下吗？",
-                "parent_summary": ""
+                "character": "慧远禅师"
             },
             "global_context": {
                 "character_list": [
                     {
                         "name": "慧远禅师",
-                        "description": "苏州罗汉院的住持",
+                        "description": "苏州罗汉院的住持，博学多才，了解双塔的历史文化",
                         "tone": "语气成熟、沧桑，而又亲切、吸引人",
                         "avatar": ""
                     }
@@ -96,6 +96,50 @@ def test_api_endpoints():
             test_generation_id = data.get('generation_id')
         else:
             print(f"   错误: {response.text}")
+    except Exception as e:
+        print(f"   异常: {e}")
+    
+    # 4.5. 测试角色检索失败的情况
+    print("\n4.5. 测试角色检索失败")
+    try:
+        test_request_invalid_character = {
+            "node_info": {
+                "name": "景点简介",
+                "abstract": "罗汉院双塔与正殿遗址的历史地位、建造背景与整体价值概述",
+                "user": "这里是什么地方？能给我介绍一下吗？",
+                "character": "不存在的角色"  # 故意使用不存在的角色名
+            },
+            "global_context": {
+                "character_list": [
+                    {
+                        "name": "慧远禅师",
+                        "description": "苏州罗汉院的住持，博学多才，了解双塔的历史文化",
+                        "tone": "语气成熟、沧桑，而又亲切、吸引人",
+                        "avatar": ""
+                    }
+                ],
+                "site_name": "罗汉院双塔及正殿遗址",
+                "other_requirements": ""
+            }
+        }
+        
+        response = requests.post(
+            f"{BASE_URL}/generate/node-content",
+            json=test_request_invalid_character,
+            headers={"Content-Type": "application/json"}
+        )
+        
+        print(f"   状态码: {response.status_code}")
+        if response.status_code == 500:
+            error_data = response.json()
+            if "找不到指定的角色" in error_data.get("detail", ""):
+                print("   ✅ 正确检测到角色不存在并返回错误")
+            else:
+                print(f"   ❌ 错误信息不符合预期: {error_data.get('detail', '')}")
+        else:
+            print(f"   ❌ 应该返回500错误，但返回了: {response.status_code}")
+            print(f"   响应内容: {response.text}")
+        
     except Exception as e:
         print(f"   异常: {e}")
     
