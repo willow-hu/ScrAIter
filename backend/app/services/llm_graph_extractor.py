@@ -5,7 +5,7 @@
 import logging
 import re
 import hashlib
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 
 from ..core.llm_client import BaseLLMClient, create_llm_client
@@ -26,10 +26,10 @@ class LLMGraphExtractor:
     """基于LLM的图提取器"""
     
     def __init__(self, 
-                 llm_client: BaseLLMClient = None,
-                 llm_config: Dict[str, Any] = None,
+                 llm_client: Optional[BaseLLMClient] = None,
+                 llm_config: Optional[Dict[str, Any]] = None,
                  max_gleanings: int = 1,
-                 entity_types: List[str] = None):
+                 entity_types: Optional[List[str]] = None):
         """初始化LLM图提取器
         
         Args:
@@ -61,12 +61,12 @@ class LLMGraphExtractor:
         all_entities = []
         all_relationships = []
         
-        for idx, text_unit in text_units.iterrows():
+        for i, (idx, text_unit) in enumerate(text_units.iterrows()):
             text = text_unit['text']
             text_unit_id = text_unit['id']
             
             try:
-                logger.info(f"处理文本单元 {idx + 1}/{len(text_units)}")
+                logger.info(f"处理文本单元 {i + 1}/{len(text_units)}")
                 
                 # 从此文本单元提取实体和关系
                 entities, relationships = self._extract_from_text(text, text_unit_id)
@@ -233,202 +233,54 @@ class LLMGraphExtractor:
         return hashlib.md5(content.encode()).hexdigest()
 
 
-class RuleBasedGraphExtractor:
-    """基于规则的图提取器，作为LLM的后备方案"""
-    
-    def __init__(self):
-        # 简单的实体模式
-        self.entity_patterns = {
-            'person': r'\b[A-Z][a-z]+ [A-Z][a-z]+\b',
-            'organization': r'\b[A-Z][a-z]+ (?:公司|集团|研究院|大学|医院|机构|Inc|Corp|Company|Ltd|LLC|Organization)\b',
-            'geo': r'\b[A-Z][a-z]+ (?:市|省|县|国|城|City|County|State|Country|University|Hospital)\b',
-            'event': r'\b[A-Z][a-z]+ (?:会议|峰会|研讨会|活动|Conference|Meeting|Summit|Workshop|Event)\b'
-        }
-        
-        # 关系模式
-        self.relationship_patterns = [
-            r'(\w+(?:\s+\w+)*)\s+(?:在|工作于|就职于|works?\s+(?:at|for)|is\s+employed\s+by)\s+(\w+(?:\s+\w+)*)',
-            r'(\w+(?:\s+\w+)*)\s+(?:创建了|建立了|founded|established|created)\s+(\w+(?:\s+\w+)*)',
-            r'(\w+(?:\s+\w+)*)\s+(?:位于|居住在|is\s+located\s+in|resides\s+in|lives\s+in)\s+(\w+(?:\s+\w+)*)',
-            r'(\w+(?:\s+\w+)*)\s+(?:参加了|出席了|attended|participated\s+in|joined)\s+(\w+(?:\s+\w+)*)'
-        ]
-    
-    def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """使用规则从文本单元中提取实体和关系"""
-        logger.info(f"使用规则方法从{len(text_units)}个文本单元中提取图数据")
-        
-        all_entities = []
-        all_relationships = []
-        
-        for _, text_unit in text_units.iterrows():
-            text = text_unit['text']
-            text_unit_id = text_unit['id']
-            
-            # 从此文本单元提取实体
-            entities = self._extract_entities(text, text_unit_id)
-            all_entities.extend(entities)
-            
-            # 从此文本单元提取关系
-            relationships = self._extract_relationships(text, text_unit_id)
-            all_relationships.extend(relationships)
-        
-        # 转换为DataFrame并合并重复项
-        entities_df = self._merge_entities(all_entities)
-        relationships_df = self._merge_relationships(all_relationships)
-        
-        logger.info(f"规则提取完成: {len(entities_df)}个实体, {len(relationships_df)}个关系")
-        
-        return entities_df, relationships_df
-    
-    def _extract_entities(self, text: str, text_unit_id: str) -> List[Dict[str, Any]]:
-        """使用简单模式匹配从文本中提取实体"""
-        entities = []
-        
-        for entity_type, pattern in self.entity_patterns.items():
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            
-            for match in matches:
-                entity = {
-                    'title': match.strip(),
-                    'type': entity_type.lower(),
-                    'description': f"在文本中提到的{entity_type}",
-                    'text_unit_ids': [text_unit_id],
-                    'id': self._generate_entity_id(match.strip(), entity_type)
-                }
-                entities.append(entity)
-        
-        return entities
-    
-    def _extract_relationships(self, text: str, text_unit_id: str) -> List[Dict[str, Any]]:
-        """使用简单模式匹配从文本中提取关系"""
-        relationships = []
-        
-        for pattern in self.relationship_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            
-            for match in matches:
-                if len(match) == 2:
-                    source, target = match
-                    source = source.strip()
-                    target = target.strip()
-                    
-                    relationship = {
-                        'source': source,
-                        'target': target,
-                        'description': f"{source}和{target}之间的关系",
-                        'text_unit_ids': [text_unit_id],
-                        'weight': 1.0,
-                        'id': self._generate_relationship_id(source, target)
-                    }
-                    relationships.append(relationship)
-        
-        return relationships
-    
-    def _merge_entities(self, entities: List[Dict[str, Any]]) -> pd.DataFrame:
-        """合并重复实体"""
-        if not entities:
-            return pd.DataFrame(columns=['id', 'title', 'type', 'description', 'text_unit_ids'])
-        
-        df = pd.DataFrame(entities)
-        
-        # 按title和type分组，合并text_unit_ids和descriptions
-        merged = df.groupby(['title', 'type']).agg({
-            'id': 'first',
-            'description': lambda x: '. '.join(set(x)),
-            'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])]))
-        }).reset_index()
-        
-        # 添加一些计算字段
-        merged['degree'] = merged['text_unit_ids'].apply(len)
-        merged['community'] = None  # 将由社区检测填充
-        
-        return merged
-    
-    def _merge_relationships(self, relationships: List[Dict[str, Any]]) -> pd.DataFrame:
-        """合并重复关系"""
-        if not relationships:
-            return pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
-        
-        df = pd.DataFrame(relationships)
-        
-        # 按source和target分组，合并descriptions并求和weights
-        merged = df.groupby(['source', 'target']).agg({
-            'id': 'first',
-            'description': lambda x: '. '.join(set(x)),
-            'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])])),
-            'weight': 'sum'
-        }).reset_index()
-        
-        return merged
-    
-    def _generate_entity_id(self, title: str, entity_type: str) -> str:
-        """为实体生成唯一ID"""
-        content = f"{title}_{entity_type}".lower()
-        return hashlib.md5(content.encode()).hexdigest()
-    
-    def _generate_relationship_id(self, source: str, target: str) -> str:
-        """为关系生成唯一ID"""
-        # 排序以确保无论顺序如何都有一致的ID
-        sorted_names = sorted([source.lower(), target.lower()])
-        content = f"{sorted_names[0]}_{sorted_names[1]}"
-        return hashlib.md5(content.encode()).hexdigest()
 
 
-class HybridGraphExtractor:
-    """混合图提取器，可以在LLM和规则方法之间切换"""
+
+class LLMOnlyGraphExtractor:
+    """专用LLM图提取器，只使用LLM进行提取"""
     
-    def __init__(self, 
-                 llm_config: Dict[str, Any] = None,
-                 use_llm: bool = True,
-                 fallback_to_rules: bool = True):
-        """初始化混合提取器
+    def __init__(self, llm_config: Optional[Dict[str, Any]] = None):
+        """初始化LLM专用提取器
         
         Args:
-            llm_config: LLM客户端配置
-            use_llm: 是否优先尝试LLM提取
-            fallback_to_rules: LLM失败时是否回退到规则方法
+            llm_config: LLM客户端配置，如果为None或无效将使用Mock客户端
         """
-        self.use_llm = use_llm
-        self.fallback_to_rules = fallback_to_rules
+        # 确保有有效的LLM配置
+        effective_config = llm_config if llm_config is not None else {"provider": "mock"}
         
-        if self.use_llm:
-            try:
-                self.llm_extractor = LLMGraphExtractor(llm_config=llm_config)
-            except Exception as e:
-                logger.warning(f"初始化LLM提取器失败: {e}")
-                self.llm_extractor = None
-                if not self.fallback_to_rules:
-                    raise
-        else:
-            self.llm_extractor = None
+        # 如果没有API密钥，强制使用Mock客户端
+        if not effective_config.get("api_key"):
+            effective_config = {"provider": "mock"}
+            logger.warning("未配置API密钥，将使用Mock LLM客户端进行测试")
         
-        if self.fallback_to_rules or not self.use_llm:
-            self.rule_extractor = RuleBasedGraphExtractor()
+        # 初始化LLM提取器
+        try:
+            self.llm_extractor = LLMGraphExtractor(llm_config=effective_config)
+            logger.info(f"LLM提取器初始化成功，使用提供商: {effective_config.get('provider', 'unknown')}")
+        except Exception as e:
+            logger.error(f"LLM提取器初始化失败: {e}")
+            # 如果初始化失败，使用Mock客户端作为后备
+            self.llm_extractor = LLMGraphExtractor(llm_config={"provider": "mock"})
+            logger.info("使用Mock LLM客户端作为后备")
     
     def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """使用可用方法提取图数据"""
+        """使用LLM提取图数据"""
         
-        # 如果可用，首先尝试LLM提取
-        if self.use_llm and self.llm_extractor:
-            try:
-                logger.info("尝试使用LLM进行图提取")
-                entities, relationships = self.llm_extractor.extract_graph(text_units)
-                
-                # 检查是否得到合理的结果
-                if len(entities) > 0 or len(relationships) > 0:
-                    logger.info("LLM提取成功")
-                    return entities, relationships
-                else:
-                    logger.warning("LLM提取未返回结果")
+        try:
+            logger.info("开始LLM图提取")
+            entities, relationships = self.llm_extractor.extract_graph(text_units)
             
-            except Exception as e:
-                logger.error(f"LLM提取失败: {e}")
+            # 检查结果
+            if len(entities) > 0 or len(relationships) > 0:
+                logger.info(f"LLM提取成功: {len(entities)}个实体, {len(relationships)}个关系")
+                return entities, relationships
+            else:
+                logger.warning("LLM提取未返回结果，可能是文本中没有可识别的实体或关系")
+                return entities, relationships
         
-        # 回退到基于规则的提取
-        if self.fallback_to_rules:
-            logger.info("使用基于规则的图提取")
-            return self.rule_extractor.extract_graph(text_units)
-        
-        # 如果执行到这里，说明所有方法都失败了
-        logger.error("所有提取方法都失败了")
-        return pd.DataFrame(), pd.DataFrame()
+        except Exception as e:
+            logger.error(f"LLM提取失败: {e}")
+            # 返回空结果而不是崩溃
+            empty_entities = pd.DataFrame(columns=['id', 'title', 'type', 'description', 'text_unit_ids'])
+            empty_relationships = pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
+            return empty_entities, empty_relationships

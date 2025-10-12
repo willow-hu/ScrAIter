@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Tuple, Dict, Any
 import logging
 
-from .llm_graph_extractor import HybridGraphExtractor
+from .llm_graph_extractor import LLMOnlyGraphExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +19,8 @@ class GraphExtractorIntegration:
         Args:
             llm_config: LLM配置，如果提供将使用LLM提取，否则使用规则方法
         """
-        # 初始化混合图提取器
-        use_llm = llm_config is not None and llm_config.get("provider") != "mock"
-        effective_config = llm_config if llm_config is not None else {}
-        self.graph_extractor = HybridGraphExtractor(
-            llm_config=effective_config,
-            use_llm=use_llm,
-            fallback_to_rules=True
-        )
+        # 初始化LLM专用图提取器
+        self.graph_extractor = LLMOnlyGraphExtractor(llm_config=llm_config)
         
         logger.info("GraphRAG实体关系提取器初始化成功")
     
