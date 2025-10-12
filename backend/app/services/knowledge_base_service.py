@@ -3,14 +3,20 @@
 """
 import os
 import json
+import shutil
 import uuid
 import asyncio
 import shutil
+import pandas as pd
+import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 from app.core.config import settings
 from app.models.file_models import KnowledgeBaseStatus, BuildStatus
+from app.services.graph_service import graph_service
+
+logger = logging.getLogger(__name__)
 
 # 导入知识库构建相关模块
 try:
@@ -302,7 +308,7 @@ class KnowledgeBaseService:
             index = VectorStoreIndex(nodes)
             
             build_status.current_file = "保存向量索引..."
-            build_status.progress = 80.0
+            build_status.progress = 60.0
             await asyncio.sleep(0.5)
             
             # 持久化存储
@@ -326,10 +332,55 @@ class KnowledgeBaseService:
             }
             self._save_kb_metadata(metadata)
             
+            # GraphRAG扩展: 实体关系提取
+            build_status.current_step = "entity_extraction" 
+            build_status.current_file = "提取实体和关系..."
+            build_status.progress = 70.0
+            await asyncio.sleep(0.5)
+            
+            # 集成GraphRAG实体关系提取
+            try:
+                # 从nodes创建文本单元
+                from app.services.graph_extractor_integration import graph_extractor_integration
+                
+                if graph_extractor_integration is not None:
+                    # 创建文本单元DataFrame
+                    text_units_df = graph_extractor_integration.create_text_units_from_nodes(nodes)
+                    
+                    # 提取实体和关系
+                    entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
+                    
+                    # 社区检测
+                    build_status.current_step = "community_detection"
+                    build_status.current_file = "检测社区结构..."
+                    build_status.progress = 80.0
+                    await asyncio.sleep(0.5)
+                    
+                    communities_df = graph_service.detect_communities(entities_df, relationships_df)
+                    
+                    # 保存图数据
+                    graph_save_success = graph_service.save_graph_data(name, entities_df, relationships_df, communities_df)
+                    
+                    if graph_save_success:
+                        build_status.graph_entities_count = len(entities_df)
+                        build_status.graph_relationships_count = len(relationships_df)
+                        build_status.graph_communities_count = len(communities_df)
+                        build_status.progress = 90.0
+                        logger.info(f"GraphRAG构建成功: {len(entities_df)} 实体, {len(relationships_df)} 关系, {len(communities_df)} 社区")
+                    else:
+                        logger.warning("GraphRAG数据保存失败")
+                else:
+                    logger.warning("GraphExtractorIntegration不可用，跳过实体关系提取")
+                    
+            except Exception as e:
+                logger.error(f"GraphRAG构建失败，但向量库构建成功: {e}")
+                # GraphRAG失败不影响整体构建
+            
             # 完成构建
             build_status.status = "completed"
             build_status.progress = 100.0
             build_status.current_file = "知识库构建完成"
+            build_status.current_step = "completed"
             
         except Exception as e:
             print(f"知识库构建失败: {e}")
