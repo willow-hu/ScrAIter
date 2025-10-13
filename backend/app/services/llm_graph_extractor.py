@@ -39,10 +39,22 @@ class LLMGraphExtractor:
             entity_types: 要提取的实体类型列表
         """
         if llm_client is None:
-            if llm_config is None:
-                # 使用模拟客户端作为后备
-                llm_config = {"provider": "mock"}
-            self.llm_client = create_llm_client(llm_config)
+            # 确保有有效的LLM配置
+            effective_config = llm_config if llm_config is not None else {"provider": "mock"}
+            
+            # 如果没有API密钥，强制使用Mock客户端
+            if not effective_config.get("api_key"):
+                effective_config = {"provider": "mock"}
+                logger.warning("未配置API密钥，将使用Mock LLM客户端进行测试")
+            
+            try:
+                self.llm_client = create_llm_client(effective_config)
+                logger.info(f"LLM提取器初始化成功，使用提供商: {effective_config.get('provider', 'unknown')}")
+            except Exception as e:
+                logger.error(f"LLM提取器初始化失败: {e}")
+                # 如果初始化失败，使用Mock客户端作为后备
+                self.llm_client = create_llm_client({"provider": "mock"})
+                logger.info("使用Mock LLM客户端作为后备")
         else:
             self.llm_client = llm_client
         
@@ -56,35 +68,47 @@ class LLMGraphExtractor:
     
     def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """使用LLM从文本单元中提取实体和关系"""
-        logger.info(f"使用LLM从{len(text_units)}个文本单元中提取图数据")
-        
-        all_entities = []
-        all_relationships = []
-        
-        for i, (idx, text_unit) in enumerate(text_units.iterrows()):
-            text = text_unit['text']
-            text_unit_id = text_unit['id']
+        try:
+            logger.info(f"开始LLM图提取，使用LLM从{len(text_units)}个文本单元中提取图数据")
             
-            try:
-                logger.info(f"处理文本单元 {i + 1}/{len(text_units)}")
+            all_entities = []
+            all_relationships = []
+            
+            for i, (idx, text_unit) in enumerate(text_units.iterrows()):
+                text = text_unit['text']
+                text_unit_id = text_unit['id']
                 
-                # 从此文本单元提取实体和关系
-                entities, relationships = self._extract_from_text(text, text_unit_id)
+                try:
+                    logger.info(f"处理文本单元 {i + 1}/{len(text_units)}")
+                    
+                    # 从此文本单元提取实体和关系
+                    entities, relationships = self._extract_from_text(text, text_unit_id)
+                    
+                    all_entities.extend(entities)
+                    all_relationships.extend(relationships)
+                    
+                except Exception as e:
+                    logger.error(f"处理文本单元{text_unit_id}时出错: {e}")
+                    continue
+            
+            # 转换为DataFrame并合并重复项
+            entities_df = self._merge_entities(all_entities)
+            relationships_df = self._merge_relationships(all_relationships)
+            
+            # 检查结果
+            if len(entities_df) > 0 or len(relationships_df) > 0:
+                logger.info(f"LLM提取成功: {len(entities_df)}个实体, {len(relationships_df)}个关系")
+                return entities_df, relationships_df
+            else:
+                logger.warning("LLM提取未返回结果，可能是文本中没有可识别的实体或关系")
+                return entities_df, relationships_df
                 
-                all_entities.extend(entities)
-                all_relationships.extend(relationships)
-                
-            except Exception as e:
-                logger.error(f"处理文本单元{text_unit_id}时出错: {e}")
-                continue
-        
-        # 转换为DataFrame并合并重复项
-        entities_df = self._merge_entities(all_entities)
-        relationships_df = self._merge_relationships(all_relationships)
-        
-        logger.info(f"使用LLM提取完成: {len(entities_df)}个实体, {len(relationships_df)}个关系")
-        
-        return entities_df, relationships_df
+        except Exception as e:
+            logger.error(f"LLM提取失败: {e}")
+            # 返回空结果而不是崩溃
+            empty_entities = pd.DataFrame(columns=['id', 'title', 'type', 'description', 'text_unit_ids'])
+            empty_relationships = pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
+            return empty_entities, empty_relationships
     
     def _extract_from_text(self, text: str, text_unit_id: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """使用LLM从单个文本中提取实体和关系"""
@@ -231,56 +255,3 @@ class LLMGraphExtractor:
         sorted_names = sorted([source.upper(), target.upper()])
         content = f"{sorted_names[0]}_TO_{sorted_names[1]}"
         return hashlib.md5(content.encode()).hexdigest()
-
-
-
-
-
-class LLMOnlyGraphExtractor:
-    """专用LLM图提取器，只使用LLM进行提取"""
-    
-    def __init__(self, llm_config: Optional[Dict[str, Any]] = None):
-        """初始化LLM专用提取器
-        
-        Args:
-            llm_config: LLM客户端配置，如果为None或无效将使用Mock客户端
-        """
-        # 确保有有效的LLM配置
-        effective_config = llm_config if llm_config is not None else {"provider": "mock"}
-        
-        # 如果没有API密钥，强制使用Mock客户端
-        if not effective_config.get("api_key"):
-            effective_config = {"provider": "mock"}
-            logger.warning("未配置API密钥，将使用Mock LLM客户端进行测试")
-        
-        # 初始化LLM提取器
-        try:
-            self.llm_extractor = LLMGraphExtractor(llm_config=effective_config)
-            logger.info(f"LLM提取器初始化成功，使用提供商: {effective_config.get('provider', 'unknown')}")
-        except Exception as e:
-            logger.error(f"LLM提取器初始化失败: {e}")
-            # 如果初始化失败，使用Mock客户端作为后备
-            self.llm_extractor = LLMGraphExtractor(llm_config={"provider": "mock"})
-            logger.info("使用Mock LLM客户端作为后备")
-    
-    def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """使用LLM提取图数据"""
-        
-        try:
-            logger.info("开始LLM图提取")
-            entities, relationships = self.llm_extractor.extract_graph(text_units)
-            
-            # 检查结果
-            if len(entities) > 0 or len(relationships) > 0:
-                logger.info(f"LLM提取成功: {len(entities)}个实体, {len(relationships)}个关系")
-                return entities, relationships
-            else:
-                logger.warning("LLM提取未返回结果，可能是文本中没有可识别的实体或关系")
-                return entities, relationships
-        
-        except Exception as e:
-            logger.error(f"LLM提取失败: {e}")
-            # 返回空结果而不是崩溃
-            empty_entities = pd.DataFrame(columns=['id', 'title', 'type', 'description', 'text_unit_ids'])
-            empty_relationships = pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
-            return empty_entities, empty_relationships
