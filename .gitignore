@@ -135,5 +135,5 @@ settings.local.*
 # Local RAG system (as specified in original)
 qwen-local-rag/
 graph_builder/
-.github/prompts/
+# .github/prompts/
 .history/
