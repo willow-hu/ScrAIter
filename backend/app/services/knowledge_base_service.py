@@ -520,84 +520,126 @@ class KnowledgeBaseService:
             "message": f"知识库 '{kb_name}' 的知识图谱构建任务已启动"
         }
     
+    async def _load_vector_and_extract_nodes(self, kb_name: str):
+        """步骤1：加载向量索引并提取文档节点"""
+        from llama_index.core import StorageContext, load_index_from_storage
+        
+        kb_vector_path = os.path.join(self.kb_path, "VectorStore", kb_name)
+        storage_context = StorageContext.from_defaults(persist_dir=kb_vector_path)
+        index = load_index_from_storage(storage_context)
+        
+        # 从索引中获取所有节点
+        nodes = list(index.docstore.docs.values())
+        
+        if not nodes:
+            raise Exception("向量索引中没有找到文档节点")
+        
+        logger.info(f"从知识库 '{kb_name}' 提取了 {len(nodes)} 个文档节点")
+        return nodes
+    
+    async def _extract_entities_and_relationships(self, kb_name: str, nodes):
+        """步骤2：实体和关系提取并保存"""
+        from app.services.graph_extractor import graph_extractor
+        
+        if graph_extractor is None:
+            raise Exception("GraphExtractor不可用")
+        
+        # 创建文本单元DataFrame
+        text_units_df = graph_extractor.create_text_units_from_nodes(nodes)
+        
+        # 提取实体和关系 (这里会调用LLM)
+        entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
+        
+        # 保存实体和关系数据
+        graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
+        os.makedirs(graph_path, exist_ok=True)
+        
+        # 格式化并保存实体数据
+        formatted_entities = graph_extractor.format_entities_for_storage(entities_df)
+        entities_file = os.path.join(graph_path, "entities.csv")
+        formatted_entities.to_csv(entities_file, index=False, encoding='utf-8')
+        
+        # 格式化并保存关系数据
+        formatted_relationships = graph_extractor.format_relationships_for_storage(relationships_df)
+        relationships_file = os.path.join(graph_path, "relationships.csv")
+        formatted_relationships.to_csv(relationships_file, index=False, encoding='utf-8')
+        
+        # 更新知识库元数据中的实体关系信息
+        metadata = self._load_kb_metadata()
+        if kb_name in metadata["knowledge_bases"]:
+            metadata["knowledge_bases"][kb_name]["graph_entities_count"] = len(entities_df)
+            metadata["knowledge_bases"][kb_name]["graph_relationships_count"] = len(relationships_df)
+            metadata["knowledge_bases"][kb_name]["entities_build_time"] = datetime.now().isoformat()
+            self._save_kb_metadata(metadata)
+        
+        logger.info(f"知识库 '{kb_name}' 实体关系提取完成: {len(entities_df)} 实体, {len(relationships_df)} 关系")
+        return entities_df, relationships_df
+    
+    async def _detect_communities(self, kb_name: str, entities_df, relationships_df):
+        """步骤3：社区检测并保存"""
+        # 执行社区检测
+        communities_df = graph_service.detect_communities(entities_df, relationships_df)
+        
+        # 保存社区数据
+        graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
+        os.makedirs(graph_path, exist_ok=True)
+        
+        communities_file = os.path.join(graph_path, "communities.csv")
+        communities_df.to_csv(communities_file, index=False, encoding='utf-8')
+        
+        # 更新知识库元数据中的社区信息
+        metadata = self._load_kb_metadata()
+        if kb_name in metadata["knowledge_bases"]:
+            metadata["knowledge_bases"][kb_name]["graph_communities_count"] = len(communities_df)
+            metadata["knowledge_bases"][kb_name]["communities_build_time"] = datetime.now().isoformat()
+            metadata["knowledge_bases"][kb_name]["graph_build_time"] = datetime.now().isoformat()
+            self._save_kb_metadata(metadata)
+        
+        logger.info(f"知识库 '{kb_name}' 社区检测完成: {len(communities_df)} 社区")
+        return communities_df
+
     async def _build_knowledge_graph_task(self, task_id: str, kb_name: str, kb_info: Dict[str, Any]):
         """执行知识图谱构建任务"""
         try:
             build_status = self.build_tasks[task_id]
             
-            # 1. 加载已构建的向量索引
+            # 步骤1: 加载向量索引和提取文档节点
             build_status.current_file = "加载向量索引..."
             build_status.progress = 10.0
             await asyncio.sleep(0.5)
             
-            from llama_index.core import StorageContext, load_index_from_storage
+            nodes = await self._load_vector_and_extract_nodes(kb_name)
             
-            kb_vector_path = os.path.join(self.kb_path, "VectorStore", kb_name)
-            storage_context = StorageContext.from_defaults(persist_dir=kb_vector_path)
-            index = load_index_from_storage(storage_context)
-            
-            # 2. 获取文档节点
-            build_status.current_file = "提取文档节点..."
+            build_status.current_file = f"提取了 {len(nodes)} 个文档节点"
             build_status.progress = 20.0
             await asyncio.sleep(0.5)
             
-            # 从索引中获取所有节点
-            nodes = list(index.docstore.docs.values())
-            
-            if not nodes:
-                raise Exception("向量索引中没有找到文档节点")
-            
-            # 3. GraphRAG实体关系提取
+            # 步骤2: 实体关系提取
             build_status.current_file = "提取实体和关系..."
             build_status.progress = 30.0
             await asyncio.sleep(0.5)
             
-            from app.services.graph_extractor import graph_extractor
+            entities_df, relationships_df = await self._extract_entities_and_relationships(kb_name, nodes)
             
-            if graph_extractor is None:
-                raise Exception("GraphExtractor不可用")
-            
-            # 创建文本单元DataFrame
-            text_units_df = graph_extractor.create_text_units_from_nodes(nodes)
-            
-            build_status.current_file = f"分析 {len(text_units_df)} 个文本单元..."
-            build_status.progress = 40.0
+            build_status.current_file = f"提取完成: {len(entities_df)} 实体, {len(relationships_df)} 关系"
+            build_status.progress = 60.0
             await asyncio.sleep(0.5)
             
-            # 提取实体和关系 (这里会调用LLM)
-            entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
-            
-            # 4. 社区检测
+            # 步骤3: 社区检测
             build_status.current_file = "检测社区结构..."
             build_status.progress = 70.0
             await asyncio.sleep(0.5)
             
-            communities_df = graph_service.detect_communities(entities_df, relationships_df)
+            communities_df = await self._detect_communities(kb_name, entities_df, relationships_df)
             
-            # 5. 保存图数据
-            build_status.current_file = "保存知识图谱..."
+            build_status.current_file = f"社区检测完成: {len(communities_df)} 社区"
             build_status.progress = 90.0
             await asyncio.sleep(0.5)
             
-            graph_save_success = graph_service.save_graph_data(kb_name, entities_df, relationships_df, communities_df)
-            
-            if graph_save_success:
-                # 更新知识库元数据，添加图谱信息
-                metadata = self._load_kb_metadata()
-                if kb_name in metadata["knowledge_bases"]:
-                    metadata["knowledge_bases"][kb_name]["graph_entities_count"] = len(entities_df)
-                    metadata["knowledge_bases"][kb_name]["graph_relationships_count"] = len(relationships_df)
-                    metadata["knowledge_bases"][kb_name]["graph_communities_count"] = len(communities_df)
-                    metadata["knowledge_bases"][kb_name]["graph_build_time"] = datetime.now().isoformat()
-                    self._save_kb_metadata(metadata)
-                
-                build_status.graph_entities_count = len(entities_df)
-                build_status.graph_relationships_count = len(relationships_df) 
-                build_status.graph_communities_count = len(communities_df)
-                
-                logger.info(f"知识库 '{kb_name}' GraphRAG构建成功: {len(entities_df)} 实体, {len(relationships_df)} 关系, {len(communities_df)} 社区")
-            else:
-                raise Exception("图谱数据保存失败")
+            # 更新构建状态
+            build_status.graph_entities_count = len(entities_df)
+            build_status.graph_relationships_count = len(relationships_df) 
+            build_status.graph_communities_count = len(communities_df)
             
             # 完成构建
             build_status.status = "completed"
