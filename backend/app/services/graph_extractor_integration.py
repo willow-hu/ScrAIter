@@ -13,16 +13,15 @@ logger = logging.getLogger(__name__)
 class GraphExtractorIntegration:
     """GraphRAG实体关系提取集成器"""
     
-    def __init__(self, llm_config: Dict[str, Any] | None = None):
-        """初始化图提取器
-        
-        Args:
-            llm_config: LLM配置，如果提供将使用LLM提取，否则使用规则方法
-        """
-        # 初始化LLM图提取器
-        self.graph_extractor = LLMGraphExtractor(llm_config=llm_config)
-        
-        logger.info("GraphRAG实体关系提取器初始化成功")
+    def __init__(self):
+        """初始化图提取器"""
+        # 初始化LLM图提取器，现在直接使用DashScope API
+        try:
+            self.graph_extractor = LLMGraphExtractor()
+            logger.info("GraphRAG实体关系提取器初始化成功")
+        except Exception as e:
+            logger.error(f"LLM图提取器初始化失败: {e}")
+            raise RuntimeError(f"GraphRAG初始化失败: {e}") from e
     
     def create_text_units_from_nodes(self, nodes) -> pd.DataFrame:
         """
@@ -151,7 +150,7 @@ class GraphExtractorIntegration:
         
         return relationships_df
 
-# 创建全局实例（使用规则方法作为默认）
+# 创建全局实例
 try:
     graph_extractor_integration = GraphExtractorIntegration()
 except Exception as e:

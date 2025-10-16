@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Empty, Tooltip, Space, Modal } from 'antd';
-import { DeleteOutlined, NodeIndexOutlined, DatabaseOutlined } from '../../utils/icons';
+import { DeleteOutlined, NodeIndexOutlined, DatabaseOutlined, LoadingOutlined } from '../../utils/icons';
 import { 
   fetchKnowledgeBases,
   deleteKnowledgeBase,
@@ -71,13 +71,132 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
     });
   };
 
-  // 提取知识图谱 (暂时只是占位功能)
+  // 构建知识图谱状态
+  const [buildingGraph, setBuildingGraph] = useState({});
+
+  // 获取图谱按钮类型
+  const getGraphButtonType = (record) => {
+    if (record.has_graph) return 'default';
+    return 'primary';
+  };
+
+  // 获取图谱按钮图标
+  const getGraphButtonIcon = (record) => {
+    if (buildingGraph[record.name]) return <LoadingOutlined />;
+    return <NodeIndexOutlined />;
+  };
+
+  // 获取图谱按钮文本
+  const getGraphButtonText = (record) => {
+    if (buildingGraph[record.name]) return '构建中';
+    if (record.has_graph) return '重构';
+    return '图谱';
+  };
+
+  // 获取图谱按钮提示
+  const getGraphButtonTooltip = (record) => {
+    if (buildingGraph[record.name]) return '正在构建知识图谱...';
+    if (record.has_graph) return '重新构建知识图谱';
+    return '提取知识图谱';
+  };
+  const [graphProgress, setGraphProgress] = useState({});
+
+  // 构建知识图谱
   const handleExtractGraph = async (kb) => {
-    Modal.info({
-      title: '知识图谱提取',
-      content: `知识图谱提取功能正在开发中，将从知识库"${kb.name}"中提取结构化知识图谱。`,
-      okText: '知道了'
+    Modal.confirm({
+      title: '构建知识图谱',
+      content: `确定要为知识库"${kb.name}"构建知识图谱吗？这将分析文档内容并提取实体关系。`,
+      okText: '开始构建',
+      cancelText: '取消',
+      onOk: async () => {
+        setBuildingGraph(prev => ({ ...prev, [kb.name]: true }));
+        setGraphProgress(prev => ({ ...prev, [kb.name]: { progress: 0, message: '准备构建...' } }));
+        
+        try {
+          // 调用后端API开始构建图谱
+          const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kb.name}/build-graph`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || '构建失败');
+          }
+          
+          const result = await response.json();
+          
+          // 开始轮询构建进度
+          pollGraphBuildProgress(kb.name, result.task_id);
+          
+        } catch (error) {
+          console.error('构建知识图谱失败:', error);
+          message.error(`构建失败: ${error.message}`);
+          setBuildingGraph(prev => ({ ...prev, [kb.name]: false }));
+          setGraphProgress(prev => {
+            const newState = { ...prev };
+            delete newState[kb.name];
+            return newState;
+          });
+        }
+      }
     });
+  };
+
+  // 轮询图谱构建进度
+  const pollGraphBuildProgress = async (kbName, taskId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kbName}/graph-status/${taskId}`);
+        
+        if (!response.ok) {
+          throw new Error('无法获取构建进度');
+        }
+        
+        const status = await response.json();
+        
+        setGraphProgress(prev => ({
+          ...prev,
+          [kbName]: {
+            progress: status.progress,
+            message: status.current_file || '处理中...'
+          }
+        }));
+        
+        if (status.status === 'completed') {
+          clearInterval(pollInterval);
+          setBuildingGraph(prev => ({ ...prev, [kbName]: false }));
+          setGraphProgress(prev => {
+            const newState = { ...prev };
+            delete newState[kbName];
+            return newState;
+          });
+          message.success(`知识库"${kbName}"的知识图谱构建完成`);
+          loadKnowledgeBases(); // 重新加载列表以更新图谱信息
+        } else if (status.status === 'error') {
+          clearInterval(pollInterval);
+          setBuildingGraph(prev => ({ ...prev, [kbName]: false }));
+          setGraphProgress(prev => {
+            const newState = { ...prev };
+            delete newState[kbName];
+            return newState;
+          });
+          message.error(`知识图谱构建失败: ${status.error_message || '未知错误'}`);
+        }
+      } catch (error) {
+        console.error('获取图谱构建进度失败:', error);
+        clearInterval(pollInterval);
+        setBuildingGraph(prev => ({ ...prev, [kbName]: false }));
+        setGraphProgress(prev => {
+          const newState = { ...prev };
+          delete newState[kbName];
+          return newState;
+        });
+        message.error('网络错误');
+      }
+    }, 2000); // 每2秒检查一次
   };
 
   // 表格列定义
@@ -134,15 +253,16 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
       width: '20%',
       render: (_, record) => (
         <Space>
-          <Tooltip title="提取知识图谱">
+          <Tooltip title={getGraphButtonTooltip(record)}>
             <Button
-              type="primary"
+              type={getGraphButtonType(record)}
               size="small"
-              icon={<NodeIndexOutlined />}
+              icon={getGraphButtonIcon(record)}
               onClick={() => handleExtractGraph(record)}
-              disabled={!record.exists}
+              disabled={!record.exists || buildingGraph[record.name]}
+              loading={buildingGraph[record.name]}
             >
-              图谱
+              {getGraphButtonText(record)}
             </Button>
           </Tooltip>
           <Tooltip title="删除知识库">

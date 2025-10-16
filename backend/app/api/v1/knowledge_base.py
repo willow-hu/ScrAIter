@@ -140,3 +140,41 @@ async def check_files_tags(request: dict):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"检查文件标签失败: {str(e)}")
+
+@router.post("/knowledge-base/{kb_name}/build-graph", response_model=BuildTaskResponse)
+async def build_knowledge_graph(kb_name: str):
+    """
+    为指定知识库构建知识图谱
+    """
+    try:
+        if not kb_name or not kb_name.strip():
+            raise HTTPException(status_code=400, detail="知识库名称不能为空")
+        
+        result = await knowledge_base_service.build_knowledge_graph(kb_name.strip())
+        
+        return BuildTaskResponse(
+            task_id=result["task_id"],
+            message=result["message"]
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"启动知识图谱构建失败: {str(e)}")
+
+@router.get("/knowledge-base/{kb_name}/graph-status/{task_id}", response_model=BuildStatus)
+async def get_graph_build_status(kb_name: str, task_id: str):
+    """
+    获取知识图谱构建进度
+    """
+    try:
+        build_status = knowledge_base_service.get_build_status(task_id)
+        
+        if not build_status:
+            raise HTTPException(status_code=404, detail="构建任务不存在")
+        
+        return build_status
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取图谱构建状态失败: {str(e)}")

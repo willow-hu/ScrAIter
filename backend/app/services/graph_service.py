@@ -11,20 +11,16 @@ import logging
 
 from app.core.config import settings
 from app.services.graph_extractor_integration import graph_extractor_integration
-from app.services.community_detector_integration import community_detector_integration
+from app.services.community_detector import community_detector_integration
 
 logger = logging.getLogger(__name__)
 
 class GraphService:
     """GraphRAG图索引构建和管理服务"""
     
-    def __init__(self, llm_config: Dict[str, Any] | None = None):
-        """初始化图服务
-        
-        Args:
-            llm_config: LLM配置，如果提供将使用LLM进行实体提取
-        """
-        self.llm_config = llm_config
+    def __init__(self):
+        """初始化图服务"""
+        pass
         
     def build_graph_index(self, kb_name: str, text_units: pd.DataFrame, task_id: str) -> Dict[str, Any]:
         """
@@ -91,11 +87,8 @@ class GraphService:
             (entities_df, relationships_df): 实体和关系DataFrame
         """
         try:
-            # 根据配置创建提取器
-            if self.llm_config:
-                from app.services.graph_extractor_integration import GraphExtractorIntegration
-                extractor = GraphExtractorIntegration(llm_config=self.llm_config)
-            elif graph_extractor_integration is not None:
+            # 使用全局的图提取器实例
+            if graph_extractor_integration is not None:
                 extractor = graph_extractor_integration
             else:
                 logger.error("GraphExtractorIntegration不可用")
@@ -505,5 +498,5 @@ class GraphService:
             logger.error(f"计算社区统计信息失败: {e}")
             return {"max_level": 0}
 
-# 创建全局实例（使用配置中的LLM设置）
-graph_service = GraphService(llm_config=settings.graphrag_llm_config)
+# 创建全局实例
+graph_service = GraphService()

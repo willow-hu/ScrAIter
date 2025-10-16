@@ -332,55 +332,10 @@ class KnowledgeBaseService:
             }
             self._save_kb_metadata(metadata)
             
-            # GraphRAG扩展: 实体关系提取
-            build_status.current_step = "entity_extraction" 
-            build_status.current_file = "提取实体和关系..."
-            build_status.progress = 70.0
-            await asyncio.sleep(0.5)
-            
-            # 集成GraphRAG实体关系提取
-            try:
-                # 从nodes创建文本单元
-                from app.services.graph_extractor_integration import graph_extractor_integration
-                
-                if graph_extractor_integration is not None:
-                    # 创建文本单元DataFrame
-                    text_units_df = graph_extractor_integration.create_text_units_from_nodes(nodes)
-                    
-                    # 提取实体和关系
-                    entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
-                    
-                    # 社区检测
-                    build_status.current_step = "community_detection"
-                    build_status.current_file = "检测社区结构..."
-                    build_status.progress = 80.0
-                    await asyncio.sleep(0.5)
-                    
-                    communities_df = graph_service.detect_communities(entities_df, relationships_df)
-                    
-                    # 保存图数据
-                    graph_save_success = graph_service.save_graph_data(name, entities_df, relationships_df, communities_df)
-                    
-                    if graph_save_success:
-                        build_status.graph_entities_count = len(entities_df)
-                        build_status.graph_relationships_count = len(relationships_df)
-                        build_status.graph_communities_count = len(communities_df)
-                        build_status.progress = 90.0
-                        logger.info(f"GraphRAG构建成功: {len(entities_df)} 实体, {len(relationships_df)} 关系, {len(communities_df)} 社区")
-                    else:
-                        logger.warning("GraphRAG数据保存失败")
-                else:
-                    logger.warning("GraphExtractorIntegration不可用，跳过实体关系提取")
-                    
-            except Exception as e:
-                logger.error(f"GraphRAG构建失败，但向量库构建成功: {e}")
-                # GraphRAG失败不影响整体构建
-            
             # 完成构建
             build_status.status = "completed"
             build_status.progress = 100.0
             build_status.current_file = "知识库构建完成"
-            build_status.current_step = "completed"
             
         except Exception as e:
             print(f"知识库构建失败: {e}")
@@ -422,6 +377,10 @@ class KnowledgeBaseService:
                 kb_path = os.path.join(self.kb_path, "VectorStore", kb_name)
                 exists = os.path.exists(kb_path)
                 
+                # 检查是否有知识图谱
+                graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
+                has_graph = os.path.exists(graph_path) and len(os.listdir(graph_path)) > 0
+                
                 kb_list.append({
                     "name": kb_name,
                     "categories": kb_info.get("categories", []),
@@ -430,7 +389,8 @@ class KnowledgeBaseService:
                     "file_count": kb_info.get("file_count", 0),
                     "document_count": kb_info.get("document_count", 0),
                     "build_config": kb_info.get("build_config", {}),
-                    "exists": exists
+                    "exists": exists,
+                    "has_graph": has_graph
                 })
             
             return {
@@ -526,6 +486,131 @@ class KnowledgeBaseService:
                 "all_tagged": False,
                 "message": f"检查文件标签失败: {str(e)}"
             }
+    
+    async def build_knowledge_graph(self, kb_name: str) -> Dict[str, Any]:
+        """为指定知识库构建知识图谱"""
+        task_id = str(uuid.uuid4())
+        
+        # 验证知识库是否存在
+        metadata = self._load_kb_metadata()
+        kb_info = metadata.get("knowledge_bases", {}).get(kb_name)
+        
+        if not kb_info:
+            raise ValueError(f"知识库 '{kb_name}' 不存在")
+        
+        # 检查向量存储是否存在
+        kb_vector_path = os.path.join(self.kb_path, "VectorStore", kb_name)
+        if not os.path.exists(kb_vector_path):
+            raise ValueError(f"知识库 '{kb_name}' 的向量存储不存在，请先重新构建知识库")
+        
+        # 创建图谱构建任务
+        build_status = BuildStatus(
+            task_id=task_id,
+            progress=0.0,
+            status="running",
+            current_file="准备构建知识图谱..."
+        )
+        self.build_tasks[task_id] = build_status
+        
+        # 异步执行图谱构建任务
+        asyncio.create_task(self._build_knowledge_graph_task(task_id, kb_name, kb_info))
+        
+        return {
+            "task_id": task_id,
+            "message": f"知识库 '{kb_name}' 的知识图谱构建任务已启动"
+        }
+    
+    async def _build_knowledge_graph_task(self, task_id: str, kb_name: str, kb_info: Dict[str, Any]):
+        """执行知识图谱构建任务"""
+        try:
+            build_status = self.build_tasks[task_id]
+            
+            # 1. 加载已构建的向量索引
+            build_status.current_file = "加载向量索引..."
+            build_status.progress = 10.0
+            await asyncio.sleep(0.5)
+            
+            from llama_index.core import StorageContext, load_index_from_storage
+            
+            kb_vector_path = os.path.join(self.kb_path, "VectorStore", kb_name)
+            storage_context = StorageContext.from_defaults(persist_dir=kb_vector_path)
+            index = load_index_from_storage(storage_context)
+            
+            # 2. 获取文档节点
+            build_status.current_file = "提取文档节点..."
+            build_status.progress = 20.0
+            await asyncio.sleep(0.5)
+            
+            # 从索引中获取所有节点
+            nodes = list(index.docstore.docs.values())
+            
+            if not nodes:
+                raise Exception("向量索引中没有找到文档节点")
+            
+            # 3. GraphRAG实体关系提取
+            build_status.current_file = "提取实体和关系..."
+            build_status.progress = 30.0
+            await asyncio.sleep(0.5)
+            
+            from app.services.graph_extractor_integration import graph_extractor_integration
+            
+            if graph_extractor_integration is None:
+                raise Exception("GraphExtractorIntegration不可用")
+            
+            # 创建文本单元DataFrame
+            text_units_df = graph_extractor_integration.create_text_units_from_nodes(nodes)
+            
+            build_status.current_file = f"分析 {len(text_units_df)} 个文本单元..."
+            build_status.progress = 40.0
+            await asyncio.sleep(0.5)
+            
+            # 提取实体和关系 (这里会调用LLM)
+            entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
+            
+            # 4. 社区检测
+            build_status.current_file = "检测社区结构..."
+            build_status.progress = 70.0
+            await asyncio.sleep(0.5)
+            
+            communities_df = graph_service.detect_communities(entities_df, relationships_df)
+            
+            # 5. 保存图数据
+            build_status.current_file = "保存知识图谱..."
+            build_status.progress = 90.0
+            await asyncio.sleep(0.5)
+            
+            graph_save_success = graph_service.save_graph_data(kb_name, entities_df, relationships_df, communities_df)
+            
+            if graph_save_success:
+                # 更新知识库元数据，添加图谱信息
+                metadata = self._load_kb_metadata()
+                if kb_name in metadata["knowledge_bases"]:
+                    metadata["knowledge_bases"][kb_name]["graph_entities_count"] = len(entities_df)
+                    metadata["knowledge_bases"][kb_name]["graph_relationships_count"] = len(relationships_df)
+                    metadata["knowledge_bases"][kb_name]["graph_communities_count"] = len(communities_df)
+                    metadata["knowledge_bases"][kb_name]["graph_build_time"] = datetime.now().isoformat()
+                    self._save_kb_metadata(metadata)
+                
+                build_status.graph_entities_count = len(entities_df)
+                build_status.graph_relationships_count = len(relationships_df) 
+                build_status.graph_communities_count = len(communities_df)
+                
+                logger.info(f"知识库 '{kb_name}' GraphRAG构建成功: {len(entities_df)} 实体, {len(relationships_df)} 关系, {len(communities_df)} 社区")
+            else:
+                raise Exception("图谱数据保存失败")
+            
+            # 完成构建
+            build_status.status = "completed"
+            build_status.progress = 100.0
+            build_status.current_file = "知识图谱构建完成"
+            
+        except Exception as e:
+            logger.error(f"知识图谱构建失败: {e}")
+            build_status = self.build_tasks.get(task_id)
+            if build_status:
+                build_status.status = "error"
+                build_status.error_message = str(e)
+                build_status.current_file = f"图谱构建失败: {str(e)}"
 
 # 创建全局实例
 knowledge_base_service = KnowledgeBaseService()

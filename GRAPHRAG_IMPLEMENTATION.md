@@ -26,62 +26,35 @@
 
 ```
 backend/app/
-├── core/
-│   └── llm_client.py              # LLM客户端（DashScope、OpenAI、Mock）
 ├── prompts/
 │   └── graph_extraction.py       # 图提取的系统prompt模板
 ├── services/
-│   ├── llm_graph_extractor.py    # 基于LLM的图提取器
-│   ├── community_detector.py     # 社区检测器
-│   ├── graph_extractor_integration.py  # 图提取集成器（已更新）
-│   ├── community_detector_integration.py  # 社区检测集成器（已更新）
-│   └── graph_service.py          # 图服务主类（已更新）
+│   ├── llm_graph_extractor.py    # 基于LLM的图提取器（已统一到RAG调用方式）
+│   ├── community_detector.py     # 社区检测器（已整合业务逻辑）
+│   ├── graph_extractor_integration.py  # 图提取集成器（已简化）
+│   └── graph_service.py          # 图服务主类（已简化）
 ```
 
 ## 配置说明
 
 ### 环境变量配置
 
-在环境变量或`.env`文件中设置以下配置以启用LLM功能：
+GraphRAG功能现在与RAG服务使用统一的配置，只需设置：
 
 ```bash
-# 启用LLM图提取
-GRAPHRAG_USE_LLM=true
-
-# LLM提供商（dashscope、openai、mock）
-GRAPHRAG_LLM_PROVIDER=dashscope
-
-# 模型名称
-GRAPHRAG_LLM_MODEL=qwen-turbo
-
-# API密钥
-GRAPHRAG_LLM_API_KEY=your_dashscope_api_key
-
-# 其他LLM参数
-GRAPHRAG_LLM_MAX_TOKENS=4000
-GRAPHRAG_LLM_TEMPERATURE=0.0
-
-# OpenAI专用（如果使用OpenAI）
-GRAPHRAG_LLM_BASE_URL=https://api.openai.com/v1
+# DashScope API密钥（RAG和GraphRAG共用）
+DASHSCOPE_API_KEY=your_dashscope_api_key
 ```
 
-### 代码配置
+### 使用方式
 
-也可以在代码中直接配置：
+GraphRAG功能现在完全自动化，无需额外配置：
 
 ```python
-from app.services.graph_service import GraphService
+from app.services.graph_service import graph_service
 
-# 使用LLM配置创建GraphService
-llm_config = {
-    "provider": "dashscope",
-    "model": "qwen-turbo", 
-    "api_key": "your_api_key",
-    "max_tokens": 4000,
-    "temperature": 0.0
-}
-
-graph_service = GraphService(llm_config=llm_config)
+# 直接使用全局实例，自动读取DASHSCOPE_API_KEY
+result = graph_service.build_graph_index(kb_name, text_units, task_id)
 ```
 
 ## 依赖包安装
@@ -180,9 +153,9 @@ result = graph_service.build_graph_index(
 ## 扩展性
 
 系统设计具有良好的扩展性：
-- **新LLM提供商**: 继承`BaseLLMClient`添加新的LLM支持
-- **新提取算法**: 实现图提取器接口
+- **新提取算法**: 扩展`LLMGraphExtractor`类的解析逻辑
 - **新社区算法**: 扩展`CommunityDetector`类
 - **自定义prompt**: 修改`graph_extraction.py`中的模板
+- **RAG集成**: GraphRAG与RAG服务共享相同的LLM调用机制
 
-通过以上实现，GraphRAG功能已完全独立于外部`graph_builder`包，可在生产环境中稳定运行。
+通过以上实现，GraphRAG功能已与RAG服务完全统一，使用相同的API密钥和调用方式，可在生产环境中稳定运行。

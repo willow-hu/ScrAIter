@@ -2,13 +2,14 @@
 基于LLM的图提取器
 使用大语言模型进行实体和关系提取
 """
+import os
 import logging
 import re
 import hashlib
 from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
+from openai import OpenAI
 
-from ..core.llm_client import BaseLLMClient, create_llm_client
 from ..prompts.graph_extraction import (
     GRAPH_EXTRACTION_PROMPT,
     CONTINUE_PROMPT,
@@ -26,37 +27,23 @@ class LLMGraphExtractor:
     """基于LLM的图提取器"""
     
     def __init__(self, 
-                 llm_client: Optional[BaseLLMClient] = None,
-                 llm_config: Optional[Dict[str, Any]] = None,
                  max_gleanings: int = 1,
                  entity_types: Optional[List[str]] = None):
         """初始化LLM图提取器
         
         Args:
-            llm_client: LLM客户端，如果为None将从配置创建
-            llm_config: LLM客户端配置
             max_gleanings: 最大额外提取轮数
             entity_types: 要提取的实体类型列表
         """
-        if llm_client is None:
-            # 确保有有效的LLM配置
-            effective_config = llm_config if llm_config is not None else {"provider": "mock"}
-            
-            # 如果没有API密钥，强制使用Mock客户端
-            if not effective_config.get("api_key"):
-                effective_config = {"provider": "mock"}
-                logger.warning("未配置API密钥，将使用Mock LLM客户端进行测试")
-            
-            try:
-                self.llm_client = create_llm_client(effective_config)
-                logger.info(f"LLM提取器初始化成功，使用提供商: {effective_config.get('provider', 'unknown')}")
-            except Exception as e:
-                logger.error(f"LLM提取器初始化失败: {e}")
-                # 如果初始化失败，使用Mock客户端作为后备
-                self.llm_client = create_llm_client({"provider": "mock"})
-                logger.info("使用Mock LLM客户端作为后备")
-        else:
-            self.llm_client = llm_client
+        # 使用与RAG服务相同的OpenAI客户端配置
+        api_key = os.getenv("DASHSCOPE_API_KEY")
+        if not api_key:
+            raise RuntimeError("未设置DASHSCOPE_API_KEY环境变量，图提取功能无法使用")
+        
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        )
         
         self.max_gleanings = max_gleanings
         self.entity_types = entity_types or DEFAULT_ENTITY_TYPES
@@ -65,6 +52,8 @@ class LLMGraphExtractor:
         self.tuple_delimiter = DEFAULT_TUPLE_DELIMITER
         self.record_delimiter = DEFAULT_RECORD_DELIMITER
         self.completion_delimiter = DEFAULT_COMPLETION_DELIMITER
+        
+        logger.info("LLM图提取器初始化成功，使用DashScope API")
     
     def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """使用LLM从文本单元中提取实体和关系"""
@@ -121,30 +110,62 @@ class LLMGraphExtractor:
             input_text=text
         )
         
-        # 初始提取
-        response = self.llm_client.chat(prompt)
-        results = response.content or ""
-        
-        # 如果配置了额外收集轮次
-        if self.max_gleanings > 0:
-            history = response.history
+        try:
+            # 使用与RAG服务相同的调用方式
+            completion = self.client.chat.completions.create(
+                model="qwen-max",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.0,
+                max_tokens=4000,
+                stream=False
+            )
             
-            for i in range(self.max_gleanings):
-                # 要求更多实体
-                continue_response = self.llm_client.chat(CONTINUE_PROMPT)
-                additional_results = continue_response.content or ""
-                results += "\n" + additional_results
-                
-                # 检查是否应该继续
-                if i < self.max_gleanings - 1:  # 最后一次迭代不检查
-                    loop_response = self.llm_client.chat(LOOP_PROMPT)
-                    if loop_response.content.strip().upper() != "Y":
-                        break
-        
-        # 解析结果
-        entities, relationships = self._parse_llm_response(results, text_unit_id)
-        
-        return entities, relationships
+            results = completion.choices[0].message.content or ""
+            
+            # 如果配置了额外收集轮次
+            if self.max_gleanings > 0:
+                for i in range(self.max_gleanings):
+                    # 要求更多实体
+                    continue_completion = self.client.chat.completions.create(
+                        model="qwen-max",
+                        messages=[
+                            {"role": "user", "content": prompt},
+                            {"role": "assistant", "content": results},
+                            {"role": "user", "content": CONTINUE_PROMPT}
+                        ],
+                        temperature=0.0,
+                        max_tokens=4000,
+                        stream=False
+                    )
+                    
+                    additional_results = continue_completion.choices[0].message.content or ""
+                    results += "\n" + additional_results
+                    
+                    # 检查是否应该继续
+                    if i < self.max_gleanings - 1:  # 最后一次迭代不检查
+                        loop_completion = self.client.chat.completions.create(
+                            model="qwen-max",
+                            messages=[
+                                {"role": "user", "content": LOOP_PROMPT}
+                            ],
+                            temperature=0.0,
+                            max_tokens=10,
+                            stream=False
+                        )
+                        
+                        if loop_completion.choices[0].message.content.strip().upper() != "Y":
+                            break
+            
+            # 解析结果
+            entities, relationships = self._parse_llm_response(results, text_unit_id)
+            
+            return entities, relationships
+            
+        except Exception as e:
+            logger.error(f"LLM调用失败: {e}")
+            raise RuntimeError(f"图提取LLM调用失败: {e}") from e
     
     def _parse_llm_response(self, response: str, text_unit_id: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """解析LLM响应提取实体和关系"""
