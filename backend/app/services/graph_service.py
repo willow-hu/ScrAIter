@@ -10,8 +10,8 @@ from typing import Dict, Any, Optional, List, Tuple
 import logging
 
 from app.core.config import settings
-from app.services.graph_extractor_integration import graph_extractor_integration
-from app.services.community_detector import community_detector_integration
+from app.services.community_detector import community_detector
+from app.services.graph_extractor import graph_extractor
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +87,9 @@ class GraphService:
             (entities_df, relationships_df): 实体和关系DataFrame
         """
         try:
-            # 使用全局的图提取器实例
-            if graph_extractor_integration is not None:
-                extractor = graph_extractor_integration
+            # 使用图提取器
+            if graph_extractor is not None:
+                extractor = graph_extractor
             else:
                 logger.error("GraphExtractorIntegration不可用")
                 return self._empty_extraction_dataframes()

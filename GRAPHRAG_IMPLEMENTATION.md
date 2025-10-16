@@ -29,9 +29,9 @@ backend/app/
 ├── prompts/
 │   └── graph_extraction.py       # 图提取的系统prompt模板
 ├── services/
-│   ├── llm_graph_extractor.py    # 基于LLM的图提取器（已统一到RAG调用方式）
+│   ├── graph_extractor.py        # GraphRAG图提取器（已统一到RAG调用方式）
 │   ├── community_detector.py     # 社区检测器（已整合业务逻辑）
-│   ├── graph_extractor_integration.py  # 图提取集成器（已简化）
+│   ├── graph_extractor.py        # GraphRAG图提取器（已合并并简化）
 │   └── graph_service.py          # 图服务主类（已简化）
 ```
 
@@ -153,7 +153,7 @@ result = graph_service.build_graph_index(
 ## 扩展性
 
 系统设计具有良好的扩展性：
-- **新提取算法**: 扩展`LLMGraphExtractor`类的解析逻辑
+- **新提取算法**: 扩展`GraphExtractor`类的解析逻辑
 - **新社区算法**: 扩展`CommunityDetector`类
 - **自定义prompt**: 修改`graph_extraction.py`中的模板
 - **RAG集成**: GraphRAG与RAG服务共享相同的LLM调用机制

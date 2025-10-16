@@ -552,13 +552,13 @@ class KnowledgeBaseService:
             build_status.progress = 30.0
             await asyncio.sleep(0.5)
             
-            from app.services.graph_extractor_integration import graph_extractor_integration
+            from app.services.graph_extractor import graph_extractor
             
-            if graph_extractor_integration is None:
-                raise Exception("GraphExtractorIntegration不可用")
+            if graph_extractor is None:
+                raise Exception("GraphExtractor不可用")
             
             # 创建文本单元DataFrame
-            text_units_df = graph_extractor_integration.create_text_units_from_nodes(nodes)
+            text_units_df = graph_extractor.create_text_units_from_nodes(nodes)
             
             build_status.current_file = f"分析 {len(text_units_df)} 个文本单元..."
             build_status.progress = 40.0
