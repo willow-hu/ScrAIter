@@ -50,10 +50,9 @@ class RAGService:
         # 默认知识库名称
         self.default_kb_name = "twin_pagoda"
         
-        # 索引缓存 - 新增
+        # 索引缓存
         self.index_cache: Dict[str, Any] = {}
         self.retriever_cache: Dict[str, Any] = {}
-        print("🚀 RAG服务初始化完成，已启用索引缓存机制")
     
     def set_default_knowledge_base(self, kb_name: str):
         """设置默认知识库"""
