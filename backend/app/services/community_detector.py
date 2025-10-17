@@ -421,9 +421,6 @@ class CommunityDetector:
 # 创建全局实例，同时保持向后兼容
 try:
     community_detector = CommunityDetector()
-    # 为了保持向后兼容，也创建integration实例
-    community_detector_integration = community_detector
 except Exception as e:
     community_detector = None
-    community_detector_integration = None
     logger.warning(f"CommunityDetector初始化失败: {e}")

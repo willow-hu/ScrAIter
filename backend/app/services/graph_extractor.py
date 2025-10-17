@@ -27,7 +27,7 @@ class GraphExtractor:
     """图提取器"""
     
     def __init__(self, 
-                 max_gleanings: int = 1,
+                 max_gleanings: int = 0,
                  entity_types: Optional[List[str]] = None):
         """初始化GraphRAG图提取器
         
@@ -53,7 +53,7 @@ class GraphExtractor:
         self.record_delimiter = DEFAULT_RECORD_DELIMITER
         self.completion_delimiter = DEFAULT_COMPLETION_DELIMITER
         
-        logger.info("图提取器初始化成功，使用DashScope API")
+        logger.info(f"图提取器初始化成功，使用DashScope API，max_gleanings={self.max_gleanings}")
     
     def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """使用LLM从文本单元中提取实体和关系"""
@@ -68,7 +68,7 @@ class GraphExtractor:
                 text_unit_id = text_unit['id']
                 
                 try:
-                    logger.info(f"处理文本单元 {i + 1}/{len(text_units)}")
+                    logger.info(f"处理文本单元 {i + 1}/{len(text_units)} (max_gleanings={self.max_gleanings})")
                     
                     # 从此文本单元提取实体和关系
                     entities, relationships = self._extract_from_text(text, text_unit_id)
@@ -155,7 +155,8 @@ class GraphExtractor:
                             stream=False
                         )
                         
-                        if loop_completion.choices[0].message.content.strip().upper() != "Y":
+                        loop_response = loop_completion.choices[0].message.content
+                        if not loop_response or loop_response.strip().upper() != "Y":
                             break
             
             # 解析结果

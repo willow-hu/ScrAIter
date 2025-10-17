@@ -91,7 +91,7 @@ class GraphService:
             if graph_extractor is not None:
                 extractor = graph_extractor
             else:
-                logger.error("GraphExtractorIntegration不可用")
+                logger.error("GraphExtractor不可用")
                 return self._empty_extraction_dataframes()
             
             logger.info(f"开始提取实体和关系，文本单元数量: {len(text_units)}")
@@ -129,14 +129,14 @@ class GraphService:
             communities_df: 社区DataFrame
         """
         try:
-            if community_detector_integration is None:
-                logger.error("CommunityDetectorIntegration不可用")
+            if community_detector is None:
+                logger.error("CommunityDetector不可用")
                 return self._empty_communities_dataframe()
             
             logger.info(f"开始社区检测，实体数量: {len(entities)}, 关系数量: {len(relationships)}")
             
             # 使用集成器进行社区检测
-            communities_df = community_detector_integration.detect_communities(entities, relationships)
+            communities_df = community_detector.detect_communities(entities, relationships)
             
             logger.info(f"社区检测完成: {len(communities_df)} 个社区")
             
@@ -487,8 +487,8 @@ class GraphService:
                 return {"max_level": 0}
             
             # 使用社区检测集成器计算统计信息
-            if community_detector_integration is not None:
-                return community_detector_integration.get_community_statistics(communities_df)
+            if community_detector is not None:
+                return community_detector.get_community_statistics(communities_df)
             else:
                 # 简单统计
                 max_level = int(communities_df['level'].max()) if 'level' in communities_df.columns else 0

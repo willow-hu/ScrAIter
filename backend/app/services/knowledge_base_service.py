@@ -9,6 +9,7 @@ import asyncio
 import shutil
 import pandas as pd
 import logging
+import time
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
@@ -545,12 +546,18 @@ class KnowledgeBaseService:
             raise Exception("GraphExtractor不可用")
         
         # 创建文本单元DataFrame
+        logger.info(f"创建文本单元DataFrame，共 {len(nodes)} 个节点")
         text_units_df = graph_extractor.create_text_units_from_nodes(nodes)
         
         # 提取实体和关系 (这里会调用LLM)
+        logger.info(f"开始LLM实体关系提取，处理 {len(text_units_df)} 个文本单元")
+        extraction_start = time.time()
         entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
+        extraction_time = time.time() - extraction_start
+        logger.info(f"LLM提取完成，耗时: {extraction_time:.2f}秒, 平均每个文本单元: {extraction_time/len(text_units_df):.2f}秒")
         
         # 保存实体和关系数据
+        save_start = time.time()
         graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
         os.makedirs(graph_path, exist_ok=True)
         
@@ -563,6 +570,9 @@ class KnowledgeBaseService:
         formatted_relationships = graph_extractor.format_relationships_for_storage(relationships_df)
         relationships_file = os.path.join(graph_path, "relationships.csv")
         formatted_relationships.to_csv(relationships_file, index=False, encoding='utf-8')
+        
+        save_time = time.time() - save_start
+        logger.info(f"实体关系数据保存完成，耗时: {save_time:.2f}秒")
         
         # 更新知识库元数据中的实体关系信息
         metadata = self._load_kb_metadata()
@@ -578,14 +588,22 @@ class KnowledgeBaseService:
     async def _detect_communities(self, kb_name: str, entities_df, relationships_df):
         """步骤3：社区检测并保存"""
         # 执行社区检测
+        logger.info(f"开始社区检测，输入: {len(entities_df)} 实体, {len(relationships_df)} 关系")
+        detection_start = time.time()
         communities_df = graph_service.detect_communities(entities_df, relationships_df)
+        detection_time = time.time() - detection_start
+        logger.info(f"社区检测完成，耗时: {detection_time:.2f}秒, 发现 {len(communities_df)} 个社区")
         
         # 保存社区数据
+        save_start = time.time()
         graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
         os.makedirs(graph_path, exist_ok=True)
         
         communities_file = os.path.join(graph_path, "communities.csv")
         communities_df.to_csv(communities_file, index=False, encoding='utf-8')
+        
+        save_time = time.time() - save_start
+        logger.info(f"社区数据保存完成，耗时: {save_time:.2f}秒")
         
         # 更新知识库元数据中的社区信息
         metadata = self._load_kb_metadata()
@@ -600,40 +618,53 @@ class KnowledgeBaseService:
 
     async def _build_knowledge_graph_task(self, task_id: str, kb_name: str, kb_info: Dict[str, Any]):
         """执行知识图谱构建任务"""
+        # 开始计时
+        start_time = time.time()
+        logger.info(f"开始构建知识库 '{kb_name}' 的知识图谱 (task_id: {task_id})")
+        
         try:
             build_status = self.build_tasks[task_id]
             
             # 步骤1: 加载向量索引和提取文档节点
+            step1_start = time.time()
             build_status.current_file = "加载向量索引..."
             build_status.progress = 10.0
             await asyncio.sleep(0.5)
             
             nodes = await self._load_vector_and_extract_nodes(kb_name)
             
-            build_status.current_file = f"提取了 {len(nodes)} 个文档节点"
+            step1_time = time.time() - step1_start
+            build_status.current_file = f"提取了 {len(nodes)} 个文档节点 (耗时: {step1_time:.2f}s)"
             build_status.progress = 20.0
+            logger.info(f"步骤1完成 - 文档节点提取: {len(nodes)} 个节点, 耗时: {step1_time:.2f}秒")
             await asyncio.sleep(0.5)
             
             # 步骤2: 实体关系提取
+            step2_start = time.time()
             build_status.current_file = "提取实体和关系..."
             build_status.progress = 30.0
             await asyncio.sleep(0.5)
             
             entities_df, relationships_df = await self._extract_entities_and_relationships(kb_name, nodes)
             
-            build_status.current_file = f"提取完成: {len(entities_df)} 实体, {len(relationships_df)} 关系"
+            step2_time = time.time() - step2_start
+            build_status.current_file = f"提取完成: {len(entities_df)} 实体, {len(relationships_df)} 关系 (耗时: {step2_time:.2f}s)"
             build_status.progress = 60.0
+            logger.info(f"步骤2完成 - 实体关系提取: {len(entities_df)} 实体, {len(relationships_df)} 关系, 耗时: {step2_time:.2f}秒")
             await asyncio.sleep(0.5)
             
             # 步骤3: 社区检测
+            step3_start = time.time()
             build_status.current_file = "检测社区结构..."
             build_status.progress = 70.0
             await asyncio.sleep(0.5)
             
             communities_df = await self._detect_communities(kb_name, entities_df, relationships_df)
             
-            build_status.current_file = f"社区检测完成: {len(communities_df)} 社区"
+            step3_time = time.time() - step3_start
+            build_status.current_file = f"社区检测完成: {len(communities_df)} 社区 (耗时: {step3_time:.2f}s)"
             build_status.progress = 90.0
+            logger.info(f"步骤3完成 - 社区检测: {len(communities_df)} 社区, 耗时: {step3_time:.2f}秒")
             await asyncio.sleep(0.5)
             
             # 更新构建状态
@@ -641,18 +672,35 @@ class KnowledgeBaseService:
             build_status.graph_relationships_count = len(relationships_df) 
             build_status.graph_communities_count = len(communities_df)
             
+            # 计算总耗时
+            total_time = time.time() - start_time
+            
             # 完成构建
             build_status.status = "completed"
             build_status.progress = 100.0
-            build_status.current_file = "知识图谱构建完成"
+            build_status.current_file = f"知识图谱构建完成 (总耗时: {total_time:.2f}s)"
+            
+            # 输出总结日志
+            logger.info(f"知识库 '{kb_name}' 图谱构建完成!")
+            logger.info(f"=== 构建统计 ===")
+            logger.info(f"总耗时: {total_time:.2f} 秒 ({total_time/60:.2f} 分钟)")
+            logger.info(f"步骤1 - 文档节点提取: {step1_time:.2f}秒 ({step1_time/total_time*100:.1f}%)")
+            logger.info(f"步骤2 - 实体关系提取: {step2_time:.2f}秒 ({step2_time/total_time*100:.1f}%)")  
+            logger.info(f"步骤3 - 社区检测: {step3_time:.2f}秒 ({step3_time/total_time*100:.1f}%)")
+            logger.info(f"提取结果: {len(entities_df)} 实体, {len(relationships_df)} 关系, {len(communities_df)} 社区")
+            logger.info(f"平均每个文档节点耗时: {total_time/len(nodes):.2f}秒")
+            logger.info("==================")
             
         except Exception as e:
-            logger.error(f"知识图谱构建失败: {e}")
+            # 记录失败时的总耗时
+            error_time = time.time() - start_time
+            logger.error(f"知识图谱构建失败 (耗时: {error_time:.2f}秒): {e}")
+            
             build_status = self.build_tasks.get(task_id)
             if build_status:
                 build_status.status = "error"
                 build_status.error_message = str(e)
-                build_status.current_file = f"图谱构建失败: {str(e)}"
+                build_status.current_file = f"图谱构建失败: {str(e)} (耗时: {error_time:.2f}s)"
 
 # 创建全局实例
 knowledge_base_service = KnowledgeBaseService()
