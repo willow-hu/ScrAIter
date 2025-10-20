@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 from openai import OpenAI
 
+from app.core.config import settings
 from ..prompts.graph_extraction import (
     GRAPH_EXTRACTION_PROMPT,
     CONTINUE_PROMPT,
@@ -53,7 +54,7 @@ class GraphExtractor:
         self.record_delimiter = DEFAULT_RECORD_DELIMITER
         self.completion_delimiter = DEFAULT_COMPLETION_DELIMITER
         
-        logger.info(f"图提取器初始化成功，使用DashScope API，max_gleanings={self.max_gleanings}")
+        logger.info(f"图提取器初始化成功，使用DashScope API")
     
     def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """使用LLM从文本单元中提取实体和关系"""
@@ -68,7 +69,7 @@ class GraphExtractor:
                 text_unit_id = text_unit['id']
                 
                 try:
-                    logger.info(f"处理文本单元 {i + 1}/{len(text_units)} (max_gleanings={self.max_gleanings})")
+                    logger.info(f"处理文本单元 {i + 1}/{len(text_units)}")
                     
                     # 从此文本单元提取实体和关系
                     entities, relationships = self._extract_from_text(text, text_unit_id)
@@ -113,12 +114,12 @@ class GraphExtractor:
         try:
             # 使用与RAG服务相同的调用方式
             completion = self.client.chat.completions.create(
-                model="qwen-max",
+                model=settings.GRAPH_EXTRACTION_MODEL,
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.0,
-                max_tokens=4000,
+                temperature=settings.GRAPH_EXTRACTION_TEMPERATURE,
+                max_tokens=settings.GRAPH_EXTRACTION_MAX_TOKENS,
                 stream=False
             )
             
@@ -129,14 +130,14 @@ class GraphExtractor:
                 for i in range(self.max_gleanings):
                     # 要求更多实体
                     continue_completion = self.client.chat.completions.create(
-                        model="qwen-max",
+                        model=settings.GRAPH_EXTRACTION_MODEL,
                         messages=[
                             {"role": "user", "content": prompt},
                             {"role": "assistant", "content": results},
                             {"role": "user", "content": CONTINUE_PROMPT}
                         ],
-                        temperature=0.0,
-                        max_tokens=4000,
+                        temperature=settings.GRAPH_EXTRACTION_TEMPERATURE,
+                        max_tokens=settings.GRAPH_EXTRACTION_MAX_TOKENS,
                         stream=False
                     )
                     
@@ -146,12 +147,12 @@ class GraphExtractor:
                     # 检查是否应该继续
                     if i < self.max_gleanings - 1:  # 最后一次迭代不检查
                         loop_completion = self.client.chat.completions.create(
-                            model="qwen-max",
+                            model=settings.GRAPH_EXTRACTION_MODEL,
                             messages=[
                                 {"role": "user", "content": LOOP_PROMPT}
                             ],
-                            temperature=0.0,
-                            max_tokens=10,
+                            temperature=settings.GRAPH_EXTRACTION_TEMPERATURE,
+                            max_tokens=settings.GRAPH_LOOP_DECISION_MAX_TOKENS,
                             stream=False
                         )
                         
@@ -408,7 +409,8 @@ class GraphExtractor:
 
 # 创建全局实例
 try:
-    graph_extractor = GraphExtractor()
+    from app.core.config import settings
+    graph_extractor = GraphExtractor(max_gleanings=settings.GRAPH_MAX_GLEANINGS)
 except Exception as e:
     graph_extractor = None
     logger.warning(f"GraphExtractor初始化失败: {e}")

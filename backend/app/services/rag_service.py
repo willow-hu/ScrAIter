@@ -306,12 +306,12 @@ class RAGService:
 
             # 调用大模型
             completion = self.client.chat.completions.create(
-                model="qwen-max",
+                model=settings.RAG_MODEL,
                 messages=[
                     {"role": "user", "content": filled_prompt}
                 ],
-                temperature=0.7,
-                max_tokens=512,
+                temperature=settings.RAG_TEMPERATURE,
+                max_tokens=settings.RAG_MAX_TOKENS,
                 stream=False
             )
             
@@ -403,12 +403,12 @@ class RAGService:
 
             # 流式调用大模型
             stream = self.client.chat.completions.create(
-                model="qwen-max",
+                model=settings.RAG_MODEL,
                 messages=[
                     {"role": "user", "content": filled_prompt}
                 ],
-                temperature=0.7,
-                max_tokens=512,
+                temperature=settings.RAG_TEMPERATURE,
+                max_tokens=settings.RAG_MAX_TOKENS,
                 stream=True
             )
             
