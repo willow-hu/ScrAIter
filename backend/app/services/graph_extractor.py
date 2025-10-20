@@ -6,6 +6,7 @@ import os
 import logging
 import re
 import hashlib
+import concurrent.futures
 from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 from openai import OpenAI
@@ -41,6 +42,7 @@ class GraphExtractor:
         if not api_key:
             raise RuntimeError("未设置DASHSCOPE_API_KEY环境变量，图提取功能无法使用")
         
+        # 同步客户端
         self.client = OpenAI(
             api_key=api_key,
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -59,27 +61,42 @@ class GraphExtractor:
     def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """使用LLM从文本单元中提取实体和关系"""
         try:
-            logger.info(f"开始图提取，使用LLM从{len(text_units)}个文本单元中提取图数据")
+            logger.info(f"开始并发图提取，使用LLM从{len(text_units)}个文本单元中提取图数据")
             
+            # 使用线程池进行并发处理（避免异步复杂性）
+            import concurrent.futures
+            
+            def process_single_unit(args):
+                text, text_unit_id = args
+                return self._extract_from_text(text, text_unit_id)
+            
+            # 准备任务参数
+            tasks = [(row['text'], row['id']) for _, row in text_units.iterrows()]
+            
+            logger.info(f"启动{len(tasks)}个并发任务（使用线程池）")
+            
+            # 使用线程池并发执行
             all_entities = []
             all_relationships = []
+            success_count = 0
             
-            for i, (idx, text_unit) in enumerate(text_units.iterrows()):
-                text = text_unit['text']
-                text_unit_id = text_unit['id']
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks), 5)) as executor:
+                # 提交所有任务
+                future_to_index = {executor.submit(process_single_unit, task): i for i, task in enumerate(tasks)}
                 
-                try:
-                    logger.info(f"处理文本单元 {i + 1}/{len(text_units)}")
-                    
-                    # 从此文本单元提取实体和关系
-                    entities, relationships = self._extract_from_text(text, text_unit_id)
-                    
-                    all_entities.extend(entities)
-                    all_relationships.extend(relationships)
-                    
-                except Exception as e:
-                    logger.error(f"处理文本单元{text_unit_id}时出错: {e}")
-                    continue
+                # 收集结果
+                for future in concurrent.futures.as_completed(future_to_index):
+                    index = future_to_index[future]
+                    try:
+                        entities, relationships = future.result()
+                        all_entities.extend(entities)
+                        all_relationships.extend(relationships)
+                        success_count += 1
+                        logger.info(f"任务 {index+1}/{len(tasks)} 完成")
+                    except Exception as e:
+                        logger.error(f"任务 {index+1} 失败: {e}")
+            
+            logger.info(f"并发处理完成: {success_count}/{len(tasks)}个任务成功")
             
             # 转换为DataFrame并合并重复项
             entities_df = self._merge_entities(all_entities)
@@ -87,19 +104,21 @@ class GraphExtractor:
             
             # 检查结果
             if len(entities_df) > 0 or len(relationships_df) > 0:
-                logger.info(f"LLM提取成功: {len(entities_df)}个实体, {len(relationships_df)}个关系")
+                logger.info(f"LLM并发提取成功: {len(entities_df)}个实体, {len(relationships_df)}个关系")
                 return entities_df, relationships_df
             else:
-                logger.warning("LLM提取未返回结果，可能是文本中没有可识别的实体或关系")
+                logger.warning("LLM并发提取未返回结果，可能是文本中没有可识别的实体或关系")
                 return entities_df, relationships_df
                 
         except Exception as e:
             logger.error(f"LLM提取失败: {e}")
+            import traceback
+            logger.error(f"详细错误: {traceback.format_exc()}")
             # 返回空结果而不是崩溃
             empty_entities = pd.DataFrame(columns=['id', 'title', 'type', 'description', 'text_unit_ids'])
             empty_relationships = pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
             return empty_entities, empty_relationships
-    
+
     def _extract_from_text(self, text: str, text_unit_id: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """使用LLM从单个文本中提取实体和关系"""
         # 准备prompt
@@ -229,7 +248,7 @@ class GraphExtractor:
                 relationships.append(relationship)
         
         return entities, relationships
-    
+
     def _merge_entities(self, entities: List[Dict[str, Any]]) -> pd.DataFrame:
         """合并重复实体"""
         if not entities:
