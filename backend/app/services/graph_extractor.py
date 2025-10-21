@@ -12,7 +12,7 @@ import pandas as pd
 from openai import OpenAI
 
 from app.core.config import settings
-from ..prompts.graph_extraction import (
+from ..prompts.graph_extraction_ch import (
     GRAPH_EXTRACTION_PROMPT,
     CONTINUE_PROMPT,
     LOOP_PROMPT,
