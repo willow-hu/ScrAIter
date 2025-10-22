@@ -216,12 +216,14 @@ class GraphExtractor:
                 entity_name = parts[1].strip().strip('"')
                 entity_type = parts[2].strip().strip('"').lower()
                 entity_description = parts[3].strip().strip('"')
+                entity_normalized_date = parts[4].strip().strip('"') if len(parts) > 4 else ""
                 
                 entity = {
                     'id': self._generate_entity_id(entity_name, entity_type),
                     'title': entity_name,
                     'type': entity_type,
                     'description': entity_description,
+                    'normalized_date': entity_normalized_date,
                     'text_unit_ids': [text_unit_id]
                 }
                 entities.append(entity)
@@ -230,10 +232,11 @@ class GraphExtractor:
                 source = parts[1].strip().strip('"')
                 target = parts[2].strip().strip('"')
                 description = parts[3].strip().strip('"')
+                relationship_time = parts[4].strip().strip('"') if len(parts) > 4 else ""
                 
                 # 尝试解析权重/强度
                 try:
-                    weight = float(parts[4].strip())
+                    weight = float(parts[5].strip()) if len(parts) > 5 else 1.0
                 except (ValueError, IndexError):
                     weight = 1.0
                 
@@ -242,6 +245,7 @@ class GraphExtractor:
                     'source': source,
                     'target': target,
                     'description': description,
+                    'relationship_time': relationship_time,
                     'weight': weight,
                     'text_unit_ids': [text_unit_id]
                 }
@@ -252,7 +256,7 @@ class GraphExtractor:
     def _merge_entities(self, entities: List[Dict[str, Any]]) -> pd.DataFrame:
         """合并重复实体"""
         if not entities:
-            return pd.DataFrame(columns=['id', 'title', 'type', 'description', 'text_unit_ids'])
+            return pd.DataFrame(columns=['id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids'])
         
         df = pd.DataFrame(entities)
         
@@ -260,6 +264,7 @@ class GraphExtractor:
         merged = df.groupby(['title', 'type']).agg({
             'id': 'first',
             'description': lambda x: '. '.join(set(x)),
+            'normalized_date': 'first',  # 取第一个非空的日期
             'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])]))
         }).reset_index()
         
@@ -272,7 +277,7 @@ class GraphExtractor:
     def _merge_relationships(self, relationships: List[Dict[str, Any]]) -> pd.DataFrame:
         """合并重复关系"""
         if not relationships:
-            return pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
+            return pd.DataFrame(columns=['id', 'source', 'target', 'description', 'relationship_time', 'text_unit_ids', 'weight'])
         
         df = pd.DataFrame(relationships)
         
@@ -280,6 +285,7 @@ class GraphExtractor:
         merged = df.groupby(['source', 'target']).agg({
             'id': 'first',
             'description': lambda x: '. '.join(set(x)),
+            'relationship_time': 'first',  # 取第一个非空的时间
             'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])])),
             'weight': 'sum'
         }).reset_index()
@@ -360,10 +366,10 @@ class GraphExtractor:
     def _empty_dataframes(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """返回空的实体和关系DataFrame"""
         entities_df = pd.DataFrame(columns=[
-            'id', 'title', 'type', 'description', 'text_unit_ids', 'degree', 'community'
+            'id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids', 'degree', 'community'
         ])
         relationships_df = pd.DataFrame(columns=[
-            'id', 'source', 'target', 'description', 'weight', 'text_unit_ids'
+            'id', 'source', 'target', 'description', 'relationship_time', 'weight', 'text_unit_ids'
         ])
         
         return entities_df, relationships_df
@@ -382,7 +388,7 @@ class GraphExtractor:
             return entities_df
         
         # 确保必要的列存在
-        required_columns = ['id', 'title', 'type', 'description', 'text_unit_ids']
+        required_columns = ['id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids']
         for col in required_columns:
             if col not in entities_df.columns:
                 entities_df[col] = None
@@ -409,11 +415,13 @@ class GraphExtractor:
             return relationships_df
         
         # 确保必要的列存在
-        required_columns = ['id', 'source', 'target', 'description', 'weight', 'text_unit_ids']
+        required_columns = ['id', 'source', 'target', 'description', 'relationship_time', 'weight', 'text_unit_ids']
         for col in required_columns:
             if col not in relationships_df.columns:
                 if col == 'weight':
                     relationships_df[col] = 1.0
+                elif col == 'relationship_time':
+                    relationships_df[col] = ""
                 else:
                     relationships_df[col] = None
         

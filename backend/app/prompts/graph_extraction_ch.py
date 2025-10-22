@@ -153,10 +153,10 @@ CONTINUE_PROMPT = "上次提取中可能遗漏了部分实体或关系。请仅�
 # 循环检查prompt
 LOOP_PROMPT = "是否仍有实体或关系未被提取？如有，请回答Y；如无，请回答N。仅用单个字母回答。\n"
 
-# 默认分隔符（保持不变）
+# 默认分隔符
 DEFAULT_TUPLE_DELIMITER = "<|>"
 DEFAULT_RECORD_DELIMITER = "##"
 DEFAULT_COMPLETION_DELIMITER = "<|COMPLETE|>"
 
-# 推荐的默认实体类型（文化遗产优化版）
+# 默认实体类型
 DEFAULT_ENTITY_TYPES = ["PERSON", "LOCATION", "HERITAGE_SITE", "ARTIFACT", "EVENT", "TIME_PERIOD", "ORGANIZATION"]
