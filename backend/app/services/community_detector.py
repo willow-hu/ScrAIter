@@ -5,6 +5,7 @@ GraphRAG社区检测器
 """
 import logging
 import hashlib
+import uuid
 from typing import Dict, Any, List, Tuple
 import pandas as pd
 import networkx as nx
@@ -15,15 +16,17 @@ logger = logging.getLogger(__name__)
 class CommunityDetector:
     """社区检测器，支持多种算法"""
     
-    def __init__(self, algorithm: str = "louvain", resolution: float = 1.0):
+    def __init__(self, algorithm: str = "louvain", resolution: float = 1.0, max_cluster_size: int = 50):
         """初始化社区检测器
         
         Args:
             algorithm: 社区检测算法 ("louvain", "leiden", "label_propagation")
             resolution: 分辨率参数，控制社区大小
+            max_cluster_size: 最大社区大小，超过此大小将进行分层分割
         """
         self.algorithm = algorithm.lower()
         self.resolution = resolution
+        self.max_cluster_size = max_cluster_size
         
         # 检查算法可用性
         self._check_algorithm_availability()
@@ -114,8 +117,11 @@ class CommunityDetector:
                 # 简单的后备算法
                 communities = self._detect_simple(G)
             
+            # 进行分层社区检测
+            hierarchical_communities = self._apply_hierarchical_clustering(G, communities)
+            
             # 格式化社区数据
-            communities_df = self._format_communities(communities, entities_df)
+            communities_df = self._format_hierarchical_communities(hierarchical_communities, entities_df)
             
             # 格式化社区数据以便存储
             communities_df = self.format_communities_for_storage(communities_df)
@@ -159,6 +165,10 @@ class CommunityDetector:
     def _detect_leiden(self, G: nx.Graph) -> List[List[str]]:
         """使用Leiden算法检测社区"""
         try:
+            if not self.leidenalg or not self.igraph:
+                logger.warning("Leiden算法依赖不可用，使用后备算法")
+                return self._detect_simple(G)
+                
             # 转换为igraph格式
             g = self.igraph.Graph.from_networkx(G)
             
@@ -417,10 +427,164 @@ class CommunityDetector:
             }
         }
 
+    def _apply_hierarchical_clustering(self, graph: nx.Graph, base_communities: List[List[str]]) -> List[Dict[str, Any]]:
+        """应用分层聚类到基础社区"""
+        hierarchical_communities = []
+        community_counter = 0
+        
+        # 第0层：基础社区
+        for i, community_nodes in enumerate(base_communities):
+            if not community_nodes:
+                continue
+                
+            hierarchical_communities.append({
+                'level': 0,
+                'community_id': community_counter,
+                'parent_id': -1,
+                'nodes': community_nodes
+            })
+            community_counter += 1
+        
+        # 进行分层分割
+        current_communities = hierarchical_communities.copy()
+        level = 0
+        
+        while level < 5:  # 最多5层防止无限循环
+            large_communities = [c for c in current_communities if len(c['nodes']) > self.max_cluster_size]
+            if not large_communities:
+                break
+                
+            level += 1
+            new_communities = []
+            
+            for community in large_communities:
+                subgraph = graph.subgraph(community['nodes'])
+                sub_communities = self._split_community(subgraph)
+                
+                for sub_comm in sub_communities:
+                    new_communities.append({
+                        'level': level,
+                        'community_id': community_counter,
+                        'parent_id': community['community_id'],
+                        'nodes': sub_comm
+                    })
+                    community_counter += 1
+            
+            # 保留小社区，添加新分割的社区
+            current_communities = [c for c in current_communities if len(c['nodes']) <= self.max_cluster_size]
+            current_communities.extend(new_communities)
+            hierarchical_communities.extend(new_communities)
+        
+        return hierarchical_communities
+
+    def _split_community(self, subgraph: nx.Graph) -> List[List[str]]:
+        """分割社区为更小的部分"""
+        if len(subgraph.nodes) <= self.max_cluster_size:
+            return [list(subgraph.nodes)]
+        
+        # 使用边介数中心性找到要移除的边
+        if len(subgraph.edges) == 0:
+            # 没有边，每个节点为独立社区
+            nodes = list(subgraph.nodes)
+            chunk_size = self.max_cluster_size
+            return [nodes[i:i + chunk_size] for i in range(0, len(nodes), chunk_size)]
+        
+        # 计算边介数中心性
+        try:
+            edge_betweenness = nx.edge_betweenness_centrality(subgraph)
+        except:
+            # 如果计算失败，使用简单分割
+            nodes = list(subgraph.nodes)
+            chunk_size = self.max_cluster_size
+            return [nodes[i:i + chunk_size] for i in range(0, len(nodes), chunk_size)]
+        
+        # 移除最高介数的边直到获得小的连通组件
+        temp_graph = subgraph.copy()
+        
+        while edge_betweenness and len(temp_graph.nodes) > 0:
+            # 找到最高介数的边
+            max_edge = max(edge_betweenness.items(), key=lambda x: x[1])
+            temp_graph.remove_edge(*max_edge[0])
+            del edge_betweenness[max_edge[0]]
+            
+            # 检查连通组件
+            components = list(nx.connected_components(temp_graph))
+            if not components:
+                break
+                
+            max_component_size = max(len(comp) for comp in components)
+            
+            if max_component_size <= self.max_cluster_size:
+                return [list(comp) for comp in components if len(comp) > 0]
+            
+            # 更新边介数
+            if temp_graph.edges:
+                try:
+                    edge_betweenness = nx.edge_betweenness_centrality(temp_graph)
+                except:
+                    break
+            else:
+                break
+        
+        # 如果分割失败，使用简单分块
+        nodes = list(subgraph.nodes)
+        chunk_size = self.max_cluster_size
+        return [nodes[i:i + chunk_size] for i in range(0, len(nodes), chunk_size)]
+
+    def _format_hierarchical_communities(self, hierarchical_communities: List[Dict[str, Any]], entities_df: pd.DataFrame) -> pd.DataFrame:
+        """格式化分层社区数据为DataFrame"""
+        formatted_communities = []
+        
+        for community in hierarchical_communities:
+            # 获取社区中实体的详细信息
+            community_entities = entities_df[entities_df['title'].isin(community['nodes'])]
+            entity_ids = community_entities['id'].tolist()
+            
+            if not entity_ids:  # 跳过空社区
+                continue
+            
+            # 计算社区统计
+            size = len(community['nodes'])
+            
+            community_info = {
+                'id': self._generate_community_id(f"community_{community['community_id']}", community['community_id']),
+                'title': f"Community {community['community_id']}",
+                'level': community['level'],
+                'community': community['community_id'],
+                'parent': community['parent_id'],
+                'entity_ids': entity_ids,
+                'size': size
+            }
+            
+            formatted_communities.append(community_info)
+        
+        if not formatted_communities:
+            return self._empty_communities_dataframe()
+        
+        communities_df = pd.DataFrame(formatted_communities)
+        
+        # 更新实体的社区信息（使用level 0的社区）
+        level_0_communities = [c for c in hierarchical_communities if c['level'] == 0]
+        self._update_entity_communities_hierarchical(entities_df, level_0_communities)
+        
+        return communities_df
+
+    def _update_entity_communities_hierarchical(self, entities_df: pd.DataFrame, level_0_communities: List[Dict[str, Any]]):
+        """更新实体DataFrame中的社区信息（分层版本）"""
+        # 创建节点到社区ID的映射
+        node_to_community = {}
+        for community in level_0_communities:
+            community_id = community['community_id']
+            for node in community['nodes']:
+                node_to_community[node] = community_id
+        
+        # 更新实体的社区字段
+        entities_df['community'] = entities_df['title'].map(node_to_community)
+
 
 # 创建全局实例，同时保持向后兼容
 try:
-    community_detector = CommunityDetector()
+    community_detector = CommunityDetector(resolution=0.5, max_cluster_size=30)  # 历史文化场景适合较小的社区
 except Exception as e:
     community_detector = None
     logger.warning(f"CommunityDetector初始化失败: {e}")
