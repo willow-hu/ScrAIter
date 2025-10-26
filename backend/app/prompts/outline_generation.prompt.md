@@ -30,6 +30,11 @@
 请按照此模板生成大纲。该模板是一个扁平化的树结构大纲。// 后为解释说明，仅供帮助你理解，不要输出。
 ```json
 {
+  "global_context": {
+    "character_list": [], // 角色列表，置空
+    "site_name": "景点名称", // 景点名称
+    "other_requirements": "" // 其他特殊要求，置空
+  },
   "structure": [ // 节点列表，每个节点为一个字典，固定有以下给出的字段。
     {
       "id": 1, // 节点唯一标识符，从1开始递增
@@ -88,6 +93,11 @@
 ## 示例1 - 山西大同悬空寺
 ```json
 {
+  "global_context": {
+    "character_list": [],
+    "site_name": "悬空寺",
+    "other_requirements": ""
+  },
   "structure": [
     {
       "id": 1,
@@ -252,6 +262,11 @@
 ## 示例2 - 都江堰水利工程
 ```json
 {
+  "global_context": {
+    "character_list": [],
+    "site_name": "都江堰水利工程",
+    "other_requirements": ""
+  },
   "structure": [
     {
       "id": 1,

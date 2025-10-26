@@ -7,10 +7,10 @@ mode: agent
 
 注：
 - 'backend/qwen-local-rag/'目录下是一个可独立运行的完整的项目，实现了本地化RAG。
-- 'backend/graph_builder/'目录下是官方的GraphRAG实现代码中提取出来的可单独运行的索引构建代码，里面实现了实体识别、关系抽取、图构建等功能。
+- 'backend/graphrag/'目录下是官方的GraphRAG实现代码的核心部分，包含了完成的GraphRAG运行流程。
 
 在此项目中，这两个文件夹用作备份，方便你将功能迁移至本项目。在修改代码的过程中，若需要实现RAG或GraphRAG相关的功能，请参考以上两个目录下的代码实现，但禁止修改目录内的所有文件，若需移动请使用复制命令。
 
-在阅读代码时可忽略'qwen-local-rag/'，'graph_builder/'，和'.github/prompts/'目录。
+在阅读代码时可忽略'qwen-local-rag/'，'graphrag/'，和'.github/prompts/'目录。
 
 阅读完成后请回答“是”。
