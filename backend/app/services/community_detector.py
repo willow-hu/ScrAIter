@@ -584,9 +584,6 @@ class CommunityDetector:
 
 # 创建全局实例，同时保持向后兼容
 try:
-    # 参数说明:
-    # resolution: 控制社区粒度，值越大社区越少越大（推荐1.0-2.0，避免过度碎片化）
-    # max_cluster_size: 触发分层的最大社区规模（推荐15-25，促进层级结构）
     community_detector = CommunityDetector(resolution=1.2, max_cluster_size=20)
 except Exception as e:
     community_detector = None
