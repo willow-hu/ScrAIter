@@ -9,7 +9,11 @@ from app.models.rag_models import (
     GenerateStructureRequest, GenerateNodeContentRequest,
     GeneratedContent, GenerationHistoryResponse, RAGSourcesResponse
 )
+from app.models.generation_models import (
+    OutlineGenerationRequest, OutlineGenerationResponse
+)
 from app.services.rag_service import rag_service
+from app.services.outline_generation_service import outline_generation_service
 
 router = APIRouter()
 
@@ -134,3 +138,32 @@ async def get_rag_sources(generation_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取RAG检索片段失败: {str(e)}")
+
+@router.post("/generate/outline", response_model=OutlineGenerationResponse)
+async def generate_outline(request: OutlineGenerationRequest):
+    """
+    生成剧本大纲（基于GraphRAG）
+    输入：知识库名称
+    输出：大纲结构JSON和保存路径
+    """
+    try:
+        if not request.kb_name or not request.kb_name.strip():
+            raise HTTPException(status_code=400, detail="知识库名称不能为空")
+        
+        result = outline_generation_service.generate_outline(request.kb_name.strip())
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+        return OutlineGenerationResponse(
+            success=result["success"],
+            message=result["message"],
+            outline_path=result.get("outline_path"),
+            structure=result.get("structure"),
+            global_context=result.get("global_context")
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成大纲失败: {str(e)}")

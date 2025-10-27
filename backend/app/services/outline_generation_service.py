@@ -1,0 +1,313 @@
+"""
+剧本大纲生成服务
+使用GraphRAG数据（实体、关系）生成剧本大纲
+"""
+import os
+import json
+import pandas as pd
+from typing import Dict, Any, Optional
+from openai import OpenAI
+import logging
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+class OutlineGenerationService:
+    """大纲生成服务"""
+    
+    def __init__(self):
+        """初始化服务"""
+        # OpenAI客户端（使用DashScope兼容接口）
+        self.client = OpenAI(
+            api_key=os.getenv("DASHSCOPE_API_KEY"),
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        )
+        
+        # 提示词路径
+        self.prompts_path = os.path.join(settings.BASE_DIR, "app", "prompts")
+        
+        # 知识库路径
+        self.kb_path = settings.KNOWLEDGE_BASES_DIR
+        
+        # 项目输出路径
+        self.projects_path = settings.PROJECTS_DIR
+    
+    def load_prompt_template(self) -> str:
+        """加载大纲生成提示词模板"""
+        try:
+            prompt_file = os.path.join(self.prompts_path, "outline_generation.prompt.md")
+            
+            if not os.path.exists(prompt_file):
+                raise FileNotFoundError(f"提示词文件不存在: {prompt_file}")
+            
+            with open(prompt_file, 'r', encoding='utf-8') as f:
+                template = f.read().strip()
+            
+            logger.info("成功加载大纲生成提示词模板")
+            return template
+            
+        except Exception as e:
+            logger.error(f"加载提示词模板失败: {e}")
+            raise
+    
+    def load_graph_data(self, kb_name: str) -> Dict[str, pd.DataFrame]:
+        """
+        加载知识库的图数据（实体、关系）
+        
+        Args:
+            kb_name: 知识库名称
+            
+        Returns:
+            包含entities、relationships的字典
+        """
+        try:
+            graph_store_path = os.path.join(self.kb_path, "GraphStore", kb_name)
+            
+            if not os.path.exists(graph_store_path):
+                raise FileNotFoundError(f"知识库 '{kb_name}' 的图数据不存在，请先构建知识图谱")
+            
+            result = {}
+            
+            # 加载实体数据
+            entities_path = os.path.join(graph_store_path, "entities.csv")
+            if os.path.exists(entities_path):
+                result['entities'] = pd.read_csv(entities_path, encoding='utf-8-sig')
+                logger.info(f"加载实体数据: {len(result['entities'])} 条")
+            else:
+                raise FileNotFoundError(f"实体文件不存在: {entities_path}")
+            
+            # 加载关系数据
+            relationships_path = os.path.join(graph_store_path, "relationships.csv")
+            if os.path.exists(relationships_path):
+                result['relationships'] = pd.read_csv(relationships_path, encoding='utf-8-sig')
+                logger.info(f"加载关系数据: {len(result['relationships'])} 条")
+            else:
+                raise FileNotFoundError(f"关系文件不存在: {relationships_path}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"加载图数据失败: {e}")
+            raise
+    
+    def format_graph_data_for_prompt(self, graph_data: Dict[str, pd.DataFrame]) -> str:
+        """
+        将图数据格式化为可以插入提示词的文本
+        
+        Args:
+            graph_data: 包含entities、relationships的字典
+            
+        Returns:
+            格式化后的文本
+        """
+        try:
+            formatted_text = ""
+            
+            # 格式化实体数据
+            if 'entities' in graph_data and not graph_data['entities'].empty:
+                entities_df = graph_data['entities']
+                formatted_text += "## entities.csv\n"
+                formatted_text += "```csv\n"
+                formatted_text += entities_df.to_csv(index=False, encoding='utf-8')
+                formatted_text += "```\n\n"
+            
+            # 格式化关系数据
+            if 'relationships' in graph_data and not graph_data['relationships'].empty:
+                relationships_df = graph_data['relationships']
+                formatted_text += "## relationships.csv\n"
+                formatted_text += "```csv\n"
+                formatted_text += relationships_df.to_csv(index=False, encoding='utf-8')
+                formatted_text += "```\n\n"
+            
+            return formatted_text
+            
+        except Exception as e:
+            logger.error(f"格式化图数据失败: {e}")
+            raise
+    
+    def call_llm_for_outline(self, prompt: str) -> str:
+        """
+        调用大模型生成大纲
+        
+        Args:
+            prompt: 完整的提示词
+            
+        Returns:
+            生成的JSON字符串
+        """
+        try:
+            logger.info("开始调用大模型生成大纲...")
+            
+            completion = self.client.chat.completions.create(
+                model=settings.RAG_MODEL,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.0,  # 使用较低的温度以提高一致性
+                max_tokens=8000,  # 大纲可能比较长
+                stream=False
+            )
+            
+            content = completion.choices[0].message.content
+            if content is None:
+                raise ValueError("大模型返回内容为空")
+            
+            logger.info("大模型调用成功")
+            return content.strip()
+            
+        except Exception as e:
+            logger.error(f"调用大模型失败: {e}")
+            raise
+    
+    def parse_llm_response(self, response: str) -> Dict[str, Any]:
+        """
+        解析大模型返回的JSON
+        
+        Args:
+            response: 大模型返回的文本
+            
+        Returns:
+            解析后的字典
+        """
+        try:
+            # 尝试提取JSON部分（移除可能的markdown代码块标记）
+            response = response.strip()
+            
+            # 移除markdown代码块标记
+            if response.startswith("```json"):
+                response = response[7:]
+            elif response.startswith("```"):
+                response = response[3:]
+            
+            if response.endswith("```"):
+                response = response[:-3]
+            
+            response = response.strip()
+            
+            # 解析JSON
+            outline_data = json.loads(response)
+            
+            # 验证必要字段
+            if "global_context" not in outline_data:
+                raise ValueError("生成的大纲缺少 'global_context' 字段")
+            if "structure" not in outline_data:
+                raise ValueError("生成的大纲缺少 'structure' 字段")
+            
+            logger.info("成功解析大模型返回的JSON")
+            return outline_data
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON解析失败: {e}")
+            logger.error(f"原始响应: {response[:500]}...")  # 只记录前500字符
+            raise ValueError(f"大模型返回的不是有效的JSON格式: {str(e)}")
+        except Exception as e:
+            logger.error(f"解析响应失败: {e}")
+            raise
+    
+    def save_outline(self, kb_name: str, outline_data: Dict[str, Any]) -> str:
+        """
+        保存大纲到项目目录
+        
+        Args:
+            kb_name: 知识库名称
+            outline_data: 大纲数据
+            
+        Returns:
+            保存的文件路径
+        """
+        try:
+            # 创建项目目录
+            project_dir = os.path.join(self.projects_path, kb_name)
+            os.makedirs(project_dir, exist_ok=True)
+            
+            # 保存为script.json
+            output_path = os.path.join(project_dir, "script.json")
+            
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(outline_data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"大纲已保存到: {output_path}")
+            return output_path
+            
+        except Exception as e:
+            logger.error(f"保存大纲失败: {e}")
+            raise
+    
+    def generate_outline(self, kb_name: str) -> Dict[str, Any]:
+        """
+        生成剧本大纲的主流程
+        
+        Args:
+            kb_name: 知识库名称
+            
+        Returns:
+            包含成功状态、消息和生成结果的字典
+        """
+        try:
+            logger.info(f"开始为知识库 '{kb_name}' 生成大纲")
+            
+            # 1. 加载提示词模板
+            prompt_template = self.load_prompt_template()
+            
+            # 2. 加载图数据
+            graph_data = self.load_graph_data(kb_name)
+            
+            # 3. 格式化图数据
+            formatted_graph_data = self.format_graph_data_for_prompt(graph_data)
+            
+            # 4. 构建完整提示词（将图数据附加到提示词末尾）
+            full_prompt = prompt_template + "\n\n" + formatted_graph_data
+            
+            # 5. 调用大模型
+            llm_response = self.call_llm_for_outline(full_prompt)
+            
+            # 6. 解析响应
+            outline_data = self.parse_llm_response(llm_response)
+            
+            # 7. 保存大纲
+            output_path = self.save_outline(kb_name, outline_data)
+            
+            logger.info(f"大纲生成成功: {len(outline_data.get('structure', []))} 个节点")
+            
+            return {
+                "success": True,
+                "message": f"大纲生成成功，共 {len(outline_data.get('structure', []))} 个节点",
+                "outline_path": output_path,
+                "structure": outline_data.get("structure", []),
+                "global_context": outline_data.get("global_context", {})
+            }
+            
+        except FileNotFoundError as e:
+            error_msg = str(e)
+            logger.error(f"文件未找到: {error_msg}")
+            return {
+                "success": False,
+                "message": error_msg,
+                "outline_path": None,
+                "structure": None,
+                "global_context": None
+            }
+        except ValueError as e:
+            error_msg = str(e)
+            logger.error(f"数据验证失败: {error_msg}")
+            return {
+                "success": False,
+                "message": error_msg,
+                "outline_path": None,
+                "structure": None,
+                "global_context": None
+            }
+        except Exception as e:
+            error_msg = f"大纲生成失败: {str(e)}"
+            logger.error(error_msg)
+            return {
+                "success": False,
+                "message": error_msg,
+                "outline_path": None,
+                "structure": None,
+                "global_context": None
+            }
+
+# 创建全局实例
+outline_generation_service = OutlineGenerationService()
