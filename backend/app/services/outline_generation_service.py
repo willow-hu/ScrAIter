@@ -126,12 +126,13 @@ class OutlineGenerationService:
             logger.error(f"格式化图数据失败: {e}")
             raise
     
-    def call_llm_for_outline(self, prompt: str) -> str:
+    def call_llm_for_outline(self, prompt_template: str, graph_data_text: str) -> str:
         """
-        调用大模型生成大纲
+        调用大模型生成大纲（分两次发送：先发模板，再发数据）
         
         Args:
-            prompt: 完整的提示词
+            prompt_template: 提示词模板
+            graph_data_text: 格式化后的图数据文本
             
         Returns:
             生成的JSON字符串
@@ -139,13 +140,16 @@ class OutlineGenerationService:
         try:
             logger.info("开始调用大模型生成大纲...")
             
+            # 使用多轮对话：第一轮发送任务说明，第二轮发送数据
             completion = self.client.chat.completions.create(
                 model=settings.RAG_MODEL,
                 messages=[
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt_template},
+                    {"role": "assistant", "content": "我已理解任务要求。请提供实体和关系数据，我将据此生成剧本大纲。"},
+                    {"role": "user", "content": graph_data_text}
                 ],
                 temperature=0.0,  # 使用较低的温度以提高一致性
-                max_tokens=8000,  # 大纲可能比较长
+                max_tokens=8192,  # 大纲可能比较长
                 stream=False
             )
             
@@ -256,16 +260,13 @@ class OutlineGenerationService:
             # 3. 格式化图数据
             formatted_graph_data = self.format_graph_data_for_prompt(graph_data)
             
-            # 4. 构建完整提示词（将图数据附加到提示词末尾）
-            full_prompt = prompt_template + "\n\n" + formatted_graph_data
+            # 4. 调用大模型（分两次发送：模板和数据分开）
+            llm_response = self.call_llm_for_outline(prompt_template, formatted_graph_data)
             
-            # 5. 调用大模型
-            llm_response = self.call_llm_for_outline(full_prompt)
-            
-            # 6. 解析响应
+            # 5. 解析响应
             outline_data = self.parse_llm_response(llm_response)
             
-            # 7. 保存大纲
+            # 6. 保存大纲
             output_path = self.save_outline(kb_name, outline_data)
             
             logger.info(f"大纲生成成功: {len(outline_data.get('structure', []))} 个节点")
