@@ -229,6 +229,7 @@ class GraphExtractor:
                 entity_type = parts[2].strip().strip('"').lower()
                 entity_description = parts[3].strip().strip('"')
                 entity_normalized_date = parts[4].strip().strip('"') if len(parts) > 4 else ""
+                entity_theme_similarity = float(parts[5].strip()) if len(parts) > 5 else 0.0
                 
                 entity = {
                     'id': self._generate_entity_id(entity_name, entity_type),
@@ -236,6 +237,7 @@ class GraphExtractor:
                     'type': entity_type,
                     'description': entity_description,
                     'normalized_date': entity_normalized_date,
+                    'theme_similarity': entity_theme_similarity,
                     'text_unit_ids': [text_unit_id]
                 }
                 entities.append(entity)
@@ -268,7 +270,7 @@ class GraphExtractor:
     def _merge_entities(self, entities: List[Dict[str, Any]]) -> pd.DataFrame:
         """合并重复实体"""
         if not entities:
-            return pd.DataFrame(columns=['id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids'])
+            return pd.DataFrame(columns=['id', 'title', 'type', 'description', 'normalized_date', 'theme_similarity', 'text_unit_ids'])
         
         df = pd.DataFrame(entities)
         
@@ -277,6 +279,7 @@ class GraphExtractor:
             'id': 'first',
             'description': lambda x: '. '.join(set(x)),
             'normalized_date': 'first',  # 取第一个非空的日期
+            'theme_similarity': 'max',  # 取最大相关性
             'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])]))
         }).reset_index()
         
@@ -298,7 +301,7 @@ class GraphExtractor:
             'description': lambda x: '. '.join(set(x)),
             'relationship_time': 'first',  # 取第一个非空的时间
             'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])])),
-            'weight': 'sum'
+            'weight': 'mean'
         }).reset_index()
         
         return merged
@@ -378,7 +381,7 @@ class GraphExtractor:
     def _empty_dataframes(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """返回空的实体和关系DataFrame"""
         entities_df = pd.DataFrame(columns=[
-            'id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids', 'degree'
+            'id', 'title', 'type', 'description', 'normalized_date', 'theme_similarity', 'text_unit_ids', 'degree'
         ])
         relationships_df = pd.DataFrame(columns=[
             'id', 'source', 'target', 'description', 'relationship_time', 'weight', 'text_unit_ids'
@@ -400,7 +403,7 @@ class GraphExtractor:
             return entities_df
         
         # 确保必要的列存在
-        required_columns = ['id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids']
+        required_columns = ['id', 'title', 'type', 'description', 'normalized_date', 'theme_similarity', 'text_unit_ids']
         for col in required_columns:
             if col not in entities_df.columns:
                 entities_df[col] = None

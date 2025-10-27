@@ -55,11 +55,11 @@ class GraphPruner:
             "heritage_site": 1.0,
             "person": 0.9,
             "event": 0.9,
-            "artifact": 0.8,  # 默认重要文物权重，普通构件会降低
-            "time_period": 0.7,
-            "location": 0.6,
-            "concept": 0.4,
-            "organization": 0.4
+            "artifact": 0.8,
+            "time_period": 0.6,
+            "location": 0.5,
+            "concept": 0.2,
+            "organization": 0.2
         }
     
     def prune(
@@ -324,8 +324,8 @@ if __name__ == "__main__":
     
     # 设置路径
     base_dir = Path(__file__).parent.parent.parent.parent
-    input_dir = base_dir / "shared" / "knowledge_bases" / "GraphStore" / "twin_pagoda1022r2"
-    output_dir = base_dir / "shared" / "knowledge_bases" / "GraphStore" / "twin_pagoda1022r2_pruned"
+    input_dir = base_dir / "shared" / "knowledge_bases" / "GraphStore" / "kb_1761556076358_780_1027r1"
+    output_dir = base_dir / "shared" / "knowledge_bases" / "GraphStore" / "kb_1761556076358_780_1027r1_pruned"
     
     # 创建输出目录
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -346,9 +346,9 @@ if __name__ == "__main__":
     print(f"\n⚙️  初始化剪枝器...")
     pruner = GraphPruner(
         alpha=0.5,
-        beta=0.3,
-        gamma=0.2,
-        entity_threshold=0.75,
+        beta=0.0,
+        gamma=0.5,
+        entity_threshold=0.8,
         relationship_weight_threshold=8.0,
         key_year_weight_threshold=9.5,
         heritage_site_min_eis=0.5, 

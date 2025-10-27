@@ -8,7 +8,7 @@ GRAPH_EXTRACTION_PROMPT = """
 -目标-
 主题：{theme}
 给定一个可能与主题（某景点/文化遗产）相关的文本文档和实体类型列表，从文本中识别这些类型的所有实体以及所识别实体之间的所有关系。
-仅提取与主题直接相关的实体和关系。若文本中提及其它地点仅为类比、参考或背景信息，不得提取其相关实体，除非明确说明其与主题存在直接关联。
+重要！**仅提取与主题直接相关的实体和关系。若文本中提及其它地点仅为类比、参考或背景信息，不得提取其相关实体，除非明确说明其与主题存在直接关联。**
 重点支持历史沿革（时间线）、人物-时间-事件对应，以及地点/遗产/文物之间的空间、归属或功能关系，以便后续生成交互式剧本与结构化知识大纲。
 
 -步骤-
@@ -16,9 +16,9 @@ GRAPH_EXTRACTION_PROMPT = """
 - entity_name: 实体名称（使用文中出现的规范化中文名称）；对于同一个实体，文中可能有多个别名或简称，请统一名称，尽量用全称。
 - entity_type: 以下类型之一: [{entity_types}]
 - entity_description: 对该实体的全面中文描述，应包含其功能、位置、历史角色或文化价值等关键信息（基于原文）
-- entity_normalized_date: 若实体有明确年代、时间区间或所属朝代，请归一化为简洁易读格式（如“618–907”、“1900”、“公元前221年”）；若无，则留空字符串
+- entity_normalized_date: 若实体有明确年代、时间区间或所属朝代，请归一化为简洁易读格式（如“618–907”、“1900”、“公元前221年”）；若无，则填“无”。
 - theme_similarity: 在0–1范围内的浮点数，表示该实体与文本主题的相关性（1表示高度相关，0表示无关）。若实体属于文献引用、对比案例或无关背景，即使文中出现，也应设为theme_similarity=0。
-将每个实体格式化为 ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>{tuple_delimiter}<entity_normalized_date>)
+将每个实体格式化为 ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>{tuple_delimiter}<entity_normalized_date>{tuple_delimiter}<theme_similarity>)
 
 2. 从步骤1中识别的所有实体中，识别所有*在历史文化语境下明确相关*的 (source_entity, target_entity) 对。
 特别关注以下关系类型：人物与事件、人物与时间、事件与时间、人物与遗产、景点/文物之间的从属关系等。
@@ -26,7 +26,7 @@ GRAPH_EXTRACTION_PROMPT = """
 - source_entity: 源实体名称（必须与步骤1中完全一致）
 - target_entity: 目标实体名称（必须与步骤1中完全一致）
 - relationship_description: 用一句中文解释二者关联，尽量引用或转述原文依据
-- relationship_time: 若关系发生有明确时间（年份、朝代或区间），请归一化填写（如“1406–1420”、“1974”）；否则留空字符串
+- relationship_time: 若关系发生有明确时间（年份、朝代或区间），请归一化填写（如“1406–1420”、“1974”）；否则填“无”。
 - relationship_strength: 关系强度分数（0–10），评分标准如下：
   • 9–10：文本直接明确陈述，且为理解该文化遗产历史的核心事实；
   • 7–8：文本直接陈述，但属辅助性事实；
