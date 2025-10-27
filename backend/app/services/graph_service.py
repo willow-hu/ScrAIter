@@ -222,8 +222,7 @@ class GraphService:
                     "type": row.get('type', ''),
                     "description": row.get('description', ''),
                     "text_unit_ids": eval(row.get('text_unit_ids', '[]')) if row.get('text_unit_ids') else [],
-                    "degree": row.get('degree'),
-                    "community": row.get('community')
+                    "degree": row.get('degree')
                 }
                 entities_list.append(entity)
             

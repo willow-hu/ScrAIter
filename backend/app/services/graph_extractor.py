@@ -270,7 +270,6 @@ class GraphExtractor:
         
         # 添加计算字段
         merged['degree'] = merged['text_unit_ids'].apply(len)
-        merged['community'] = None  # 将由社区检测填充
         
         return merged
     
@@ -366,7 +365,7 @@ class GraphExtractor:
     def _empty_dataframes(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """返回空的实体和关系DataFrame"""
         entities_df = pd.DataFrame(columns=[
-            'id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids', 'degree', 'community'
+            'id', 'title', 'type', 'description', 'normalized_date', 'text_unit_ids', 'degree'
         ])
         relationships_df = pd.DataFrame(columns=[
             'id', 'source', 'target', 'description', 'relationship_time', 'weight', 'text_unit_ids'
