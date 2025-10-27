@@ -6,7 +6,9 @@ GraphRAG图提取的系统prompt模板（文化遗产优化版）
 # 主要的图提取prompt模板
 GRAPH_EXTRACTION_PROMPT = """
 -目标-
-给定一个可能与此景点/文化遗产相关的文本文档和实体类型列表，从文本中识别这些类型的所有实体以及所识别实体之间的所有关系。
+主题：{theme}
+给定一个可能与主题（某景点/文化遗产）相关的文本文档和实体类型列表，从文本中识别这些类型的所有实体以及所识别实体之间的所有关系。
+仅提取与主题直接相关的实体和关系。若文本中提及其它地点仅为类比、参考或背景信息，不得提取其相关实体，除非明确说明其与主题存在直接关联。
 重点支持历史沿革（时间线）、人物-时间-事件对应，以及地点/遗产/文物之间的空间、归属或功能关系，以便后续生成交互式剧本与结构化知识大纲。
 
 -步骤-
@@ -15,6 +17,7 @@ GRAPH_EXTRACTION_PROMPT = """
 - entity_type: 以下类型之一: [{entity_types}]
 - entity_description: 对该实体的全面中文描述，应包含其功能、位置、历史角色或文化价值等关键信息（基于原文）
 - entity_normalized_date: 若实体有明确年代、时间区间或所属朝代，请归一化为简洁易读格式（如“618–907”、“1900”、“公元前221年”）；若无，则留空字符串
+- theme_similarity: 在0–1范围内的浮点数，表示该实体与文本主题的相关性（1表示高度相关，0表示无关）。若实体属于文献引用、对比案例或无关背景，即使文中出现，也应设为theme_similarity=0。
 将每个实体格式化为 ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>{tuple_delimiter}<entity_normalized_date>)
 
 2. 从步骤1中识别的所有实体中，识别所有*在历史文化语境下明确相关*的 (source_entity, target_entity) 对。

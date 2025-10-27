@@ -202,14 +202,14 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
   // 表格列定义
   const columns = [
     {
-      title: '知识库名称',
-      dataIndex: 'name',
-      key: 'name',
+      title: '知识库主题',
+      dataIndex: 'theme',
+      key: 'theme',
       width: '25%',
       render: (text, record) => (
         <Space>
           <DatabaseOutlined style={{ color: '#1890ff' }} />
-          <span style={{ fontWeight: 'bold' }}>{text}</span>
+          <span style={{ fontWeight: 'bold' }}>{text || record.name}</span>
           {!record.exists && <Tag color="red" size="small">文件缺失</Tag>}
         </Space>
       ),

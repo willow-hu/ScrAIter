@@ -16,7 +16,8 @@ const { Option } = Select;
 
 function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false, existingKnowledgeBase = null }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [kbName, setKbName] = useState('');
+  const [kbTheme, setKbTheme] = useState(''); // 知识库主题（允许中文）
+  const [kbName, setKbName] = useState(''); // 系统生成的目录名
   const [building, setBuilding] = useState(false);
   const [buildProgress, setBuildProgress] = useState(0);
   const [buildStatus, setBuildStatus] = useState('idle'); // idle, building, completed, error
@@ -29,9 +30,10 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
     if (isRebuild && existingKnowledgeBase) {
       setSelectedCategories(existingKnowledgeBase.categories || []);
       setKbName(existingKnowledgeBase.name || '');
+      setKbTheme(existingKnowledgeBase.theme || existingKnowledgeBase.name || '');
       form.setFieldsValue({
         categories: existingKnowledgeBase.categories || [],
-        kbName: existingKnowledgeBase.name || ''
+        kbTheme: existingKnowledgeBase.theme || existingKnowledgeBase.name || ''
       });
     }
   }, [isRebuild, existingKnowledgeBase, form]);
@@ -65,6 +67,19 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
     return canBuildKnowledgeBase(selectedCategories, selectedStats);
   }, [selectedCategories, selectedStats]);
 
+  // 生成唯一的目录名（基于主题和时间戳）
+  const generateUniqueName = (theme) => {
+    // 将主题转为拼音或英文标识，这里简化为使用时间戳和随机数
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `kb_${timestamp}_${random}`;
+  };
+
+  // 检查主题是否已存在
+  const isThemeExists = (theme) => {
+    return existingKBs.some(kb => kb.theme === theme);
+  };
+
   // 开始构建知识库
   const handleBuild = async () => {
     try {
@@ -73,7 +88,7 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
       
       // 确保使用最新的selectedCategories状态
       const categoriesToUse = isRebuild ? selectedCategories : values.categories;
-      const nameToUse = isRebuild ? kbName : values.kbName;
+      const themeToUse = isRebuild ? kbTheme : values.kbTheme;
       
       if (!categoriesToUse || categoriesToUse.length === 0) {
         message.error('请选择至少一个类目');
@@ -85,20 +100,26 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
         return;
       }
 
-      // 加载已有知识库列表来检查名称冲突（仅新建模式需要）
+      // 加载已有知识库列表来检查主题冲突（仅新建模式需要）
       if (!isRebuild) {
         await loadKnowledgeBases();
         
-        // 检查知识库名称是否已存在
-        const nameExists = isKnowledgeBaseNameExists(nameToUse, existingKBs);
-        if (nameExists) {
-          message.error(`知识库 "${nameToUse}" 已存在，请使用其他名称`);
+        // 检查主题是否已存在
+        if (isThemeExists(themeToUse)) {
+          message.error(`知识库主题 "${themeToUse}" 已存在，请使用其他主题`);
           return;
         }
+        
+        // 生成唯一的目录名
+        const generatedName = generateUniqueName(themeToUse);
+        setKbName(generatedName);
+        
+        // 直接开始构建
+        await startBuild(generatedName, themeToUse);
+      } else {
+        // 重建模式使用现有的name和theme
+        await startBuild(kbName, themeToUse);
       }
-      
-      // 直接开始构建
-      await startBuild(nameToUse);
     } catch (error) {
       // 表单验证失败
       console.error('构建知识库失败:', error);
@@ -106,14 +127,20 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
   };
 
   // 执行构建
-  const startBuild = async (kbName) => {
+  const startBuild = async (kbName, kbTheme) => {
     setBuilding(true);
     setBuildStatus('building');
     setBuildProgress(0);
     setBuildMessage('正在初始化...');
 
     try {
-      const result = await startKnowledgeBaseBuild(kbName, selectedCategories, buildConfig);
+      // 构建配置中包含主题
+      const configWithTheme = {
+        ...buildConfig,
+        theme: kbTheme
+      };
+      
+      const result = await startKnowledgeBaseBuild(kbName, selectedCategories, configWithTheme);
       
       // 开始轮询构建进度
       pollBuildProgress(result.task_id);
@@ -219,32 +246,33 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
             </Select>
           </Form.Item>
 
-          {/* 知识库命名 */}
+          {/* 知识库主题 */}
           {!isRebuild && (
             <Form.Item 
-              label="知识库名称" 
-              name="kbName"
+              label="知识库主题" 
+              name="kbTheme"
               rules={[
-                { required: true, message: '请输入知识库名称' },
-                { pattern: /^[a-zA-Z0-9_-]+$/, message: '知识库名称只能包含字母、数字、下划线和短横线' }
+                { required: true, message: '请输入知识库主题' },
+                { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_]+$/, message: '主题只能包含中文、字母、数字和下划线，不能包含空格和其他特殊符号' },
+                { max: 50, message: '主题长度不能超过50个字符' }
               ]}
             >
               <Input 
-                placeholder="例：twin_pagoda" 
-                value={kbName}
+                placeholder="例：苏州双塔" 
+                value={kbTheme}
                 onChange={(e) => {
-                  setKbName(e.target.value);
+                  setKbTheme(e.target.value);
                   // 同步更新表单字段
-                  form.setFieldValue('kbName', e.target.value);
+                  form.setFieldValue('kbTheme', e.target.value);
                 }}
               />
             </Form.Item>
           )}
 
-          {/* 重建模式显示知识库名称 */}
+          {/* 重建模式显示知识库主题 */}
           {isRebuild && (
             <Alert
-              message={`重建知识库：${kbName}`}
+              message={`重建知识库：${kbTheme}`}
               type="info"
               showIcon
               style={{ marginBottom: 16 }}

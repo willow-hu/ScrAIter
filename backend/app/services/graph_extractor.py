@@ -58,17 +58,22 @@ class GraphExtractor:
         
         logger.info(f"图提取器初始化成功，使用DashScope API")
     
-    def extract_graph(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """使用LLM从文本单元中提取实体和关系"""
+    def extract_graph(self, text_units: pd.DataFrame, theme: str = "") -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """使用LLM从文本单元中提取实体和关系
+        
+        Args:
+            text_units: 文本单元DataFrame
+            theme: 知识库主题，用于提示词填充
+        """
         try:
-            logger.info(f"开始并发图提取，使用LLM从{len(text_units)}个文本单元中提取图数据")
+            logger.info(f"开始并发图提取，使用LLM从{len(text_units)}个文本单元中提取图数据，主题: {theme}")
             
             # 使用线程池进行并发处理（避免异步复杂性）
             import concurrent.futures
             
             def process_single_unit(args):
                 text, text_unit_id = args
-                return self._extract_from_text(text, text_unit_id)
+                return self._extract_from_text(text, text_unit_id, theme)
             
             # 准备任务参数
             tasks = [(row['text'], row['id']) for _, row in text_units.iterrows()]
@@ -119,10 +124,17 @@ class GraphExtractor:
             empty_relationships = pd.DataFrame(columns=['id', 'source', 'target', 'description', 'text_unit_ids', 'weight'])
             return empty_entities, empty_relationships
 
-    def _extract_from_text(self, text: str, text_unit_id: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-        """使用LLM从单个文本中提取实体和关系"""
-        # 准备prompt
+    def _extract_from_text(self, text: str, text_unit_id: str, theme: str = "") -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """使用LLM从单个文本中提取实体和关系
+        
+        Args:
+            text: 文本内容
+            text_unit_id: 文本单元ID
+            theme: 知识库主题，用于提示词填充
+        """
+        # 准备prompt，填入主题
         prompt = GRAPH_EXTRACTION_PROMPT.format(
+            theme=theme if theme else "未指定主题",
             entity_types=",".join([t.upper() for t in self.entity_types]),
             tuple_delimiter=self.tuple_delimiter,
             record_delimiter=self.record_delimiter,
@@ -334,12 +346,13 @@ class GraphExtractor:
             logger.error(f"创建文本单元失败: {e}")
             return pd.DataFrame(columns=['id', 'text', 'n_tokens', 'document_ids', 'chunk_order'])
     
-    def extract_entities_and_relationships(self, text_units: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def extract_entities_and_relationships(self, text_units: pd.DataFrame, theme: str = "") -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         从文本单元中提取实体和关系（业务接口方法）
         
         Args:
             text_units: 文本单元DataFrame
+            theme: 知识库主题，用于提示词填充
             
         Returns:
             (entities_df, relationships_df): 实体和关系DataFrame
@@ -349,10 +362,10 @@ class GraphExtractor:
                 logger.warning("文本单元为空，跳过实体关系提取")
                 return self._empty_dataframes()
             
-            logger.info(f"开始从 {len(text_units)} 个文本单元中提取实体和关系")
+            logger.info(f"开始从 {len(text_units)} 个文本单元中提取实体和关系，主题: {theme}")
             
-            # 使用核心提取方法
-            entities_df, relationships_df = self.extract_graph(text_units)
+            # 使用核心提取方法，传入主题
+            entities_df, relationships_df = self.extract_graph(text_units, theme)
             
             logger.info(f"提取完成: {len(entities_df)} 个实体, {len(relationships_df)} 个关系")
             

@@ -38,6 +38,8 @@ async def build_knowledge_base(request: BuildKnowledgeBaseRequest):
             name=request.name.strip(),
             categories=request.categories,
             file_type=request.file_type,
+            # 知识库主题
+            theme=request.theme,
             # 文本处理参数
             chunk_size=request.chunk_size,
             chunk_overlap=request.chunk_overlap,

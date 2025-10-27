@@ -66,6 +66,9 @@ class BuildKnowledgeBaseRequest(BaseModel):
     categories: List[str]
     file_type: str = "mixed"  # "structured", "unstructured", "mixed"
     
+    # 知识库主题（允许中文）
+    theme: Optional[str] = None
+    
     # 文本处理参数
     chunk_size: int = 1000
     chunk_overlap: int = 200

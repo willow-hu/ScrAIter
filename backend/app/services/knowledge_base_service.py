@@ -169,7 +169,8 @@ class KnowledgeBaseService:
         if name in metadata.get("knowledge_bases", {}):
             raise ValueError(f"知识库 '{name}' 已存在，请使用其他名称")
         
-        # 提取构建参数并设置默认值
+        # 提取构建参数并设置默认值（包括主题）
+        theme = build_params.get("theme", "")
         build_config = {
             "chunk_size": build_params.get("chunk_size", 1000),
             "chunk_overlap": build_params.get("chunk_overlap", 200),
@@ -181,7 +182,8 @@ class KnowledgeBaseService:
             "description": build_params.get("description"),
             "tags": build_params.get("tags", []),
             "batch_size": build_params.get("batch_size", 32),
-            "max_workers": build_params.get("max_workers", 4)
+            "max_workers": build_params.get("max_workers", 4),
+            "theme": theme  # 保存主题到配置中
         }
         
         # 检查是否有文件可用
@@ -340,7 +342,8 @@ class KnowledgeBaseService:
                 "task_id": task_id,
                 "vector_path": kb_vector_path,
                 "document_count": len(nodes),
-                "build_config": build_config  # 保存构建配置
+                "build_config": build_config,  # 保存构建配置（包含主题）
+                "theme": build_config.get("theme", "")  # 单独保存主题方便查询
             }
             self._save_kb_metadata(metadata)
             
@@ -401,6 +404,7 @@ class KnowledgeBaseService:
                     "file_count": kb_info.get("file_count", 0),
                     "document_count": kb_info.get("document_count", 0),
                     "build_config": kb_info.get("build_config", {}),
+                    "theme": kb_info.get("theme", ""),  # 添加主题字段
                     "exists": exists,
                     "has_graph": has_graph
                 })
@@ -556,16 +560,21 @@ class KnowledgeBaseService:
         if graph_extractor is None:
             raise Exception("GraphExtractor不可用")
         
+        # 从元数据获取主题
+        metadata = self._load_kb_metadata()
+        kb_info = metadata.get("knowledge_bases", {}).get(kb_name, {})
+        theme = kb_info.get("theme", "")
+        
         # 创建文本单元DataFrame
         self._write_graph_build_log(f"📝 创建文本单元DataFrame，共 {len(nodes)} 个节点")
         logger.info(f"创建文本单元DataFrame，共 {len(nodes)} 个节点")
         text_units_df = graph_extractor.create_text_units_from_nodes(nodes)
         
-        # 提取实体和关系 (这里会调用LLM)
-        self._write_graph_build_log(f"🤖 开始LLM实体关系提取，处理 {len(text_units_df)} 个文本单元")
-        logger.info(f"开始LLM实体关系提取，处理 {len(text_units_df)} 个文本单元")
+        # 提取实体和关系 (这里会调用LLM，传入主题)
+        self._write_graph_build_log(f"🤖 开始LLM实体关系提取，处理 {len(text_units_df)} 个文本单元，主题: {theme}")
+        logger.info(f"开始LLM实体关系提取，处理 {len(text_units_df)} 个文本单元，主题: {theme}")
         extraction_start = time.time()
-        entities_df, relationships_df = graph_service.extract_entities_and_relationships(text_units_df)
+        entities_df, relationships_df = graph_extractor.extract_entities_and_relationships(text_units_df, theme)
         extraction_time = time.time() - extraction_start
         self._write_graph_build_log(f"✨ LLM提取完成，耗时: {extraction_time:.2f}秒, 平均每个文本单元: {extraction_time/len(text_units_df):.2f}秒")
         logger.info(f"LLM提取完成，耗时: {extraction_time:.2f}秒, 平均每个文本单元: {extraction_time/len(text_units_df):.2f}秒")
