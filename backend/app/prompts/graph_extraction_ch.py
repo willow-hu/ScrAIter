@@ -11,14 +11,14 @@ GRAPH_EXTRACTION_PROMPT = """
 
 -步骤-
 1. 识别所有实体。对于每个识别的实体，提取以下信息：
-- entity_name: 实体名称（使用文中出现的规范化中文名称）
+- entity_name: 实体名称（使用文中出现的规范化中文名称）；对于同一个实体，文中可能有多个别名或简称，请统一名称，尽量用全称。
 - entity_type: 以下类型之一: [{entity_types}]
 - entity_description: 对该实体的全面中文描述，应包含其功能、位置、历史角色或文化价值等关键信息（基于原文）
 - entity_normalized_date: 若实体有明确年代、时间区间或所属朝代，请归一化为简洁易读格式（如“618–907”、“1900”、“公元前221年”）；若无，则留空字符串
 将每个实体格式化为 ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>{tuple_delimiter}<entity_normalized_date>)
 
 2. 从步骤1中识别的所有实体中，识别所有*在历史文化语境下明确相关*的 (source_entity, target_entity) 对。
-特别关注以下关系类型：人物与事件、人物与时间、事件与时间、遗产/文物与地点、事件与地点、人物与遗产等。
+特别关注以下关系类型：人物与事件、人物与时间、事件与时间、人物与遗产、景点/文物之间的从属关系等。
 对于每对相关实体，提取以下信息：
 - source_entity: 源实体名称（必须与步骤1中完全一致）
 - target_entity: 目标实体名称（必须与步骤1中完全一致）
