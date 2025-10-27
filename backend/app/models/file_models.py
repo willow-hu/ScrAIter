@@ -99,7 +99,6 @@ class BuildStatus(BaseModel):
     status: str  # "running", "completed", "error"
     error_message: Optional[str] = None
     # GraphRAG扩展字段
-    current_step: Optional[str] = None  # 当前步骤：preprocessing, vector_building, entity_extraction, community_detection
+    current_step: Optional[str] = None  # 当前步骤：preprocessing, vector_building, entity_extraction
     graph_entities_count: Optional[int] = 0
     graph_relationships_count: Optional[int] = 0
-    graph_communities_count: Optional[int] = 0

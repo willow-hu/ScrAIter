@@ -1,6 +1,6 @@
 """
 GraphRAG服务
-提供统一的图索引构建接口，支持实体关系提取和社区检测
+提供统一的图索引构建接口，支持实体关系提取
 """
 import os
 import json
@@ -10,7 +10,6 @@ from typing import Dict, Any, Optional, List, Tuple
 import logging
 
 from app.core.config import settings
-from app.services.community_detector import community_detector
 from app.services.graph_extractor import graph_extractor
 
 logger = logging.getLogger(__name__)
@@ -40,18 +39,14 @@ class GraphService:
             # 1. 提取实体和关系
             entities_df, relationships_df = self.extract_entities_and_relationships(text_units)
             
-            # 2. 社区检测
-            communities_df = self.detect_communities(entities_df, relationships_df)
-            
-            # 3. 保存图数据
-            save_success = self.save_graph_data(kb_name, entities_df, relationships_df, communities_df)
+            # 2. 保存图数据
+            save_success = self.save_graph_data(kb_name, entities_df, relationships_df)
             
             if not save_success:
                 return {
                     "success": False,
                     "entities_count": 0,
                     "relationships_count": 0,
-                    "communities_count": 0,
                     "message": "图数据保存失败"
                 }
             
@@ -59,7 +54,6 @@ class GraphService:
                 "success": True,
                 "entities_count": len(entities_df),
                 "relationships_count": len(relationships_df),
-                "communities_count": len(communities_df),
                 "message": f"图索引构建完成: {len(entities_df)} 实体, {len(relationships_df)} 关系"
             }
             
@@ -72,7 +66,6 @@ class GraphService:
                 "success": False,
                 "entities_count": 0,
                 "relationships_count": 0,
-                "communities_count": 0,
                 "message": f"图索引构建失败: {str(e)}"
             }
     
@@ -117,40 +110,7 @@ class GraphService:
         relationships_df = pd.DataFrame(columns=['id', 'source', 'target', 'description', 'weight', 'text_unit_ids'])
         return entities_df, relationships_df
     
-    def detect_communities(self, entities: pd.DataFrame, relationships: pd.DataFrame) -> pd.DataFrame:
-        """
-        执行社区检测
-        
-        Args:
-            entities: 实体DataFrame
-            relationships: 关系DataFrame
-            
-        Returns:
-            communities_df: 社区DataFrame
-        """
-        try:
-            if community_detector is None:
-                logger.error("CommunityDetector不可用")
-                return self._empty_communities_dataframe()
-            
-            logger.info(f"开始社区检测，实体数量: {len(entities)}, 关系数量: {len(relationships)}")
-            
-            # 使用集成器进行社区检测
-            communities_df = community_detector.detect_communities(entities, relationships)
-            
-            logger.info(f"社区检测完成: {len(communities_df)} 个社区")
-            
-            return communities_df
-            
-        except Exception as e:
-            logger.error(f"社区检测失败: {e}")
-            return self._empty_communities_dataframe()
-    
-    def _empty_communities_dataframe(self) -> pd.DataFrame:
-        """返回空的社区DataFrame"""
-        return pd.DataFrame(columns=['id', 'title', 'level', 'community', 'parent', 'entity_ids', 'size'])
-    
-    def save_graph_data(self, kb_name: str, entities: pd.DataFrame, relationships: pd.DataFrame, communities: pd.DataFrame) -> bool:
+    def save_graph_data(self, kb_name: str, entities: pd.DataFrame, relationships: pd.DataFrame) -> bool:
         """
         保存图数据到存储
         
@@ -158,7 +118,6 @@ class GraphService:
             kb_name: 知识库名称
             entities: 实体数据
             relationships: 关系数据
-            communities: 社区数据
             
         Returns:
             bool: 保存是否成功
@@ -191,24 +150,12 @@ class GraphService:
                     relationships_path, index=False, encoding='utf-8'
                 )
             
-            # 保存社区数据（目前为空，为社区检测功能预留）
-            communities_path = os.path.join(graph_store_path, "communities.csv")
-            if not communities.empty:
-                communities.to_csv(communities_path, index=False, encoding='utf-8')
-                logger.info(f"保存 {len(communities)} 个社区到 communities.csv")
-            else:
-                # 创建空文件
-                pd.DataFrame(columns=['id', 'title', 'level', 'community', 'parent', 'entity_ids']).to_csv(
-                    communities_path, index=False, encoding='utf-8'
-                )
-            
             # 生成图构建元数据
             metadata = {
                 "kb_name": kb_name,
                 "created_time": datetime.now().isoformat(),
                 "entities_count": len(entities),
                 "relationships_count": len(relationships),
-                "communities_count": len(communities),
                 "extraction_method": "rule_based",  # 当前使用规则提取
                 "version": "1.0"
             }
@@ -353,61 +300,6 @@ class GraphService:
                 "total": 0
             }
     
-    def load_graph_communities(self, kb_name: str, level: Optional[int] = None) -> Dict[str, Any]:
-        """
-        加载图社区数据
-        
-        Args:
-            kb_name: 知识库名称  
-            level: 层级筛选
-            
-        Returns:
-            社区数据
-        """
-        try:
-            communities_path = os.path.join(self.get_graph_store_path(kb_name), "communities.csv")
-            
-            if not os.path.exists(communities_path):
-                return {
-                    "communities": [],
-                    "total": 0
-                }
-            
-            # 读取社区数据
-            communities_df = pd.read_csv(communities_path, encoding='utf-8')
-            
-            # 应用层级筛选
-            if level is not None:
-                communities_df = communities_df[communities_df['level'] == level]
-            
-            total = len(communities_df)
-            
-            # 转换为字典列表
-            communities_list = []
-            for _, row in communities_df.iterrows():
-                community = {
-                    "id": row.get('id', ''),
-                    "title": row.get('title', ''),
-                    "level": int(row.get('level', 0)),
-                    "community": int(row.get('community', 0)),
-                    "parent": int(row.get('parent', -1)),
-                    "entity_ids": eval(row.get('entity_ids', '[]')) if row.get('entity_ids') else [],
-                    "size": int(row.get('size', 0))
-                }
-                communities_list.append(community)
-            
-            return {
-                "communities": communities_list,
-                "total": total
-            }
-            
-        except Exception as e:
-            logger.error(f"加载社区数据失败: {e}")
-            return {
-                "communities": [],
-                "total": 0
-            }
-    
     def get_graph_statistics(self, kb_name: str) -> Dict[str, Any]:
         """
         获取图统计信息
@@ -427,14 +319,9 @@ class GraphService:
                 with open(metadata_path, 'r', encoding='utf-8') as f:
                     metadata = json.load(f)
                 
-                # 尝试从社区数据获取更详细的统计信息
-                community_stats = self._calculate_community_statistics(kb_name)
-                
                 return {
                     "entities_count": metadata.get("entities_count", 0),
                     "relationships_count": metadata.get("relationships_count", 0),
-                    "communities_count": metadata.get("communities_count", 0),
-                    "max_community_level": community_stats.get("max_level", 0),
                     "avg_entity_degree": 0.0,  # 需要基于实际数据计算
                     "graph_density": 0.0,  # 需要基于实际数据计算
                     "created_time": metadata.get("created_time"),
@@ -444,8 +331,6 @@ class GraphService:
                 return {
                     "entities_count": 0,
                     "relationships_count": 0,
-                    "communities_count": 0,
-                    "max_community_level": 0,
                     "avg_entity_degree": 0.0,
                     "graph_density": 0.0,
                     "created_time": None,
@@ -457,46 +342,11 @@ class GraphService:
             return {
                 "entities_count": 0,
                 "relationships_count": 0,
-                "communities_count": 0,
-                "max_community_level": 0,
                 "avg_entity_degree": 0.0,
                 "graph_density": 0.0,
                 "created_time": None,
                 "last_updated": None
             }
-    
-    def _calculate_community_statistics(self, kb_name: str) -> Dict[str, Any]:
-        """
-        计算社区统计信息
-        
-        Args:
-            kb_name: 知识库名称
-            
-        Returns:
-            社区统计数据
-        """
-        try:
-            communities_path = os.path.join(self.get_graph_store_path(kb_name), "communities.csv")
-            
-            if not os.path.exists(communities_path):
-                return {"max_level": 0}
-            
-            communities_df = pd.read_csv(communities_path, encoding='utf-8')
-            
-            if communities_df.empty:
-                return {"max_level": 0}
-            
-            # 使用社区检测集成器计算统计信息
-            if community_detector is not None:
-                return community_detector.get_community_statistics(communities_df)
-            else:
-                # 简单统计
-                max_level = int(communities_df['level'].max()) if 'level' in communities_df.columns else 0
-                return {"max_level": max_level}
-                
-        except Exception as e:
-            logger.error(f"计算社区统计信息失败: {e}")
-            return {"max_level": 0}
 
 # 创建全局实例
 graph_service = GraphService()

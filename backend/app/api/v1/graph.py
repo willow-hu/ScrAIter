@@ -1,13 +1,13 @@
 """
 GraphRAG图数据查询API端点
-提供实体、关系、社区等图数据的查询接口
+提供实体、关系等图数据的查询接口
 """
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from app.models.graph_models import (
-    GraphEntitiesResponse, GraphRelationshipsResponse, GraphCommunitiesResponse,
+    GraphEntitiesResponse, GraphRelationshipsResponse,
     GraphStatistics
 )
 from app.services.graph_service import graph_service
@@ -96,42 +96,6 @@ async def get_graph_relationships(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"查询关系数据失败: {str(e)}")
-
-@router.get("/knowledge-base/{kb_name}/graph/communities", response_model=GraphCommunitiesResponse)
-async def get_graph_communities(
-    kb_name: str,
-    level: Optional[int] = Query(None, ge=0, description="层级筛选")
-):
-    """
-    查询社区层次结构
-    
-    Args:
-        kb_name: 知识库名称
-        level: 层级筛选
-        
-    Returns:
-        社区数据
-    """
-    try:
-        if not kb_name or not kb_name.strip():
-            raise HTTPException(status_code=400, detail="知识库名称不能为空")
-        
-        result = graph_service.load_graph_communities(
-            kb_name=kb_name.strip(),
-            level=level
-        )
-        
-        # 转换为GraphCommunity模型
-        from app.models.graph_models import GraphCommunity
-        communities = [GraphCommunity(**community) for community in result["communities"]]
-        
-        return GraphCommunitiesResponse(
-            communities=communities,
-            total=result["total"]
-        )
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"查询社区数据失败: {str(e)}")
 
 @router.get("/knowledge-base/{kb_name}/graph/statistics", response_model=GraphStatistics)
 async def get_graph_statistics(kb_name: str):
