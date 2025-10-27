@@ -91,48 +91,58 @@ class OutlineGenerationService:
             logger.error(f"加载图数据失败: {e}")
             raise
     
-    def format_graph_data_for_prompt(self, graph_data: Dict[str, pd.DataFrame]) -> str:
+    def format_entities_for_prompt(self, entities_df: pd.DataFrame) -> str:
         """
-        将图数据格式化为可以插入提示词的文本
+        将实体数据格式化为文本
         
         Args:
-            graph_data: 包含entities、relationships的字典
+            entities_df: 实体数据框
             
         Returns:
             格式化后的文本
         """
         try:
-            formatted_text = ""
-            
-            # 格式化实体数据
-            if 'entities' in graph_data and not graph_data['entities'].empty:
-                entities_df = graph_data['entities']
-                formatted_text += "## entities.csv\n"
-                formatted_text += "```csv\n"
-                formatted_text += entities_df.to_csv(index=False, encoding='utf-8')
-                formatted_text += "```\n\n"
-            
-            # 格式化关系数据
-            if 'relationships' in graph_data and not graph_data['relationships'].empty:
-                relationships_df = graph_data['relationships']
-                formatted_text += "## relationships.csv\n"
-                formatted_text += "```csv\n"
-                formatted_text += relationships_df.to_csv(index=False, encoding='utf-8')
-                formatted_text += "```\n\n"
+            formatted_text = "## entities.csv\n"
+            formatted_text += "```csv\n"
+            formatted_text += entities_df.to_csv(index=False, encoding='utf-8')
+            formatted_text += "```\n"
             
             return formatted_text
             
         except Exception as e:
-            logger.error(f"格式化图数据失败: {e}")
+            logger.error(f"格式化实体数据失败: {e}")
             raise
     
-    def call_llm_for_outline(self, prompt_template: str, graph_data_text: str) -> str:
+    def format_relationships_for_prompt(self, relationships_df: pd.DataFrame) -> str:
         """
-        调用大模型生成大纲（分两次发送：先发模板，再发数据）
+        将关系数据格式化为文本
+        
+        Args:
+            relationships_df: 关系数据框
+            
+        Returns:
+            格式化后的文本
+        """
+        try:
+            formatted_text = "## relationships.csv\n"
+            formatted_text += "```csv\n"
+            formatted_text += relationships_df.to_csv(index=False, encoding='utf-8')
+            formatted_text += "```\n"
+            
+            return formatted_text
+            
+        except Exception as e:
+            logger.error(f"格式化关系数据失败: {e}")
+            raise
+    
+    def call_llm_for_outline(self, prompt_template: str, entities_text: str, relationships_text: str) -> str:
+        """
+        调用大模型生成大纲（分三次发送：先发模板，再发实体，最后发关系）
         
         Args:
             prompt_template: 提示词模板
-            graph_data_text: 格式化后的图数据文本
+            entities_text: 格式化后的实体数据文本
+            relationships_text: 格式化后的关系数据文本
             
         Returns:
             生成的JSON字符串
@@ -140,13 +150,15 @@ class OutlineGenerationService:
         try:
             logger.info("开始调用大模型生成大纲...")
             
-            # 使用多轮对话：第一轮发送任务说明，第二轮发送数据
+            # 使用多轮对话：第一轮发送任务说明，第二轮发送实体，第三轮发送关系
             completion = self.client.chat.completions.create(
                 model=settings.RAG_MODEL,
                 messages=[
                     {"role": "user", "content": prompt_template},
-                    {"role": "assistant", "content": "我已理解任务要求。请提供实体和关系数据，我将据此生成剧本大纲。"},
-                    {"role": "user", "content": graph_data_text}
+                    {"role": "assistant", "content": "我已理解任务要求。请先提供实体数据。"},
+                    {"role": "user", "content": entities_text},
+                    {"role": "assistant", "content": "实体数据已收到。请继续提供关系数据，我将据此生成剧本大纲。"},
+                    {"role": "user", "content": relationships_text}
                 ],
                 temperature=0.0,  # 使用较低的温度以提高一致性
                 max_tokens=8192,  # 大纲可能比较长
@@ -257,11 +269,12 @@ class OutlineGenerationService:
             # 2. 加载图数据
             graph_data = self.load_graph_data(kb_name)
             
-            # 3. 格式化图数据
-            formatted_graph_data = self.format_graph_data_for_prompt(graph_data)
+            # 3. 格式化实体和关系数据（分开）
+            entities_text = self.format_entities_for_prompt(graph_data['entities'])
+            relationships_text = self.format_relationships_for_prompt(graph_data['relationships'])
             
-            # 4. 调用大模型（分两次发送：模板和数据分开）
-            llm_response = self.call_llm_for_outline(prompt_template, formatted_graph_data)
+            # 4. 调用大模型（分三次发送：模板、实体、关系）
+            llm_response = self.call_llm_for_outline(prompt_template, entities_text, relationships_text)
             
             # 5. 解析响应
             outline_data = self.parse_llm_response(llm_response)
