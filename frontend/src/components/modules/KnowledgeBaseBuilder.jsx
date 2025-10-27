@@ -16,7 +16,7 @@ const { Option } = Select;
 
 function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false, existingKnowledgeBase = null }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [kbTheme, setKbTheme] = useState(''); // 知识库主题（允许中文）
+  const [kbTheme, setKbTheme] = useState('');
   const [kbName, setKbName] = useState(''); // 系统生成的目录名
   const [building, setBuilding] = useState(false);
   const [buildProgress, setBuildProgress] = useState(0);
@@ -254,11 +254,11 @@ function KnowledgeBaseBuilder({ categories, files, onRefresh, isRebuild = false,
               rules={[
                 { required: true, message: '请输入知识库主题' },
                 { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_]+$/, message: '主题只能包含中文、字母、数字和下划线，不能包含空格和其他特殊符号' },
-                { max: 50, message: '主题长度不能超过50个字符' }
+                { max: 20, message: '主题长度不能超过20个字符' }
               ]}
             >
               <Input 
-                placeholder="例：苏州双塔" 
+                placeholder="例：罗汉院双塔及正殿遗址" 
                 value={kbTheme}
                 onChange={(e) => {
                   setKbTheme(e.target.value);
