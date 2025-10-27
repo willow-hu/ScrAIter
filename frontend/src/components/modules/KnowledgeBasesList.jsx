@@ -105,7 +105,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
   const handleExtractGraph = async (kb) => {
     Modal.confirm({
       title: '构建知识图谱',
-      content: `确定要为知识库"${kb.name}"构建知识图谱吗？这将分析文档内容并提取实体关系。`,
+      content: `确定要为知识库"${kb.theme}"构建知识图谱吗？这将分析文档内容并提取实体关系。`,
       okText: '开始构建',
       cancelText: '取消',
       onOk: async () => {

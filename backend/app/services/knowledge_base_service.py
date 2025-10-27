@@ -404,7 +404,7 @@ class KnowledgeBaseService:
                     "file_count": kb_info.get("file_count", 0),
                     "document_count": kb_info.get("document_count", 0),
                     "build_config": kb_info.get("build_config", {}),
-                    "theme": kb_info.get("theme", ""),  # 添加主题字段
+                    "theme": kb_info.get("theme", ""),
                     "exists": exists,
                     "has_graph": has_graph
                 })
@@ -554,8 +554,9 @@ class KnowledgeBaseService:
         return nodes
     
     async def _extract_entities_and_relationships(self, kb_name: str, nodes):
-        """步骤2：实体和关系提取并保存"""
+        """步骤2：实体和关系提取、剪枝并保存"""
         from app.services.graph_extractor import graph_extractor
+        from app.services.graph_pruning import GraphPruner
         
         if graph_extractor is None:
             raise Exception("GraphExtractor不可用")
@@ -577,37 +578,71 @@ class KnowledgeBaseService:
         entities_df, relationships_df = graph_extractor.extract_entities_and_relationships(text_units_df, theme)
         extraction_time = time.time() - extraction_start
         self._write_graph_build_log(f"✨ LLM提取完成，耗时: {extraction_time:.2f}秒, 平均每个文本单元: {extraction_time/len(text_units_df):.2f}秒")
+        self._write_graph_build_log(f"   提取结果: {len(entities_df)} 实体, {len(relationships_df)} 关系")
         logger.info(f"LLM提取完成，耗时: {extraction_time:.2f}秒, 平均每个文本单元: {extraction_time/len(text_units_df):.2f}秒")
+        logger.info(f"提取结果: {len(entities_df)} 实体, {len(relationships_df)} 关系")
         
-        # 保存实体和关系数据
+        # 格式化实体和关系数据（剪枝前需要）
+        formatted_entities = graph_extractor.format_entities_for_storage(entities_df)
+        formatted_relationships = graph_extractor.format_relationships_for_storage(relationships_df)
+        
+        # 图谱剪枝
+        pruning_start = time.time()
+        self._write_graph_build_log(f"✂️  开始图谱剪枝...")
+        logger.info(f"开始图谱剪枝...")
+        
+        pruner = GraphPruner(
+            alpha=0.5,
+            beta=0.5,
+            entity_threshold=0.8,
+            relationship_weight_threshold=8.0,
+            heritage_site_min_eis=0.5,
+            important_artifact_weight_threshold=8.0,
+            theme_similarity_threshold=0.7
+        )
+        
+        pruned_entities, pruned_relationships = pruner.prune(formatted_entities, formatted_relationships)
+        
+        pruning_time = time.time() - pruning_start
+        entity_retention = len(pruned_entities) / len(formatted_entities) * 100 if len(formatted_entities) > 0 else 0
+        relationship_retention = len(pruned_relationships) / len(formatted_relationships) * 100 if len(formatted_relationships) > 0 else 0
+        
+        self._write_graph_build_log(f"✨ 剪枝完成，耗时: {pruning_time:.2f}秒")
+        self._write_graph_build_log(f"   剪枝前: {len(formatted_entities)} 实体, {len(formatted_relationships)} 关系")
+        self._write_graph_build_log(f"   剪枝后: {len(pruned_entities)} 实体 ({entity_retention:.1f}%), {len(pruned_relationships)} 关系 ({relationship_retention:.1f}%)")
+        logger.info(f"剪枝完成，耗时: {pruning_time:.2f}秒")
+        logger.info(f"剪枝前: {len(formatted_entities)} 实体, {len(formatted_relationships)} 关系")
+        logger.info(f"剪枝后: {len(pruned_entities)} 实体 ({entity_retention:.1f}%), {len(pruned_relationships)} 关系 ({relationship_retention:.1f}%)")
+        
+        # 保存剪枝后的实体和关系数据
         save_start = time.time()
         graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
         os.makedirs(graph_path, exist_ok=True)
         
-        # 格式化并保存实体数据
-        formatted_entities = graph_extractor.format_entities_for_storage(entities_df)
+        # 保存实体数据
         entities_file = os.path.join(graph_path, "entities.csv")
-        formatted_entities.to_csv(entities_file, index=False, encoding='utf-8')
+        pruned_entities.to_csv(entities_file, index=False, encoding='utf-8-sig')
         
-        # 格式化并保存关系数据
-        formatted_relationships = graph_extractor.format_relationships_for_storage(relationships_df)
+        # 保存关系数据
         relationships_file = os.path.join(graph_path, "relationships.csv")
-        formatted_relationships.to_csv(relationships_file, index=False, encoding='utf-8')
+        pruned_relationships.to_csv(relationships_file, index=False, encoding='utf-8-sig')
         
         save_time = time.time() - save_start
         self._write_graph_build_log(f"💾 实体关系数据保存完成，耗时: {save_time:.2f}秒")
         logger.info(f"实体关系数据保存完成，耗时: {save_time:.2f}秒")
         
-        # 更新知识库元数据中的实体关系信息
+        # 更新知识库元数据中的实体关系信息（使用剪枝后的数量）
         metadata = self._load_kb_metadata()
         if kb_name in metadata["knowledge_bases"]:
-            metadata["knowledge_bases"][kb_name]["graph_entities_count"] = len(entities_df)
-            metadata["knowledge_bases"][kb_name]["graph_relationships_count"] = len(relationships_df)
+            metadata["knowledge_bases"][kb_name]["graph_entities_count"] = len(pruned_entities)
+            metadata["knowledge_bases"][kb_name]["graph_relationships_count"] = len(pruned_relationships)
+            metadata["knowledge_bases"][kb_name]["graph_entities_count_before_pruning"] = len(formatted_entities)
+            metadata["knowledge_bases"][kb_name]["graph_relationships_count_before_pruning"] = len(formatted_relationships)
             metadata["knowledge_bases"][kb_name]["entities_build_time"] = datetime.now().isoformat()
             self._save_kb_metadata(metadata)
         
-        logger.info(f"知识库 '{kb_name}' 实体关系提取完成: {len(entities_df)} 实体, {len(relationships_df)} 关系")
-        return entities_df, relationships_df
+        logger.info(f"知识库 '{kb_name}' 实体关系提取并剪枝完成: {len(pruned_entities)} 实体, {len(pruned_relationships)} 关系")
+        return pruned_entities, pruned_relationships
 
     async def _build_knowledge_graph_task(self, task_id: str, kb_name: str, kb_info: Dict[str, Any]):
         """执行知识图谱构建任务"""
@@ -643,10 +678,10 @@ class KnowledgeBaseService:
             entities_df, relationships_df = await self._extract_entities_and_relationships(kb_name, nodes)
             
             step2_time = time.time() - step2_start
-            build_status.current_file = f"提取完成: {len(entities_df)} 实体, {len(relationships_df)} 关系 (耗时: {step2_time:.2f}s)"
+            build_status.current_file = f"提取并剪枝完成: {len(entities_df)} 实体, {len(relationships_df)} 关系 (耗时: {step2_time:.2f}s)"
             build_status.progress = 90.0
-            self._write_graph_build_log(f"🔍 步骤2完成 - 实体关系提取: {len(entities_df)} 实体, {len(relationships_df)} 关系, 耗时: {step2_time:.2f}秒")
-            logger.info(f"步骤2完成 - 实体关系提取: {len(entities_df)} 实体, {len(relationships_df)} 关系, 耗时: {step2_time:.2f}秒")
+            self._write_graph_build_log(f"🔍 步骤2完成 - 实体关系提取与剪枝: {len(entities_df)} 实体, {len(relationships_df)} 关系, 耗时: {step2_time:.2f}秒")
+            logger.info(f"步骤2完成 - 实体关系提取与剪枝: {len(entities_df)} 实体, {len(relationships_df)} 关系, 耗时: {step2_time:.2f}秒")
             await asyncio.sleep(0.5)
             
             # 更新构建状态
@@ -667,8 +702,8 @@ class KnowledgeBaseService:
             self._write_graph_build_log(f"=" * 50)
             self._write_graph_build_log(f"📊 总耗时: {total_time:.2f} 秒 ({total_time/60:.2f} 分钟)")
             self._write_graph_build_log(f"📋 步骤1 - 文档节点提取: {step1_time:.2f}秒 ({step1_time/total_time*100:.1f}%)")
-            self._write_graph_build_log(f"🤖 步骤2 - 实体关系提取: {step2_time:.2f}秒 ({step2_time/total_time*100:.1f}%)")  
-            self._write_graph_build_log(f" 提取结果: {len(entities_df)} 实体, {len(relationships_df)} 关系")
+            self._write_graph_build_log(f"🤖 步骤2 - 实体关系提取与剪枝: {step2_time:.2f}秒 ({step2_time/total_time*100:.1f}%)")  
+            self._write_graph_build_log(f"   最终结果: {len(entities_df)} 实体, {len(relationships_df)} 关系")
             self._write_graph_build_log(f"⏱️  平均每个文档节点耗时: {total_time/len(nodes):.2f}秒")
             self._write_graph_build_log(f"=" * 50)
             
@@ -676,8 +711,8 @@ class KnowledgeBaseService:
             logger.info(f"=== 构建统计 ===")
             logger.info(f"总耗时: {total_time:.2f} 秒 ({total_time/60:.2f} 分钟)")
             logger.info(f"步骤1 - 文档节点提取: {step1_time:.2f}秒 ({step1_time/total_time*100:.1f}%)")
-            logger.info(f"步骤2 - 实体关系提取: {step2_time:.2f}秒 ({step2_time/total_time*100:.1f}%)")  
-            logger.info(f"提取结果: {len(entities_df)} 实体, {len(relationships_df)} 关系")
+            logger.info(f"步骤2 - 实体关系提取与剪枝: {step2_time:.2f}秒 ({step2_time/total_time*100:.1f}%)")  
+            logger.info(f"最终结果: {len(entities_df)} 实体, {len(relationships_df)} 关系")
             logger.info(f"平均每个文档节点耗时: {total_time/len(nodes):.2f}秒")
             logger.info("==================")
             
