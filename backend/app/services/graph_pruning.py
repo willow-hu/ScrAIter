@@ -1,225 +1,204 @@
 import pandas as pd
+import numpy as np
 import networkx as nx
-from typing import Set, Tuple, Optional
+from typing import Tuple, Any
 
 
 class GraphPruning:
+    """基于图重要性的两阶段剪枝与大纲骨架提取"""
+    
     def __init__(
         self,
         alpha: float = 0.3,
-        beta: float = 0.5,
-        gamma: float = 0.2,
-        top_n: int = 50,
-        min_edge_weight: float = 6.0,
-        high_weight_threshold: float = 9.0,
-        forced_types: Optional[Set[str]] = None,
-        forced_time_periods: Optional[Set[str]] = None
+        beta: float = 0.2,
+        gamma: float = 0.5,
+        top_n: int = 20,
+        min_edge_weight: float = 0.8
     ):
         """
         初始化图剪枝器
         
         Args:
-            alpha: 度中心性权重系数
-            beta: 加权度权重系数
-            gamma: 主题相似度权重系数
-            top_n: 保留的核心节点数量
-            min_edge_weight: 最小边权重阈值
-            high_weight_threshold: 高权重边阈值（强制保留相关节点）
-            forced_types: 强制保留的节点类型集合
-            forced_time_periods: 强制保留的时间节点集合
+            alpha: degree_centrality 权重
+            beta: weighted_degree 权重
+            gamma: theme_similarity 权重
+            top_n: 保留的Top-K核心实体数量
+            min_edge_weight: 最小边权重阈值（归一化后的值，原始值6对应0.6）
         """
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
         self.top_n = top_n
         self.min_edge_weight = min_edge_weight
-        self.high_weight_threshold = high_weight_threshold
-        self.forced_types = forced_types or {"heritage_site"}
-        self.forced_time_periods = forced_time_periods or set()
         
     def prune_graph(
-        self,
-        entities_df: pd.DataFrame,
+        self, 
+        entities_df: pd.DataFrame, 
         relationships_df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        从原始图中提取高信息密度、低冗余的子图
+        执行图剪枝
         
         Args:
-            entities_df: 实体DataFrame，包含列：title, type, normalized_date, description
-            relationships_df: 关系DataFrame，包含列：source, target, weight
-            
-        Returns:
-            (pruned_entities_df, pruned_relationships_df): 剪枝后的实体和关系DataFrame
-        """
-        # 数据清洗：删除没有 id 的实体行
-        entities_df = self._clean_entities(entities_df)
+            entities_df: 实体DataFrame，包含列: id, title, theme_similarity等
+            relationships_df: 关系DataFrame，包含列: id, source, target, weight等
         
-        # 步骤 1.1：构建知识图谱
+        Returns:
+            (entities_sub_df, relationships_sub_df): 剪枝后的实体和关系DataFrame
+        """
+        # TODO: Clean entities
+        # 清理没有id的实体
+        entities_df = entities_df.dropna(subset=['id'])
+        
+        # 步骤 1.1: 构建知识图谱
         G = self._build_graph(entities_df, relationships_df)
         
-        # 步骤 1.2：计算节点重要性
+        # 步骤 1.2: 计算节点重要性
         importance_scores = self._calculate_importance(G, entities_df)
         
-        # 步骤 1.3：筛选 Top-K 核心实体
-        selected_nodes = self._select_core_entities(
-            G, entities_df, relationships_df, importance_scores
+        # 步骤 1.3: 筛选 Top-K 核心实体
+        top_entities = self._select_top_entities(importance_scores)
+        
+        # 步骤 1.4 & 1.5: 提取子图并汇总为DataFrame
+        entities_sub_df, relationships_sub_df = self._extract_subgraph(
+            entities_df, relationships_df, top_entities
         )
         
-        # 步骤 1.4：提取子图
-        pruned_entities_df, pruned_relationships_df = self._extract_subgraph(
-            entities_df, relationships_df, selected_nodes
-        )
-        
-        return pruned_entities_df, pruned_relationships_df
-    
-    def _clean_entities(self, entities_df: pd.DataFrame) -> pd.DataFrame:
-        """清洗实体数据，删除没有 id 的行"""
-        if entities_df.empty:
-            return entities_df
-        
-        # 检查是否有 id 列
-        if 'id' not in entities_df.columns:
-            return entities_df
-        
-        # 删除 id 为空的行
-        cleaned_df = entities_df[entities_df['id'].notna()].copy()
-        
-        return cleaned_df
+        return entities_sub_df, relationships_sub_df
     
     def _build_graph(
-        self,
-        entities_df: pd.DataFrame,
+        self, 
+        entities_df: pd.DataFrame, 
         relationships_df: pd.DataFrame
-    ) -> nx.Graph:
-        """构建带权重的无向图"""
+    ) -> Any:
+        """构建知识图谱"""
         G = nx.Graph()
         
-        # 添加节点（使用 title 作为节点名）
+        # 添加节点（使用title作为节点名，保留id作为属性）
         for _, row in entities_df.iterrows():
-            G.add_node(
-                row['title'],
-                type=row.get('type', ''),
-                normalized_date=row.get('normalized_date', ''),
-                description=row.get('description', '')
-            )
+            G.add_node(row['title'], entity_id=row['id'])
         
-        # 添加边
+        # 添加边（归一化权重：原始值1-10除以10）
         for _, row in relationships_df.iterrows():
+            normalized_weight = row['weight'] / 10.0
             G.add_edge(
-                row['source'],
-                row['target'],
-                weight=row.get('weight', 1.0)
+                row['source'], 
+                row['target'], 
+                weight=normalized_weight,
+                relationship_id=row['id']
             )
         
         return G
     
+    def _calculate_degree_centrality_normalized(self, G: Any, node: str) -> float:
+        """
+        计算对数归一化的度中心性
+        
+        使用公式: log(degree + 1) / log(max_degree + 1)
+        范围在 [0, 1] 之间
+        """
+        degree_view = G.degree()
+        degree = degree_view[node]
+        max_degree = max([d for _, d in degree_view]) if G.number_of_nodes() > 0 else 1
+        
+        if max_degree == 0:
+            return 0.0
+        
+        # 对数归一化
+        normalized = np.log(degree + 1) / np.log(max_degree + 1)
+        return float(normalized)
+    
+    def _calculate_weighted_degree(self, G: Any, node: str) -> float:
+        """
+        计算加权度（所有邻接边的weight的平均数）
+        """
+        edges = G.edges(node, data=True)
+        weights = [data['weight'] for _, _, data in edges if 'weight' in data]
+        
+        if not weights:
+            return 0.0
+        
+        return float(np.mean(weights))
+    
+    def _get_theme_similarity(self, entities_df: pd.DataFrame, node_title: str) -> float:
+        """获取节点的主题相似度"""
+        # 从entities_df中查找对应节点的theme_similarity
+        entity_row = entities_df[entities_df['title'] == node_title]
+        
+        if entity_row.empty:
+            return 0.0
+        
+        # 假设theme_similarity字段存在
+        if 'theme_similarity' in entity_row.columns:
+            return float(entity_row.iloc[0]['theme_similarity'])
+        else:
+            return 0.0
+    
     def _calculate_importance(
-        self,
-        G: nx.Graph,
+        self, 
+        G: Any, 
         entities_df: pd.DataFrame
     ) -> dict:
-        """计算节点综合重要性得分"""
-        importance = {}
+        """
+        计算节点重要性得分
         
-        # 计算度中心性
-        degree_centrality = nx.degree_centrality(G)
+        importance(v) = α * degree_centrality(v) + β * weighted_degree(v) + γ * theme_similarity(v)
+        """
+        importance_scores = {}
         
-        # 计算加权度（所有邻接边的权重之和）
-        weighted_degree = {}
         for node in G.nodes():
-            weighted_degree[node] = sum(
-                G[node][neighbor].get('weight', 1.0)
-                for neighbor in G.neighbors(node)
+            degree_cent = self._calculate_degree_centrality_normalized(G, node)
+            weighted_deg = self._calculate_weighted_degree(G, node)
+            theme_sim = self._get_theme_similarity(entities_df, node)
+            
+            importance = (
+                self.alpha * degree_cent +
+                self.beta * weighted_deg +
+                self.gamma * theme_sim
             )
+            
+            importance_scores[node] = importance
         
-        # 归一化加权度
-        max_weighted_degree = max(weighted_degree.values()) if weighted_degree else 1.0
-        if max_weighted_degree > 0:
-            weighted_degree = {
-                k: v / max_weighted_degree 
-                for k, v in weighted_degree.items()
-            }
-        
-        # 获取主题相似度（从实体描述或属性中获取，这里假设为0.5）
-        theme_similarity = {}
-        entity_dict = entities_df.set_index('title').to_dict('index')
-        for node in G.nodes():
-            # 这里使用默认值，实际应用中可以根据实体属性计算
-            theme_similarity[node] = 0.5
-        
-        # 计算综合重要性
-        for node in G.nodes():
-            importance[node] = (
-                self.alpha * degree_centrality.get(node, 0) +
-                self.beta * weighted_degree.get(node, 0) +
-                self.gamma * theme_similarity.get(node, 0)
-            )
-        
-        return importance
+        return importance_scores
     
-    def _select_core_entities(
-        self,
-        G: nx.Graph,
-        entities_df: pd.DataFrame,
-        relationships_df: pd.DataFrame,
-        importance_scores: dict
-    ) -> Set[str]:
-        """筛选核心实体节点"""
-        selected_nodes = set()
-        
-        # 1. 按重要性排序，取 Top-N
-        sorted_nodes = sorted(
-            importance_scores.items(),
-            key=lambda x: x[1],
+    def _select_top_entities(self, importance_scores: dict) -> set:
+        """筛选Top-K核心实体"""
+        # 按重要性得分排序
+        sorted_entities = sorted(
+            importance_scores.items(), 
+            key=lambda x: x[1], 
             reverse=True
         )
-        top_nodes = {node for node, _ in sorted_nodes[:self.top_n]}
-        selected_nodes.update(top_nodes)
         
-        # 2. 强制保留特定类型的节点
-        entity_dict = entities_df.set_index('title').to_dict('index')
-        for node in G.nodes():
-            if node in entity_dict:
-                node_type = entity_dict[node].get('type', '')
-                normalized_date = entity_dict[node].get('normalized_date', '')
-                
-                # 强制保留的类型
-                if node_type in self.forced_types:
-                    selected_nodes.add(node)
-                
-                # 强制保留的时间节点
-                if (node_type == 'time_period' and 
-                    normalized_date in self.forced_time_periods):
-                    selected_nodes.add(node)
+        # 取前top_n个节点
+        top_entities = set([title for title, _ in sorted_entities[:self.top_n]])
         
-        # 3. 强制保留高权重边的两端节点
-        high_weight_edges = relationships_df[
-            relationships_df['weight'] >= self.high_weight_threshold
-        ]
-        for _, row in high_weight_edges.iterrows():
-            selected_nodes.add(row['source'])
-            selected_nodes.add(row['target'])
-        
-        return selected_nodes
+        return top_entities
     
     def _extract_subgraph(
         self,
         entities_df: pd.DataFrame,
         relationships_df: pd.DataFrame,
-        selected_nodes: Set[str]
+        top_entities: set
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """提取子图的实体和关系"""
-        # 筛选实体
-        pruned_entities_df = entities_df[
-            entities_df['title'].isin(selected_nodes)
+        """
+        提取子图并生成新的DataFrame
+        
+        - 仅保留选中的节点及其之间的边
+        - 边也需 weight ≥ min_edge_weight（归一化后）
+        """
+        # 筛选实体：保留在top_entities中的实体
+        entities_sub_df = entities_df[entities_df['title'].isin(top_entities)].copy()
+        
+        # 筛选关系：
+        # 1. source和target都在top_entities中
+        # 2. weight >= min_edge_weight * 10（因为原始weight是1-10）
+        min_weight_original = self.min_edge_weight * 10
+        
+        relationships_sub_df = relationships_df[
+            (relationships_df['source'].isin(top_entities)) &
+            (relationships_df['target'].isin(top_entities)) &
+            (relationships_df['weight'] >= min_weight_original)
         ].copy()
         
-        # 筛选关系（仅保留选中节点之间的边，且权重 >= 阈值）
-        pruned_relationships_df = relationships_df[
-            (relationships_df['source'].isin(selected_nodes)) &
-            (relationships_df['target'].isin(selected_nodes)) &
-            (relationships_df['weight'] >= self.min_edge_weight)
-        ].copy()
-        
-        return pruned_entities_df, pruned_relationships_df
+        return entities_sub_df, relationships_sub_df

@@ -277,7 +277,7 @@ class GraphExtractor:
         # 按title和type分组，合并descriptions和text_unit_ids
         merged = df.groupby(['title', 'type']).agg({
             'id': 'first',
-            'description': lambda x: '. '.join(set(x)),
+            'description': lambda x: '。'.join(set(x)),
             'normalized_date': 'first',  # 取第一个非空的日期
             'theme_similarity': 'max',  # 取最大相关性
             'text_unit_ids': lambda x: list(set([item for sublist in x for item in (sublist if isinstance(sublist, list) else [sublist])]))
