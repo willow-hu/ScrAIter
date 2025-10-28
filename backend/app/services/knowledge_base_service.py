@@ -592,16 +592,14 @@ class KnowledgeBaseService:
         logger.info(f"开始图谱剪枝...")
         
         pruner = GraphPruner(
-            alpha=0.5,
-            beta=0.5,
-            entity_threshold=0.8,
-            relationship_weight_threshold=8.0,
-            heritage_site_min_eis=0.5,
-            important_artifact_weight_threshold=8.0,
-            theme_similarity_threshold=0.7
+            alpha=0.3,
+            beta=0.2,
+            gamma=0.5,
+            top_n=20,
+            min_edge_weight=0.8
         )
         
-        pruned_entities, pruned_relationships = pruner.prune(formatted_entities, formatted_relationships)
+        pruned_entities, pruned_relationships = pruner.prune_graph(formatted_entities, formatted_relationships)
         
         pruning_time = time.time() - pruning_start
         entity_retention = len(pruned_entities) / len(formatted_entities) * 100 if len(formatted_entities) > 0 else 0

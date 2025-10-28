@@ -4,8 +4,8 @@ import networkx as nx
 from typing import Tuple, Any
 
 
-class GraphPruning:
-    """基于图重要性的两阶段剪枝与大纲骨架提取"""
+class GraphPruner:
+    """基于图重要性的剪枝"""
     
     def __init__(
         self,
