@@ -229,7 +229,17 @@ class GraphExtractor:
                 entity_type = parts[2].strip().strip('"').lower()
                 entity_description = parts[3].strip().strip('"')
                 entity_normalized_date = parts[4].strip().strip('"') if len(parts) > 4 else ""
-                entity_theme_similarity = float(parts[5].strip()) if len(parts) > 5 else 0.0
+                
+                # 尝试解析主题相似度，增加异常处理
+                try:
+                    # 提取纯数字部分，去除可能的括号和后续文本
+                    similarity_str = parts[5].strip() if len(parts) > 5 else "0.0"
+                    # 移除右括号及其后的所有内容
+                    similarity_str = re.split(r'[)\s]', similarity_str)[0]
+                    entity_theme_similarity = float(similarity_str)
+                except (ValueError, IndexError, AttributeError):
+                    entity_theme_similarity = 0.0
+                    logger.warning(f"无法解析实体 '{entity_name}' 的主题相似度，使用默认值0.0")
                 
                 entity = {
                     'id': self._generate_entity_id(entity_name, entity_type),
@@ -250,9 +260,13 @@ class GraphExtractor:
                 
                 # 尝试解析权重/强度
                 try:
-                    weight = float(parts[5].strip()) if len(parts) > 5 else 1.0
-                except (ValueError, IndexError):
+                    weight_str = parts[5].strip() if len(parts) > 5 else "1.0"
+                    # 移除右括号及其后的所有内容
+                    weight_str = re.split(r'[)\s]', weight_str)[0]
+                    weight = float(weight_str)
+                except (ValueError, IndexError, AttributeError):
                     weight = 1.0
+                    logger.warning(f"无法解析关系 '{source}'-'{target}' 的权重，使用默认值1.0")
                 
                 relationship = {
                     'id': self._generate_relationship_id(source, target),
