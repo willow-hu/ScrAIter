@@ -46,10 +46,6 @@ class GraphPruner:
         Returns:
             (entities_sub_df, relationships_sub_df): 剪枝后的实体和关系DataFrame
         """
-        # TODO: Clean entities
-        # 清理没有id的实体
-        entities_df = entities_df.dropna(subset=['id'])
-        
         # 步骤 1.1: 构建知识图谱
         G = self._build_graph(entities_df, relationships_df)
         
