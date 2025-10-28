@@ -12,7 +12,7 @@ class GraphPruner:
         alpha: float = 0.3,
         beta: float = 0.2,
         gamma: float = 0.5,
-        top_n: int = 20,
+        top_percent: float = 0.3,
         min_edge_weight: float = 0.8
     ):
         """
@@ -22,13 +22,13 @@ class GraphPruner:
             alpha: degree_centrality 权重
             beta: weighted_degree 权重
             gamma: theme_similarity 权重
-            top_n: 保留的Top-K核心实体数量
+            top_percent: 保留的核心实体百分比（0-1之间，例如0.3表示保留30%的实体）
             min_edge_weight: 最小边权重阈值（归一化后的值，原始值6对应0.6）
         """
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
-        self.top_n = top_n
+        self.top_percent = top_percent
         self.min_edge_weight = min_edge_weight
         
     def prune_graph(
@@ -158,7 +158,7 @@ class GraphPruner:
         return importance_scores
     
     def _select_top_entities(self, importance_scores: dict) -> set:
-        """筛选Top-K核心实体"""
+        """筛选核心实体（按百分比）"""
         # 按重要性得分排序
         sorted_entities = sorted(
             importance_scores.items(), 
@@ -166,8 +166,12 @@ class GraphPruner:
             reverse=True
         )
         
-        # 取前top_n个节点
-        top_entities = set([title for title, _ in sorted_entities[:self.top_n]])
+        # 计算需要保留的实体数量（总数 × 百分比）
+        total_entities = len(sorted_entities)
+        top_k = max(1, int(total_entities * self.top_percent))  # 至少保留1个实体
+        
+        # 取前top_k个节点
+        top_entities = set([title for title, _ in sorted_entities[:top_k]])
         
         return top_entities
     

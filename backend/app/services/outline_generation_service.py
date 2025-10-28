@@ -137,7 +137,7 @@ class OutlineGenerationService:
     
     def call_llm_for_outline(self, prompt_template: str, entities_text: str, relationships_text: str) -> str:
         """
-        调用大模型生成大纲（分三次发送：先发模板，再发实体，最后发关系）
+        调用大模型生成大纲
         
         Args:
             prompt_template: 提示词模板
@@ -150,15 +150,13 @@ class OutlineGenerationService:
         try:
             logger.info("开始调用大模型生成大纲...")
             
-            # 使用多轮对话：第一轮发送任务说明，第二轮发送实体，第三轮发送关系
+            # 将提示词模板和数据组合成完整的提示词
+            full_prompt = f"{prompt_template}\n\n{entities_text}\n{relationships_text}"
+
             completion = self.client.chat.completions.create(
                 model=settings.RAG_MODEL,
                 messages=[
-                    {"role": "user", "content": prompt_template},
-                    {"role": "assistant", "content": "我已理解任务要求。请先提供实体数据。"},
-                    {"role": "user", "content": entities_text},
-                    {"role": "assistant", "content": "实体数据已收到。请继续提供关系数据，我将据此生成剧本大纲。"},
-                    {"role": "user", "content": relationships_text}
+                    {"role": "user", "content": full_prompt}
                 ],
                 temperature=0.0,  # 使用较低的温度以提高一致性
                 max_tokens=8192,  # 大纲可能比较长

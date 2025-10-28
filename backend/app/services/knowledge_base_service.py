@@ -586,6 +586,22 @@ class KnowledgeBaseService:
         formatted_entities = graph_extractor.format_entities_for_storage(entities_df)
         formatted_relationships = graph_extractor.format_relationships_for_storage(relationships_df)
         
+        # 创建图谱存储目录
+        graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
+        os.makedirs(graph_path, exist_ok=True)
+        
+        # 保存剪枝前的完整数据
+        save_full_start = time.time()
+        entities_full_file = os.path.join(graph_path, "entities_full.csv")
+        formatted_entities.to_csv(entities_full_file, index=False, encoding='utf-8-sig')
+        
+        relationships_full_file = os.path.join(graph_path, "relationships_full.csv")
+        formatted_relationships.to_csv(relationships_full_file, index=False, encoding='utf-8-sig')
+        
+        save_full_time = time.time() - save_full_start
+        self._write_graph_build_log(f"💾 剪枝前完整数据保存完成，耗时: {save_full_time:.2f}秒")
+        logger.info(f"剪枝前完整数据保存完成，耗时: {save_full_time:.2f}秒")
+        
         # 图谱剪枝
         pruning_start = time.time()
         self._write_graph_build_log(f"✂️  开始图谱剪枝...")
@@ -595,7 +611,7 @@ class KnowledgeBaseService:
             alpha=0.3,
             beta=0.2,
             gamma=0.5,
-            top_n=20,
+            top_percent=0.25,
             min_edge_weight=0.8
         )
         
@@ -614,20 +630,18 @@ class KnowledgeBaseService:
         
         # 保存剪枝后的实体和关系数据
         save_start = time.time()
-        graph_path = os.path.join(self.kb_path, "GraphStore", kb_name)
-        os.makedirs(graph_path, exist_ok=True)
         
-        # 保存实体数据
+        # 保存剪枝后的实体数据
         entities_file = os.path.join(graph_path, "entities.csv")
         pruned_entities.to_csv(entities_file, index=False, encoding='utf-8-sig')
         
-        # 保存关系数据
+        # 保存剪枝后的关系数据
         relationships_file = os.path.join(graph_path, "relationships.csv")
         pruned_relationships.to_csv(relationships_file, index=False, encoding='utf-8-sig')
         
         save_time = time.time() - save_start
-        self._write_graph_build_log(f"💾 实体关系数据保存完成，耗时: {save_time:.2f}秒")
-        logger.info(f"实体关系数据保存完成，耗时: {save_time:.2f}秒")
+        self._write_graph_build_log(f"💾 剪枝后数据保存完成，耗时: {save_time:.2f}秒")
+        logger.info(f"剪枝后数据保存完成，耗时: {save_time:.2f}秒")
         
         # 更新知识库元数据中的实体关系信息（使用剪枝后的数量）
         metadata = self._load_kb_metadata()
