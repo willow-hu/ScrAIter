@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Table, Tag, Button, Empty, Tooltip, Space, Modal } from 'antd';
+import { Table, Tag, Button, Empty, Tooltip, Space, Modal, message } from 'antd';
 import { DeleteOutlined, NodeIndexOutlined, DatabaseOutlined, LoadingOutlined } from '../../utils/icons';
 import { 
   fetchKnowledgeBases,
   deleteKnowledgeBase,
   formatDate
 } from '../../utils/archive_manager';
+import GraphBuildingModal from './GraphBuildingModal';
 
 function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
   const [knowledgeBases, setKnowledgeBases] = useState([]);
@@ -73,6 +74,8 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
 
   // 构建知识图谱状态
   const [buildingGraph, setBuildingGraph] = useState({});
+  const [showGraphBuildingModal, setShowGraphBuildingModal] = useState(false);
+  const [currentBuildingKB, setCurrentBuildingKB] = useState(null);
 
   // 获取图谱按钮类型
   const getGraphButtonType = (record) => {
@@ -111,6 +114,8 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
       onOk: async () => {
         setBuildingGraph(prev => ({ ...prev, [kb.name]: true }));
         setGraphProgress(prev => ({ ...prev, [kb.name]: { progress: 0, message: '准备构建...' } }));
+        setCurrentBuildingKB(kb);
+        setShowGraphBuildingModal(true);
         
         try {
           // 调用后端API开始构建图谱
@@ -140,6 +145,8 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
             delete newState[kb.name];
             return newState;
           });
+          setShowGraphBuildingModal(false);
+          setCurrentBuildingKB(null);
         }
       }
     });
@@ -173,7 +180,9 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
             delete newState[kbName];
             return newState;
           });
-          message.success(`知识库"${kbName}"的知识图谱构建完成`);
+          setShowGraphBuildingModal(false);
+          setCurrentBuildingKB(null);
+          message.success(`知识图谱构建完成`);
           loadKnowledgeBases(); // 重新加载列表以更新图谱信息
         } else if (status.status === 'error') {
           clearInterval(pollInterval);
@@ -183,6 +192,8 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
             delete newState[kbName];
             return newState;
           });
+          setShowGraphBuildingModal(false);
+          setCurrentBuildingKB(null);
           message.error(`知识图谱构建失败: ${status.error_message || '未知错误'}`);
         }
       } catch (error) {
@@ -194,6 +205,8 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
           delete newState[kbName];
           return newState;
         });
+        setShowGraphBuildingModal(false);
+        setCurrentBuildingKB(null);
         message.error('网络错误');
       }
     }, 2000); // 每2秒检查一次
@@ -306,6 +319,12 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
         pagination={false}
         size="small"
         loading={loadingKBs || loading}
+      />
+
+      {/* 图谱构建等待界面 */}
+      <GraphBuildingModal 
+        visible={showGraphBuildingModal}
+        kbTheme={currentBuildingKB?.theme || currentBuildingKB?.name}
       />
     </div>
   );
