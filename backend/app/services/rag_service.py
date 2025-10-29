@@ -199,8 +199,8 @@ class RAGService:
             kb_projects_dir = os.path.join(projects_base_dir, kb_name)
             os.makedirs(kb_projects_dir, exist_ok=True)
             
-            # 创建JSON文件
-            script_file_name = f"{kb_name}_script.json"
+            # 创建JSON文件（统一使用script.json）
+            script_file_name = "script.json"
             script_file_path = os.path.join(kb_projects_dir, script_file_name)
             
             # 检查文件是否已存在，如果存在则只更新structure字段

@@ -160,7 +160,7 @@ function ScriptEditor() {
           return;
         }
         
-        // 如果script数据不存在，创建空白数据并保存
+        // 如果script数据不存在，只在内存中创建空白数据，不保存到文件
         const emptyData = {
           global_context: {
             character_list: [],
@@ -169,19 +169,6 @@ function ScriptEditor() {
           },
           structure: []
         };
-        
-        // 自动创建script.json文件
-        const createResponse = await fetch(`http://localhost:8000/api/v1/projects/${selectedKnowledgeBase}/script`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(emptyData)
-        });
-        
-        if (createResponse.ok) {
-          console.log(`已为知识库 "${selectedKnowledgeBase}" 创建空白script.json文件`);
-        }
         
         const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
         setTreeData(emptyDataWithPositions);
@@ -488,36 +475,31 @@ function ScriptEditor() {
       message.error('请先选择知识库');
       return;
     }
-    
-    // 检查项目信息
-    const globalContext = treeData?.global_context;
-    if (!globalContext) {
-      message.error('请先设置项目信息');
-      setProjectInfoModalVisible(true); // 自动打开项目信息编辑
-      return;
-    }
+
+    // 获取当前知识库的主题
+    const selectedKB = knowledgeBases.find(kb => kb.name === knowledgeBaseName);
+    const kbTheme = selectedKB?.theme || knowledgeBaseName;
 
     // 显示确认对话框
     Modal.confirm({
-      title: '操作确认',
+      title: '生成大纲',
       icon: <Icons.ExclamationCircleOutlined />,
-      content: '此操作将覆盖现有的内容，确定要重新生成吗？',
+      content: `此操作将基于知识库「${kbTheme}」的知识图谱生成新的大纲，会覆盖现有的内容。确定要继续吗？`,
       okText: '确定生成',
       cancelText: '取消',
       okType: 'primary',
       onOk: async () => {
         try {
-          message.info('正在生成大纲，请稍候...');
+          message.loading({ content: `正在为「${kbTheme}」生成大纲，请稍候...`, key: 'outline-gen', duration: 0 });
           
           // 调用后端API生成大纲
-          const response = await fetch('http://localhost:8000/api/v1/generate/structure', {
+          const response = await fetch('http://localhost:8000/api/v1/generate/outline', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              kb_name: knowledgeBaseName.trim(),
-              global_context: globalContext
+              kb_name: knowledgeBaseName.trim()
             })
           });
           
@@ -527,19 +509,23 @@ function ScriptEditor() {
           }
           
           const result = await response.json();
-          message.success('大纲生成成功！');
           
-          // 可选：更新当前树结构为生成的结构
+          if (!result.success) {
+            throw new Error(result.message || '生成大纲失败');
+          }
+          
+          message.success({ content: result.message, key: 'outline-gen' });
+          
+          // 更新当前树结构为生成的结构
           if (result.structure && result.structure.length > 0) {
             const newTreeData = {
-              global_context: result.global_context || globalContext,
+              global_context: result.global_context || {
+                character_list: [],
+                site_name: "",
+                other_requirements: ""
+              },
               structure: result.structure
             };
-            
-            // 移除knowledge_base_name字段（如果存在）
-            if (newTreeData.global_context && 'knowledge_base_name' in newTreeData.global_context) {
-              delete newTreeData.global_context.knowledge_base_name;
-            }
             
             const newDataWithPositions = addAutoLayoutPositions(newTreeData);
             setTreeData(newDataWithPositions);
@@ -550,7 +536,7 @@ function ScriptEditor() {
           
         } catch (error) {
           console.error('生成大纲失败:', error);
-          message.error(error.message || '生成大纲失败');
+          message.error({ content: error.message || '生成大纲失败', key: 'outline-gen' });
         }
       }
     });
@@ -698,7 +684,7 @@ function ScriptEditor() {
           知识库:
         </span>
         <Select
-          style={{ width: 150 }}
+          style={{ width: 200 }}
           placeholder="选择知识库"
           value={selectedKnowledgeBase}
           onChange={setSelectedKnowledgeBase}
@@ -708,7 +694,7 @@ function ScriptEditor() {
         >
           {knowledgeBases.map(kb => (
             <Select.Option key={kb.name} value={kb.name}>
-              {kb.name}
+              {kb.theme || kb.name}
             </Select.Option>
           ))}
         </Select>

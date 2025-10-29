@@ -30,17 +30,17 @@ class ScriptFileService:
     def get_tree_file_path(self, project_name: str) -> str:
         """获取树结构文件路径（步骤2-3使用）"""
         project_dir = self.get_project_dir(project_name)
-        return os.path.join(project_dir, f"{project_name}_tree.json")
+        return os.path.join(project_dir, "tree.json")
     
     def get_script_file_path(self, project_name: str) -> str:
         """获取脚本文件路径（步骤4使用）"""
         project_dir = self.get_project_dir(project_name)
-        return os.path.join(project_dir, f"{project_name}_script.json")
+        return os.path.join(project_dir, "script.json")
     
     def get_reviewed_script_file_path(self, project_name: str) -> str:
         """获取校对后脚本文件路径（步骤5使用）"""
         project_dir = self.get_project_dir(project_name)
-        return os.path.join(project_dir, f"{project_name}_reviewed_script.json")
+        return os.path.join(project_dir, "reviewed_script.json")
     
     def _migrate_data_format(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """将旧格式数据迁移到新格式"""
