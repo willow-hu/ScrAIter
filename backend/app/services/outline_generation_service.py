@@ -283,9 +283,6 @@ class OutlineGenerationService:
             logger.info(f"大纲生成成功: {len(outline_data.get('structure', []))} 个节点")
             
             return {
-                "success": True,
-                "message": f"大纲生成成功，共 {len(outline_data.get('structure', []))} 个节点",
-                "outline_path": output_path,
                 "structure": outline_data.get("structure", []),
                 "global_context": outline_data.get("global_context", {})
             }
@@ -293,33 +290,15 @@ class OutlineGenerationService:
         except FileNotFoundError as e:
             error_msg = str(e)
             logger.error(f"文件未找到: {error_msg}")
-            return {
-                "success": False,
-                "message": error_msg,
-                "outline_path": None,
-                "structure": None,
-                "global_context": None
-            }
+            raise
         except ValueError as e:
             error_msg = str(e)
             logger.error(f"数据验证失败: {error_msg}")
-            return {
-                "success": False,
-                "message": error_msg,
-                "outline_path": None,
-                "structure": None,
-                "global_context": None
-            }
+            raise
         except Exception as e:
             error_msg = f"大纲生成失败: {str(e)}"
             logger.error(error_msg)
-            return {
-                "success": False,
-                "message": error_msg,
-                "outline_path": None,
-                "structure": None,
-                "global_context": None
-            }
+            raise
 
 # 创建全局实例
 outline_generation_service = OutlineGenerationService()

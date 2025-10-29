@@ -630,6 +630,10 @@ class KnowledgeBaseService:
         
         # 保存剪枝后的实体和关系数据
         save_start = time.time()
+
+        # 保留需要的列
+        pruned_entities = pruned_entities[["title", "type", "description", "normalized_date"]]
+        pruned_relationships = pruned_relationships[["source", "target", "description", "relationship_time"]]
         
         # 保存剪枝后的实体数据
         entities_file = os.path.join(graph_path, "entities.csv")

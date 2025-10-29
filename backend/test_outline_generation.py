@@ -33,22 +33,7 @@ def test_outline_generation(kb_name: str):
         
         if result['success']:
             print(f"保存路径: {result['outline_path']}")
-            print(f"\n生成的大纲结构:")
             print(f"节点数量: {len(result['structure'])}")
-            
-            # 打印前几个节点
-            print(f"\n前3个节点:")
-            for i, node in enumerate(result['structure'][:3]):
-                print(f"\n节点 {i+1}:")
-                print(f"  ID: {node.get('id')}")
-                print(f"  名称: {node.get('name')}")
-                print(f"  摘要: {node.get('abstract')}")
-                print(f"  子节点: {node.get('child_ids')}")
-            
-            # 打印全局上下文
-            print(f"\n全局上下文:")
-            print(f"  景点名称: {result['global_context'].get('site_name')}")
-            print(f"  角色列表数量: {len(result['global_context'].get('character_list', []))}")
             
             # 保存详细结果到文件
             output_file = f"test_outline_{kb_name}_result.json"
