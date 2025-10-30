@@ -133,8 +133,12 @@ settings.local.*
 *.backup
 *~
 
-# Local RAG system (as specified in original)
+# other projects
 qwen-local-rag/
 graphrag/
-# .github/prompts/
+
+# Special files
+.github/prompts/
 .history/
+scripts/add_branch.md
+scripts/reset_version.md
