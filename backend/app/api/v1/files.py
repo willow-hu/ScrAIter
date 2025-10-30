@@ -3,6 +3,7 @@
 """
 import json
 import os
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -15,6 +16,7 @@ from app.services.file_service import file_service
 from app.core.config import settings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.get("/source-tags")
 async def get_source_tags():
@@ -22,6 +24,7 @@ async def get_source_tags():
     获取来源标签配置
     """
     try:
+        logger.debug("获取来源标签配置")
         config_path = os.path.join(settings.SHARED_DIR, "configs", "source_tags.json")
         
         if os.path.exists(config_path):
@@ -41,6 +44,7 @@ async def get_source_tags():
                 ]
             }
     except Exception as e:
+        logger.error(f"获取标签配置失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取标签配置失败: {str(e)}")
 
 @router.get("/files", response_model=FileListResponse)
@@ -50,8 +54,10 @@ async def get_files():
     返回：文件名、大小、上传时间、处理状态、标签等
     """
     try:
+        logger.info("获取文件列表")
         return file_service.get_file_list()
     except Exception as e:
+        logger.error(f"获取文件列表失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
 
 @router.get("/categories", response_model=CategoryListResponse)
