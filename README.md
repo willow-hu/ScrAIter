@@ -17,7 +17,7 @@ ScrAIter是一个智能剧本创作辅助系统，结合了知识图谱和检索
 ### 1. 克隆项目
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/willow-hu/ScrAIter.git
 cd ScrAIter
 ```
 
