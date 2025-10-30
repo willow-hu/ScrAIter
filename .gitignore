@@ -141,4 +141,4 @@ graphrag/
 .github/prompts/
 .history/
 scripts/add_branch.md
-scripts/reset_version.md
+scripts/reset_version.sh
