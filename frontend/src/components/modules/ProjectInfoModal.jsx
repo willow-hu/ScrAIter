@@ -141,14 +141,14 @@ function ProjectInfoModal({
     >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         {/* 基本信息 */}
-        <div>
+        {/* <div>
           <Typography.Text strong>景点名称</Typography.Text>
           <Input
             value={form.site_name || ''}
             onChange={(e) => handleFieldChange('site_name', e.target.value)}
             placeholder="输入景点名称"
           />
-        </div>
+        </div> */}
         
         {/* <div>
           <Typography.Text strong>其他要求</Typography.Text>

@@ -735,17 +735,17 @@ function ScriptEditor() {
       <div className="floating-buttons-container">
         <Button
           shape="circle"
-          icon={<Icons.FileTextOutlined />}
-          title="项目信息"
-          onClick={handleOpenProjectInfo}
-          className="floating-button"
-        />
-        
-        <Button
-          shape="circle"
           icon={<Icons.NodeIndexOutlined />}
           title="生成大纲"
           onClick={handleGenerateOutline}
+          className="floating-button"
+        />
+
+        <Button
+          shape="circle"
+          icon={<Icons.FileTextOutlined />}
+          title="项目信息"
+          onClick={handleOpenProjectInfo}
           className="floating-button"
         />
         
@@ -765,13 +765,13 @@ function ScriptEditor() {
           className="floating-button"
         />
 
-        <Button
+        {/* <Button
           shape="circle"
           icon={<Icons.ReloadOutlined />}
           title="重置为GraphRAG生成的结构"
           onClick={handleResetWithConfirm}
           className="floating-button"
-        />
+        /> */}
 
         <Button
           shape="circle"
