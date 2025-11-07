@@ -42,53 +42,6 @@ class ScriptFileService:
         project_dir = self.get_project_dir(project_name)
         return os.path.join(project_dir, "reviewed_script.json")
     
-    def _migrate_data_format(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """将旧格式数据迁移到新格式"""
-        if not data or not isinstance(data, dict):
-            return data
-        
-        # 检查是否需要迁移
-        global_context = data.get("global_context", {})
-        if not isinstance(global_context, dict):
-            return data
-        
-        # 如果已经是新格式（有character_list），直接返回
-        if "character_list" in global_context:
-            return data
-        
-        # 执行迁移：从旧格式转换到新格式
-        migrated_data = data.copy()
-        migrated_global_context = global_context.copy()
-        
-        # 创建角色列表
-        character_list = []
-        
-        # 从narrator_role和character_setting创建默认角色
-        narrator_role = global_context.get("narrator_role", "")
-        character_setting = global_context.get("character_setting", "")
-        
-        if narrator_role or character_setting:
-            character_list.append({
-                "name": narrator_role or "讲述者",
-                "description": character_setting or "默认角色设定",
-                "tone": "友好、知识渊博",
-                "avatar": ""
-            })
-        
-        # 更新global_context
-        migrated_global_context["character_list"] = character_list
-        migrated_global_context["site_name"] = global_context.get("site_name", "")
-        migrated_global_context["other_requirements"] = global_context.get("other_requirements", "")
-        
-        # 删除旧字段
-        migrated_global_context.pop("narrator_role", None)
-        migrated_global_context.pop("character_setting", None)
-        
-        migrated_data["global_context"] = migrated_global_context
-        
-        print(f"数据迁移完成：从旧格式转换为新格式")
-        return migrated_data
-    
     def save_tree_structure(self, project_name: str, tree_data: Dict[str, Any]) -> bool:
         """保存树结构数据（步骤2-3）"""
         try:
@@ -158,9 +111,6 @@ class ScriptFileService:
             
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            
-            # 数据迁移：将旧格式转换为新格式
-            data = self._migrate_data_format(data)
             
             return data
         except Exception as e:

@@ -10,6 +10,7 @@ from typing import Set, List, Dict, Any, Optional
 from datetime import datetime
 
 from app.core.config import settings
+from backend.app.services.script_format_convert import authoring_to_game
 from app.models.export_models import ExportFormat, ExportResponse
 
 class ExportService:
@@ -89,6 +90,9 @@ class ExportService:
                     message="脚本文件不存在"
                 )
             
+            # 执行格式转换（创作格式 -> 游戏格式）
+            game_script_data = authoring_to_game(script_data)
+
             # 创建临时目录
             temp_export_dir = tempfile.mkdtemp(prefix=f"export_{kb_name}_")
             
@@ -99,7 +103,7 @@ class ExportService:
                     script_export_path = os.path.join(temp_export_dir, script_filename)
                     
                     with open(script_export_path, 'w', encoding='utf-8') as f:
-                        json.dump(script_data, f, ensure_ascii=False, indent=2)
+                        json.dump(game_script_data, f, ensure_ascii=False, indent=4)
                     
                     return ExportResponse(
                         success=True,
@@ -119,7 +123,7 @@ class ExportService:
                     
                     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                         # 添加脚本JSON文件
-                        script_json = json.dumps(script_data, ensure_ascii=False, indent=2)
+                        script_json = json.dumps(game_script_data, ensure_ascii=False, indent=2)
                         zipf.writestr(f"{kb_name}_script.json", script_json)
                         
                         # 添加图片文件
@@ -128,6 +132,7 @@ class ExportService:
                             images_to_include = []
                             
                             # 获取脚本中使用的图片
+                            # 保持图片提取基于原始创作格式，避免转换对资源选择的潜在影响
                             used_images = self.extract_used_images(script_data)
                             
                             # 获取所有可用图片
