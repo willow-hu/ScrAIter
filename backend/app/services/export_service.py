@@ -10,7 +10,7 @@ from typing import Set, List, Dict, Any, Optional
 from datetime import datetime
 
 from app.core.config import settings
-from backend.app.services.script_format_convert import authoring_to_game
+from app.services.script_format_convert import authoring_to_game
 from app.models.export_models import ExportFormat, ExportResponse
 
 class ExportService:
