@@ -219,6 +219,28 @@ class OutlineGenerationService:
             logger.error(f"解析响应失败: {e}")
             raise
     
+    def post_process_outline(self, outline_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        LLM生成大纲后的后处理函数
+        在保存到文件前对大纲数据进行修改和调整
+        
+        Args:
+            outline_data: LLM生成的原始大纲数据
+            
+        Returns:
+            处理后的大纲数据
+        """
+        for scene in outline_data.get("structure", []):
+            if "role" not in scene:
+                scene["role"] = ""
+            if "npc_pic" not in scene:
+                scene["npc_pic"] = ""
+            if "bg" not in scene:
+                scene["bg"] = ""
+            if "user" not in scene:
+                scene["user"] = ""
+        return outline_data
+    
     def save_outline(self, kb_name: str, outline_data: Dict[str, Any]) -> str:
         """
         保存大纲到项目目录
@@ -276,6 +298,9 @@ class OutlineGenerationService:
             
             # 5. 解析响应
             outline_data = self.parse_llm_response(llm_response)
+            
+            # 5+. 后处理大纲（在保存前修改）
+            outline_data = self.post_process_outline(outline_data)
             
             # 6. 保存大纲
             output_path = self.save_outline(kb_name, outline_data)
