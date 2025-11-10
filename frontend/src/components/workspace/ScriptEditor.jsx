@@ -671,6 +671,14 @@ function ScriptEditor() {
       <div className="floating-buttons-container">
         <Button
           shape="circle"
+          icon={<Icons.QuestionCircleOutlined />}
+          title="使用说明"
+          onClick={handleShowUsage}
+          className="floating-button"
+        />
+
+        <Button
+          shape="circle"
           icon={<Icons.NodeIndexOutlined />}
           title="生成大纲"
           onClick={handleGenerateOutline}
@@ -696,18 +704,11 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.DownloadOutlined />}
-          title="导出脚本"
+          title="导出素材"
           onClick={handleExportWithValidation}
           className="floating-button"
         />
 
-        <Button
-          shape="circle"
-          icon={<Icons.QuestionCircleOutlined />}
-          title="使用说明"
-          onClick={handleShowUsage}
-          className="floating-button"
-        />
       </div>
 
       {/* 节点编辑模态框 */}
