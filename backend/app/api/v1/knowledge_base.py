@@ -180,3 +180,17 @@ async def get_graph_build_status(kb_name: str, task_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取图谱构建状态失败: {str(e)}")
+
+@router.get("/knowledge-bases")
+async def get_knowledge_bases():
+    """
+    获取所有可用的知识库列表（用于项目创建时选择）
+    """
+    try:
+        result = knowledge_base_service.list_knowledge_bases()
+        return JSONResponse(
+            status_code=200,
+            content=result
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取知识库列表失败: {str(e)}")

@@ -10,17 +10,17 @@ from app.services.export_service import export_service
 
 router = APIRouter()
 
-@router.post("/projects/{kb_name}/export", response_model=ExportResponse)
-async def export_project(kb_name: str, request: ExportRequest):
+@router.post("/projects/{project_id}/export", response_model=ExportResponse)
+async def export_project(project_id: str, request: ExportRequest):
     """
     导出项目
     """
     try:
-        if not kb_name or not kb_name.strip():
-            raise HTTPException(status_code=400, detail="知识库名称不能为空")
+        if not project_id or not project_id.strip():
+            raise HTTPException(status_code=400, detail="项目ID不能为空")
         
         result = export_service.create_export_package(
-            kb_name=kb_name.strip(),
+            project_id=project_id.strip(),
             export_format=request.format,
             include_images=request.include_images
         )
@@ -35,14 +35,14 @@ async def export_project(kb_name: str, request: ExportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"导出失败: {str(e)}")
 
-@router.get("/projects/{kb_name}/download")
-async def download_export_file(kb_name: str, file_path: str):
+@router.get("/projects/{project_id}/download")
+async def download_export_file(project_id: str, file_path: str):
     """
     下载导出文件
     """
     try:
-        if not kb_name or not kb_name.strip():
-            raise HTTPException(status_code=400, detail="知识库名称不能为空")
+        if not project_id or not project_id.strip():
+            raise HTTPException(status_code=400, detail="项目ID不能为空")
         
         if not file_path or not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="文件不存在")

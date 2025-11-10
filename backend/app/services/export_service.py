@@ -11,11 +11,12 @@ from datetime import datetime
 
 from app.core.config import settings
 from app.services.script_format_convert import authoring_to_game
+from app.services.project_service import project_service
 from app.models.export_models import ExportFormat, ExportResponse
 
 class ExportService:
     def __init__(self):
-        self.projects_path = settings.SHARED_DIR + "/projects"
+        self.projects_path = settings.PROJECTS_DIR
         self.temp_dir = tempfile.gettempdir()
     
     def extract_used_images(self, script_data: Dict[str, Any]) -> Set[str]:
@@ -51,22 +52,13 @@ class ExportService:
         
         return used_images
     
-    def load_script_data(self, kb_name: str) -> Optional[Dict[str, Any]]:
+    def load_script_data(self, project_id: str) -> Optional[Dict[str, Any]]:
         """加载脚本数据"""
-        script_path = os.path.join(self.projects_path, kb_name, f"{kb_name}_script.json")
-        
-        if not os.path.exists(script_path):
-            return None
-        
-        try:
-            with open(script_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
-            return None
+        return project_service.load_script(project_id)
     
-    def get_available_images(self, kb_name: str) -> List[str]:
-        """获取知识库中所有可用的图片"""
-        images_dir = os.path.join(self.projects_path, kb_name, "images")
+    def get_available_images(self, project_id: str) -> List[str]:
+        """获取项目中所有可用的图片"""
+        images_dir = os.path.join(self.projects_path, project_id, "assets")
         
         if not os.path.exists(images_dir):
             return []
@@ -79,11 +71,21 @@ class ExportService:
         
         return images
     
-    def create_export_package(self, kb_name: str, export_format: ExportFormat, include_images: bool = True) -> ExportResponse:
+    def create_export_package(self, project_id: str, export_format: ExportFormat, include_images: bool = True) -> ExportResponse:
         """创建导出包"""
         try:
+            # 获取项目信息
+            project_info = project_service.get_project(project_id)
+            if not project_info:
+                return ExportResponse(
+                    success=False,
+                    message="项目不存在"
+                )
+            
+            project_name = project_info.get("name", project_id)
+            
             # 加载脚本数据
-            script_data = self.load_script_data(kb_name)
+            script_data = self.load_script_data(project_id)
             if not script_data:
                 return ExportResponse(
                     success=False,
@@ -94,12 +96,12 @@ class ExportService:
             game_script_data = authoring_to_game(script_data)
 
             # 创建临时目录
-            temp_export_dir = tempfile.mkdtemp(prefix=f"export_{kb_name}_")
+            temp_export_dir = tempfile.mkdtemp(prefix=f"export_{project_id}_")
             
             try:
                 if export_format == ExportFormat.JSON_ONLY:
                     # 仅导出JSON
-                    script_filename = f"{kb_name}_script.json"
+                    script_filename = f"{project_name}_script.json"
                     script_export_path = os.path.join(temp_export_dir, script_filename)
                     
                     with open(script_export_path, 'w', encoding='utf-8') as f:
@@ -116,7 +118,7 @@ class ExportService:
                     # 导出包含图片的完整包
                     
                     # 创建ZIP文件
-                    zip_filename = f"{kb_name}_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+                    zip_filename = f"{project_name}_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
                     zip_path = os.path.join(temp_export_dir, zip_filename)
                     
                     included_images = []
@@ -124,7 +126,7 @@ class ExportService:
                     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                         # 添加脚本JSON文件
                         script_json = json.dumps(game_script_data, ensure_ascii=False, indent=2)
-                        zipf.writestr(f"{kb_name}_script.json", script_json)
+                        zipf.writestr(f"{project_name}_script.json", script_json)
                         
                         # 添加图片文件
                         if include_images:
@@ -136,13 +138,13 @@ class ExportService:
                             used_images = self.extract_used_images(script_data)
                             
                             # 获取所有可用图片
-                            available_images = self.get_available_images(kb_name)
+                            available_images = self.get_available_images(project_id)
                             
                             # 策略：包含所有图片（简化实现）
                             images_to_include = available_images
                             
                             # 添加图片到ZIP
-                            images_dir = os.path.join(self.projects_path, kb_name, "images")
+                            images_dir = os.path.join(self.projects_path, project_id, "assets")
                             
                             for image_filename in images_to_include:
                                 image_path = os.path.join(images_dir, image_filename)
@@ -152,11 +154,12 @@ class ExportService:
                                     included_images.append(image_filename)
                         
                         # 添加说明文件
-                        readme_content = f"""# {kb_name} 导出包
+                        readme_content = f"""# {project_name} 导出包
 
+项目ID: {project_id}
 导出时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 包含文件:
-- {kb_name}_script.json: 脚本内容
+- {project_name}_script.json: 脚本内容
 - images/: 背景图片目录 ({len(included_images)} 个文件)
 
 使用说明:

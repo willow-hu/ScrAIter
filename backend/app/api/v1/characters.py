@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.services.script_file_service import script_file_service
+from app.services.project_service import project_service
 
 router = APIRouter()
 
@@ -37,16 +37,16 @@ class CharacterListResponse(BaseModel):
     characters: List[Character]
     total_count: int
 
-@router.get("/projects/{project_name}/characters", response_model=CharacterListResponse)
-async def get_characters(project_name: str):
+@router.get("/projects/{project_id}/characters", response_model=CharacterListResponse)
+async def get_characters(project_id: str):
     """获取项目的角色列表"""
     try:
         # 加载项目脚本数据
-        script_data = script_file_service.load_script_content(project_name)
+        script_data = project_service.load_script(project_id)
         
         if not script_data:
-            # 如果项目不存在，返回空列表
-            return CharacterListResponse(characters=[], total_count=0)
+            # 如果项目不存在，返回404
+            raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取角色列表
         character_list = script_data.get("global_context", {}).get("character_list", [])
@@ -59,18 +59,20 @@ async def get_characters(project_name: str):
             total_count=len(characters)
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取角色列表失败: {str(e)}")
 
-@router.post("/projects/{project_name}/characters")
-async def add_character(project_name: str, request: CharacterCreateRequest):
+@router.post("/projects/{project_id}/characters")
+async def add_character(project_id: str, request: CharacterCreateRequest):
     """添加新角色"""
     try:
         # 加载项目脚本数据
-        script_data = script_file_service.load_script_content(project_name)
+        script_data = project_service.load_script(project_id)
         
         if not script_data:
-            raise HTTPException(status_code=404, detail=f"项目 '{project_name}' 不存在")
+            raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取当前角色列表
         global_context = script_data.get("global_context", {})
@@ -95,7 +97,7 @@ async def add_character(project_name: str, request: CharacterCreateRequest):
         script_data["global_context"] = global_context
         
         # 保存到文件
-        success = script_file_service.save_script_content(project_name, script_data)
+        success = project_service.save_script(project_id, script_data)
         if not success:
             raise HTTPException(status_code=500, detail="保存角色数据失败")
         
@@ -113,15 +115,15 @@ async def add_character(project_name: str, request: CharacterCreateRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"添加角色失败: {str(e)}")
 
-@router.put("/projects/{project_name}/characters/{character_name}")
-async def update_character(project_name: str, character_name: str, request: CharacterUpdateRequest):
+@router.put("/projects/{project_id}/characters/{character_name}")
+async def update_character(project_id: str, character_name: str, request: CharacterUpdateRequest):
     """更新角色信息"""
     try:
         # 加载项目脚本数据
-        script_data = script_file_service.load_script_content(project_name)
+        script_data = project_service.load_script(project_id)
         
         if not script_data:
-            raise HTTPException(status_code=404, detail=f"项目 '{project_name}' 不存在")
+            raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取当前角色列表
         global_context = script_data.get("global_context", {})
@@ -160,7 +162,7 @@ async def update_character(project_name: str, character_name: str, request: Char
         script_data["global_context"] = global_context
         
         # 保存到文件
-        success = script_file_service.save_script_content(project_name, script_data)
+        success = project_service.save_script(project_id, script_data)
         if not success:
             raise HTTPException(status_code=500, detail="保存角色数据失败")
         
@@ -178,15 +180,15 @@ async def update_character(project_name: str, character_name: str, request: Char
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"更新角色失败: {str(e)}")
 
-@router.delete("/projects/{project_name}/characters/{character_name}")
-async def delete_character(project_name: str, character_name: str):
+@router.delete("/projects/{project_id}/characters/{character_name}")
+async def delete_character(project_id: str, character_name: str):
     """删除角色"""
     try:
         # 加载项目脚本数据
-        script_data = script_file_service.load_script_content(project_name)
+        script_data = project_service.load_script(project_id)
         
         if not script_data:
-            raise HTTPException(status_code=404, detail=f"项目 '{project_name}' 不存在")
+            raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取当前角色列表
         global_context = script_data.get("global_context", {})
@@ -210,7 +212,7 @@ async def delete_character(project_name: str, character_name: str):
         script_data["global_context"] = global_context
         
         # 保存到文件
-        success = script_file_service.save_script_content(project_name, script_data)
+        success = project_service.save_script(project_id, script_data)
         if not success:
             raise HTTPException(status_code=500, detail="保存角色数据失败")
         
