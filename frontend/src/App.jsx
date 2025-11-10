@@ -21,7 +21,7 @@ function App() {
       case 'script':
         return <ScriptEditor />;
       default:
-        return <ArchiveManager />;
+        return <ProjectManager />;
     }
   };
 

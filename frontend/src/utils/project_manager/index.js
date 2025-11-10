@@ -24,7 +24,7 @@ export const fetchProjects = async () => {
           if (scriptResponse.ok) {
             const scriptData = await scriptResponse.json();
             // 从global_context中获取knowledge_base_name，如果没有则使用项目名称
-            const kbName = scriptData.global_context?.knowledge_base_name || project.name;
+            const kbName = project.name;
             return { ...project, kb_name: kbName };
           }
         } catch (error) {

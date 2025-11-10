@@ -3,7 +3,6 @@
  * 统一导出所有工具类，方便使用
  */
 
-// export * from './tree_editor/index.js';
-// export * from './content_generator/index.js';
 export * from './script_editor/index.js';
 export * from './archive_manager/index.js';
+export * from './project_manager/index.js';
