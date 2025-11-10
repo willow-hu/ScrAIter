@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { message, Button, Modal, Select } from 'antd';
+import { useParams, useNavigate } from 'react-router-dom';
+import { message, Button, Modal, Select, Spin } from 'antd';
 
 import * as Icons from '../../utils/icons';
 import TreeCanvas from '../modules/TreeCanvas';
@@ -13,14 +14,16 @@ import { createTreeStructureManager } from '../../utils/script_editor/treeStruct
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
 
 function ScriptEditor() {
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+  
   const [treeData, setTreeData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [nodeEditModalVisible, setNodeEditModalVisible] = useState(false);
   
-  // 知识库相关状态
-  const [selectedKnowledgeBase, setSelectedKnowledgeBase] = useState(null);
-  const [knowledgeBases, setKnowledgeBases] = useState([]);
-  const [loadingKnowledgeBases, setLoadingKnowledgeBases] = useState(false);
+  // 项目相关状态
+  const [projectInfo, setProjectInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   // 新增的浮动按钮相关状态
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
@@ -38,40 +41,61 @@ function ScriptEditor() {
   // 布局管理器
   const [layoutManager] = useState(() => new TreeLayoutManager());
 
-  // 加载知识库列表
-  const loadKnowledgeBases = async () => {
-    setLoadingKnowledgeBases(true);
+  // 加载项目数据
+  const loadProjectData = async () => {
+    if (!projectId) {
+      message.error('项目ID不存在');
+      navigate('/projects');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/knowledge-base/list');
-      if (!response.ok) {
-        throw new Error('获取知识库列表失败');
+      // 加载项目脚本数据
+      const scriptResponse = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/script`);
+      if (!scriptResponse.ok) {
+        throw new Error('获取项目数据失败');
       }
-      const result = await response.json();
+      const scriptData = await scriptResponse.json();
       
-      // 转换为数组格式
-      const kbArray = Object.keys(result.knowledge_bases || {}).map(name => ({
-        name,
-        ...result.knowledge_bases[name]
-      }));
-      
-      setKnowledgeBases(kbArray);
-      
-      // 如果还没有选择知识库且有可用的知识库，选择第一个
-      if (!selectedKnowledgeBase && kbArray.length > 0) {
-        setSelectedKnowledgeBase(kbArray[0].name);
+      // 加载项目基本信息
+      const infoResponse = await fetch(`http://localhost:8000/api/v1/projects/${projectId}`);
+      if (infoResponse.ok) {
+        const info = await infoResponse.json();
+        setProjectInfo(info);
       }
+      
+      // 处理脚本数据
+      const hasPositions = scriptData.structure && scriptData.structure.some(node => node.position);
+      const dataWithPositions = hasPositions ? scriptData : addAutoLayoutPositions(scriptData);
+      
+      treeManager.setData(dataWithPositions);
+      setTreeData(dataWithPositions);
+      
     } catch (error) {
-      console.error('加载知识库列表失败:', error);
-      message.error('加载知识库列表失败');
-      setKnowledgeBases([]);
+      console.error('加载项目数据失败:', error);
+      message.error('加载项目数据失败');
+      // 出错时创建空白数据
+      const emptyData = {
+        global_context: {
+          character_list: [],
+          site_name: "",
+          other_requirements: ""
+        },
+        structure: []
+      };
+      
+      const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
+      setTreeData(emptyDataWithPositions);
+      treeManager.setData(emptyDataWithPositions);
     } finally {
-      setLoadingKnowledgeBases(false);
+      setLoading(false);
     }
   };
 
-  // 获取当前知识库名称的辅助函数
-  const getCurrentKnowledgeBaseName = () => {
-    return selectedKnowledgeBase;
+  // 获取当前项目ID
+  const getCurrentProjectId = () => {
+    return projectId;
   };
 
   // 验证数据完整性
@@ -115,87 +139,10 @@ function ScriptEditor() {
     setTreeData(newData);
   }));
 
-  // 加载知识库列表
+  // 加载项目数据
   useEffect(() => {
-    loadKnowledgeBases();
-  }, []);
-
-  // 当选择的知识库变化时，加载对应的数据
-  useEffect(() => {
-    const loadKnowledgeBaseData = async () => {
-      if (!selectedKnowledgeBase) {
-        // 如果没有选择知识库，创建空白结构
-        const emptyData = {
-          global_context: {
-            character_list: [],
-            site_name: "",
-            other_requirements: ""
-          },
-          structure: []
-        };
-        
-        const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
-        setTreeData(emptyDataWithPositions);
-        treeManager.setData(emptyDataWithPositions);
-        return;
-      }
-      
-      try {
-        // 尝试加载对应知识库的script数据
-        const scriptResponse = await fetch(`http://localhost:8000/api/v1/projects/${selectedKnowledgeBase}/script`);
-        
-        if (scriptResponse.ok) {
-          const scriptData = await scriptResponse.json();
-          
-          // 移除knowledge_base_name字段（如果存在）
-          if (scriptData.global_context && 'knowledge_base_name' in scriptData.global_context) {
-            delete scriptData.global_context.knowledge_base_name;
-          }
-          
-          const hasPositions = scriptData.structure && scriptData.structure.some(node => node.position);
-          const dataWithPositions = hasPositions ? scriptData : addAutoLayoutPositions(scriptData);
-          
-          treeManager.setData(dataWithPositions);
-          setTreeData(dataWithPositions);
-          return;
-        }
-        
-        // 如果script数据不存在，只在内存中创建空白数据，不保存到文件
-        const emptyData = {
-          global_context: {
-            character_list: [],
-            site_name: "",
-            other_requirements: ""
-          },
-          structure: []
-        };
-        
-        const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
-        setTreeData(emptyDataWithPositions);
-        treeManager.setData(emptyDataWithPositions);
-        
-      } catch (error) {
-        console.error('Failed to load knowledge base data:', error);
-        // 出错时也创建空白数据
-        const emptyData = {
-          global_context: {
-            character_list: [],
-            site_name: "",
-            other_requirements: ""
-          },
-          structure: []
-        };
-        
-        const emptyDataWithPositions = addAutoLayoutPositions(emptyData);
-        setTreeData(emptyDataWithPositions);
-        treeManager.setData(emptyDataWithPositions);
-      }
-    };
-
-    loadKnowledgeBaseData().catch(err => {
-      console.error('loadKnowledgeBaseData failed:', err);
-    });
-  }, [selectedKnowledgeBase, treeManager]);
+    loadProjectData();
+  }, [projectId]);
 
   // 保存修改
   const handleSave = async () => {
@@ -212,15 +159,14 @@ function ScriptEditor() {
     }
     
     try {
-      // 获取当前的知识库名称
-      const kbName = getCurrentKnowledgeBaseName();
+      const currentProjectId = getCurrentProjectId();
       
-      if (!kbName) {
-        message.error('请先选择知识库');
+      if (!currentProjectId) {
+        message.error('项目ID不存在');
         return;
       }
       
-      // 构建完整的保存数据，确保包含global_context和structure，不包含knowledge_base_name
+      // 构建完整的保存数据
       const saveData = {
         global_context: {
           character_list: treeData.global_context.character_list || [],
@@ -231,7 +177,7 @@ function ScriptEditor() {
       };
       
       // 保存为script数据
-      const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+      const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}/script`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,7 +186,7 @@ function ScriptEditor() {
       });
       
       if (response.ok) {
-        message.success(`保存成功！`);
+        message.success('保存成功！');
       } else {
         const errorData = await response.json();
         message.error(`保存失败: ${errorData.detail || '未知错误'}`);
@@ -306,9 +252,9 @@ function ScriptEditor() {
 
   // 处理导出（根据格式选择）
   const handleExportByFormat = async (format) => {
-    const kbName = getCurrentKnowledgeBaseName();
-    if (!kbName) {
-      message.error('请先选择知识库');
+    const currentProjectId = getCurrentProjectId();
+    if (!currentProjectId) {
+      message.error('项目ID不存在');
       return;
     }
 
@@ -320,7 +266,7 @@ function ScriptEditor() {
       try {
         message.info('正在创建导出包，请稍候...');
         
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/export`, {
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}/export`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -341,7 +287,7 @@ function ScriptEditor() {
         if (result.success && result.download_url) {
           // 创建下载链接
           const link = document.createElement('a');
-          link.href = `http://localhost:8000/api/v1/projects/${kbName}/download?file_path=${encodeURIComponent(result.download_url)}`;
+          link.href = `http://localhost:8000/api/v1/projects/${currentProjectId}/download?file_path=${encodeURIComponent(result.download_url)}`;
           link.download = '';
           link.click();
           
@@ -358,10 +304,10 @@ function ScriptEditor() {
 
   // 新增：重置到默认状态
   const handleReset = () => {
-    const currentKbName = getCurrentKnowledgeBaseName();
+    const currentProjectId = getCurrentProjectId();
     
-    if (!currentKbName) {
-      message.error('请先选择知识库');
+    if (!currentProjectId) {
+      message.error('项目ID不存在');
       return;
     }
     
@@ -428,9 +374,9 @@ function ScriptEditor() {
       message.success('项目信息已更新');
       
       // 自动保存到服务器
-      const kbName = getCurrentKnowledgeBaseName();
-      if (kbName && kbName.trim()) {
-        // 构建保存数据，不包含knowledge_base_name
+      const currentProjectId = getCurrentProjectId();
+      if (currentProjectId) {
+        // 构建保存数据
         const saveData = {
           global_context: {
             character_list: projectInfoData.character_list || [],
@@ -440,7 +386,7 @@ function ScriptEditor() {
           structure: treeData?.structure || []
         };
         
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}/script`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -469,28 +415,25 @@ function ScriptEditor() {
 
   // 新增：生成大纲（GraphRAG）
   const handleGenerateOutline = async () => {
-    // 检查知识库选择
-    const knowledgeBaseName = getCurrentKnowledgeBaseName();
-    if (!knowledgeBaseName || !knowledgeBaseName.trim()) {
-      message.error('请先选择知识库');
+    // 检查项目信息
+    if (!projectInfo || !projectInfo.kb_id) {
+      message.error('项目未关联知识库，无法生成大纲');
       return;
     }
 
-    // 获取当前知识库的主题
-    const selectedKB = knowledgeBases.find(kb => kb.name === knowledgeBaseName);
-    const kbTheme = selectedKB?.theme || knowledgeBaseName;
+    const kbName = projectInfo.kb_name || projectInfo.kb_id;
 
     // 显示确认对话框
     Modal.confirm({
       title: '生成大纲',
       icon: <Icons.ExclamationCircleOutlined />,
-      content: `此操作将基于知识库「${kbTheme}」的知识图谱生成新的大纲，会覆盖现有的内容。确定要继续吗？`,
+      content: `此操作将基于知识库「${kbName}」的知识图谱生成新的大纲，会覆盖现有的内容。确定要继续吗？`,
       okText: '确定生成',
       cancelText: '取消',
       okType: 'primary',
       onOk: async () => {
         try {
-          message.loading({ content: `正在为「${kbTheme}」生成大纲，请稍候...`, key: 'outline-gen', duration: 0 });
+          message.loading({ content: `正在为「${kbName}」生成大纲，请稍候...`, key: 'outline-gen', duration: 0 });
           
           // 调用后端API生成大纲
           const response = await fetch('http://localhost:8000/api/v1/generate/outline', {
@@ -499,7 +442,7 @@ function ScriptEditor() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              kb_name: knowledgeBaseName.trim()
+              kb_name: projectInfo.kb_id
             })
           });
           
@@ -663,16 +606,30 @@ function ScriptEditor() {
     }}>加载中...</div>;
   }
 
+  // 如果正在加载，显示加载状态
+  if (loading) {
+    return (
+      <div className="script-editor" style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <Spin size="large" tip="加载项目数据中..." />
+      </div>
+    );
+  }
+
   return (
     <div className="script-editor">
-      {/* 左上角知识库选择器 */}
+      {/* 左上角项目信息显示 */}
       <div style={{
         position: 'absolute',
         top: '20px',
         left: '20px',
         zIndex: 1000,
         background: 'rgba(255, 255, 255, 0.95)',
-        padding: '6px 10px',
+        padding: '6px 12px',
         borderRadius: '6px',
         border: '1px solid #d9d9d9',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
@@ -681,23 +638,19 @@ function ScriptEditor() {
         gap: '8px'
       }}>
         <span style={{ fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>
-          知识库:
+          项目:
         </span>
-        <Select
-          style={{ width: 200 }}
-          placeholder="选择知识库"
-          value={selectedKnowledgeBase}
-          onChange={setSelectedKnowledgeBase}
-          loading={loadingKnowledgeBases}
-          allowClear={false}
-          size="small"
-        >
-          {knowledgeBases.map(kb => (
-            <Select.Option key={kb.name} value={kb.name}>
-              {kb.theme || kb.name}
-            </Select.Option>
-          ))}
-        </Select>
+        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
+          {projectInfo?.name || '未命名项目'}
+        </span>
+        {projectInfo?.kb_name && (
+          <>
+            <span style={{ color: '#d9d9d9' }}>|</span>
+            <span style={{ fontSize: '12px', color: '#999' }}>
+              知识库: {projectInfo.kb_name}
+            </span>
+          </>
+        )}
       </div>
 
       <TreeCanvas
@@ -795,7 +748,7 @@ function ScriptEditor() {
       <ProjectInfoModal
         visible={projectInfoModalVisible}
         projectInfo={treeData?.global_context}
-        projectName={selectedKnowledgeBase}
+        projectName={projectInfo?.name}
         onSave={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}
       />

@@ -16,70 +16,102 @@
  */
 
 import React, { useState } from 'react';
-import { Table, Button, Empty, Space, Dropdown, Modal, message } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { Table, Button, Empty, Space, Dropdown, Modal, Input, message } from 'antd';
 import { EditOutlined, MoreOutlined, DatabaseOutlined } from '../../utils/icons';
+import { deleteProject, updateProject, duplicateProject } from '../../utils/project_manager';
 
 function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onDuplicateSuccess, onRefresh }) {
+  const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState({});
 
   // 处理编辑按钮点击
   const handleEdit = (project) => {
-    // TODO: 实现编辑功能
-    message.info(`编辑项目: ${project.name}`);
+    navigate(`/projects/${project.id}/edit`);
   };
 
   // 处理重命名
   const handleRename = (project) => {
+    let newName = '';
     Modal.confirm({
       title: '重命名项目',
-      content: `确定要重命名项目"${project.name}"吗？`,
+      content: (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8 }}>当前名称: {project.name}</div>
+          <Input
+            placeholder="请输入新名称"
+            defaultValue={project.name}
+            onChange={(e) => { newName = e.target.value; }}
+          />
+        </div>
+      ),
       okText: '确定',
       cancelText: '取消',
       onOk: async () => {
-        // TODO: 实现重命名功能
-        message.info('重命名功能待实现');
-        // setActionLoading(prev => ({ ...prev, [project.name]: true }));
-        // try {
-        //   // 调用重命名API
-        //   onRenameSuccess && onRenameSuccess();
-        // } catch (error) {
-        //   console.error('重命名失败:', error);
-        //   message.error(`重命名失败: ${error.message}`);
-        // } finally {
-        //   setActionLoading(prev => {
-        //     const newState = { ...prev };
-        //     delete newState[project.name];
-        //     return newState;
-        //   });
-        // }
+        if (!newName || newName === project.name) {
+          message.warning('请输入不同的名称');
+          return Promise.reject();
+        }
+        
+        setActionLoading(prev => ({ ...prev, [project.id]: true }));
+        try {
+          await updateProject(project.id, { name: newName });
+          message.success('重命名成功');
+          onRenameSuccess && onRenameSuccess();
+        } catch (error) {
+          console.error('重命名失败:', error);
+          message.error(`重命名失败: ${error.message}`);
+          throw error;
+        } finally {
+          setActionLoading(prev => {
+            const newState = { ...prev };
+            delete newState[project.id];
+            return newState;
+          });
+        }
       }
     });
   };
 
   // 处理复制
   const handleDuplicate = (project) => {
+    let newName = '';
     Modal.confirm({
       title: '复制项目',
-      content: `确定要复制项目"${project.name}"吗？`,
+      content: (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8 }}>原项目: {project.name}</div>
+          <Input
+            placeholder="请输入新项目名称"
+            defaultValue={`${project.name}_副本`}
+            onChange={(e) => { newName = e.target.value; }}
+          />
+        </div>
+      ),
       okText: '确定',
       cancelText: '取消',
       onOk: async () => {
-        // TODO: 实现复制功能
-        message.info('复制功能待实现');
-        // setActionLoading(prev => ({ ...prev, [project.name]: true }));
-        // try {
-        //   // 调用复制API
-        //   onDuplicateSuccess && onDuplicateSuccess();
-        // } catch (error) {
-        //   console.error('复制失败:', error);
-        //   message.error(`复制失败: ${error.message}`);
-        // } finally {
-        //   setActionLoading(prev => {
-        //     const newState = { ...prev };
-        //     delete newState[project.name];
-        //     return newState;
-        //   });
-        // }
+        if (!newName) {
+          message.warning('请输入项目名称');
+          return Promise.reject();
+        }
+        
+        setActionLoading(prev => ({ ...prev, [project.id]: true }));
+        try {
+          await duplicateProject(project.id, newName);
+          message.success('复制成功');
+          onDuplicateSuccess && onDuplicateSuccess();
+        } catch (error) {
+          console.error('复制失败:', error);
+          message.error(`复制失败: ${error.message}`);
+          throw error;
+        } finally {
+          setActionLoading(prev => {
+            const newState = { ...prev };
+            delete newState[project.id];
+            return newState;
+          });
+        }
       }
     });
   };
@@ -93,22 +125,22 @@ function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onD
       okType: 'danger',
       cancelText: '取消',
       onOk: async () => {
-        // TODO: 实现删除功能
-        message.info('删除功能待实现');
-        // setActionLoading(prev => ({ ...prev, [project.name]: true }));
-        // try {
-        //   // 调用删除API
-        //   onDeleteSuccess && onDeleteSuccess();
-        // } catch (error) {
-        //   console.error('删除失败:', error);
-        //   message.error(`删除失败: ${error.message}`);
-        // } finally {
-        //   setActionLoading(prev => {
-        //     const newState = { ...prev };
-        //     delete newState[project.name];
-        //     return newState;
-        //   });
-        // }
+        setActionLoading(prev => ({ ...prev, [project.id]: true }));
+        try {
+          await deleteProject(project.id);
+          message.success('删除成功');
+          onDeleteSuccess && onDeleteSuccess();
+        } catch (error) {
+          console.error('删除失败:', error);
+          message.error(`删除失败: ${error.message}`);
+          throw error;
+        } finally {
+          setActionLoading(prev => {
+            const newState = { ...prev };
+            delete newState[project.id];
+            return newState;
+          });
+        }
       }
     });
   };
@@ -151,17 +183,18 @@ function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onD
     },
     {
       title: '知识库',
-      dataIndex: 'kb_name',
-      key: 'kb_name',
+      dataIndex: 'kb_id',
+      key: 'kb_id',
       width: '25%',
-      render: (text) => {
+      render: (text, record) => {
+        const kbName = record.kb_name || text || '-';
         if (!text || text === '-') {
           return <span style={{ color: '#999' }}>未关联</span>;
         }
         return (
           <Space>
             <DatabaseOutlined style={{ color: '#1890ff' }} />
-            <span>{text}</span>
+            <span>{kbName}</span>
           </Space>
         );
       },
@@ -176,7 +209,7 @@ function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onD
           size="small"
           icon={<EditOutlined />}
           onClick={() => handleEdit(record)}
-          loading={actionLoading[record.name]}
+          loading={actionLoading[record.id]}
         >
           编辑
         </Button>
@@ -196,7 +229,7 @@ function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onD
           <Button
             type="text"
             icon={<MoreOutlined style={{ fontSize: '18px' }} />}
-            loading={actionLoading[record.name]}
+            loading={actionLoading[record.id]}
           />
         </Dropdown>
       ),
@@ -227,7 +260,7 @@ function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onD
       <Table
         columns={columns}
         dataSource={projects}
-        rowKey="name"
+        rowKey="id"
         pagination={{
           pageSize: 10,
           showSizeChanger: false

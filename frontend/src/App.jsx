@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from 'antd';
 import Navigation from './components/workspace/Navigation';
 import ArchiveManager from './components/workspace/ArchiveManager';
@@ -7,29 +8,22 @@ import ScriptEditor from './components/workspace/ScriptEditor';
 
 const { Content } = Layout;
 
-function App() {
-  const [activeView, setActiveView] = useState('data');
+function AppContent() {
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(250);
 
-  const renderContent = () => {
-    switch (activeView) {
-      case 'data':
-        return <ArchiveManager />;
-      case 'project':
-        return <ProjectManager />;
-      case 'script':
-        return <ScriptEditor />;
-      default:
-        return <ProjectManager />;
-    }
+  // 根据路由确定当前激活的视图
+  const getActiveView = () => {
+    if (location.pathname.startsWith('/archive')) return 'archive';
+    if (location.pathname.startsWith('/projects')) return 'projects';
+    return 'projects';
   };
 
   return (
     <Layout className="app">
       <Navigation
-        activeView={activeView}
-        onViewChange={setActiveView}
+        activeView={getActiveView()}
         collapsed={sidebarCollapsed}
         onCollapse={setSidebarCollapsed}
         width={sidebarWidth}
@@ -37,10 +31,23 @@ function App() {
       />
       <Layout style={{ marginLeft: sidebarCollapsed ? 80 : sidebarWidth }}>
         <Content className="main-content">
-          {renderContent()}
+          <Routes>
+            <Route path="/" element={<Navigate to="/projects" replace />} />
+            <Route path="/archive" element={<ArchiveManager />} />
+            <Route path="/projects" element={<ProjectManager />} />
+            <Route path="/projects/:projectId/edit" element={<ScriptEditor />} />
+          </Routes>
         </Content>
       </Layout>
     </Layout>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 

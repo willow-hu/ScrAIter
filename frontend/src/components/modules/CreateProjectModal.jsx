@@ -14,6 +14,7 @@
 
 import React, { useState } from 'react';
 import { Form, Input, Select, Button, Space, message } from 'antd';
+import { createProject } from '../../utils/project_manager';
 
 const { Option } = Select;
 
@@ -25,28 +26,14 @@ function CreateProjectModal({ knowledgeBases, onCreateSuccess, onCancel }) {
   const handleSubmit = async (values) => {
     setCreating(true);
     try {
-      // TODO: 实现创建项目API调用
-      message.info('创建项目功能待实现');
+      await createProject({
+        name: values.name,
+        kb_id: values.kb_id,
+      });
       
-      // 模拟API调用
-      // const response = await fetch('http://localhost:8000/api/v1/projects', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     name: values.name,
-      //     kb_name: values.kb_name,
-      //   })
-      // });
-      
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   throw new Error(error.detail || '创建失败');
-      // }
-      
-      // onCreateSuccess && onCreateSuccess();
-      // form.resetFields();
+      message.success('项目创建成功');
+      onCreateSuccess && onCreateSuccess();
+      form.resetFields();
       
     } catch (error) {
       console.error('创建项目失败:', error);
@@ -85,7 +72,7 @@ function CreateProjectModal({ knowledgeBases, onCreateSuccess, onCancel }) {
 
       <Form.Item
         label="选择知识库"
-        name="kb_name"
+        name="kb_id"
         rules={[
           { required: true, message: '请选择知识库' },
         ]}
@@ -99,8 +86,8 @@ function CreateProjectModal({ knowledgeBases, onCreateSuccess, onCancel }) {
           }
         >
           {knowledgeBases.map(kb => (
-            <Option key={kb.name} value={kb.name}>
-              {kb.theme || kb.name}
+            <Option key={kb.id} value={kb.id}>
+              {kb.theme || kb.name || kb.id}
             </Option>
           ))}
         </Select>

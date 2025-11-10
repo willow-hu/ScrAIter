@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout, Menu, Button, Tooltip } from 'antd';
 import {
   DatabaseOutlined,
-  EditOutlined,
   FolderOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined
@@ -12,37 +12,31 @@ const { Sider } = Layout;
 
 function Navigation({ 
   activeView, 
-  onViewChange, 
   collapsed, 
   onCollapse, 
   width, 
   onWidthChange 
 }) {
+  const navigate = useNavigate();
   const [isResizing, setIsResizing] = useState(false);
 
   const menuItems = [
     {
-      key: 'data',
+      key: 'archive',
       icon: <DatabaseOutlined />,
       label: '资料管理',
     },
     {
-      key: 'project',
+      key: 'projects',
       icon: <FolderOutlined />,
       label: '项目管理',
-    },
-    {
-      key: 'script',
-      icon: <EditOutlined />,
-      label: '脚本创作',
     },
   ];
 
   const handleMenuClick = ({ key }) => {
-    onViewChange(key);
+    navigate(`/${key}`);
   };
 
-  // 处理鼠标拖拽调整宽度
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
     setIsResizing(true);
@@ -59,7 +53,6 @@ function Navigation({
     setIsResizing(false);
   }, []);
 
-  // 添加事件监听器
   React.useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -116,7 +109,6 @@ function Navigation({
         />
       </Sider>
 
-      {/* 拖拽调整宽度的分割线 */}
       {!collapsed && (
         <div
           className="navi-resizer"
