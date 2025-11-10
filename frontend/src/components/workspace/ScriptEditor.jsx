@@ -363,21 +363,6 @@ function ScriptEditor() {
     message.success('已重置到初始状态');
   };
 
-  // 新增：处理重置脚本（带确认）
-  const handleResetWithConfirm = () => {
-    Modal.confirm({
-      title: '重置脚本',
-      icon: <Icons.ExclamationCircleOutlined />,
-      content: '确定要重置脚本吗？这将放弃所有未保存的更改，回到初始状态。',
-      okText: '确定重置',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk() {
-        handleReset();
-      },
-    });
-  };
-
   // 新增：打开项目信息编辑
   const handleOpenProjectInfo = () => {
     setProjectInfoModalVisible(true);
@@ -615,15 +600,11 @@ function ScriptEditor() {
     setNodeEditModalVisible(false);
   };
 
-  if (!treeData) {
-    return <div className="script-editor-no-data">加载中...</div>;
-  }
-
   // 如果正在加载，显示加载状态
   if (loading) {
     return (
       <div className="script-editor script-editor-loading">
-        <Spin size="large" tip="加载项目数据中..." />
+        <Spin size="large" tip="加载数据中..." />
       </div>
     );
   }
@@ -719,14 +700,6 @@ function ScriptEditor() {
           onClick={handleExportWithValidation}
           className="floating-button"
         />
-
-        {/* <Button
-          shape="circle"
-          icon={<Icons.ReloadOutlined />}
-          title="重置为GraphRAG生成的结构"
-          onClick={handleResetWithConfirm}
-          className="floating-button"
-        /> */}
 
         <Button
           shape="circle"

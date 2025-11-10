@@ -61,14 +61,6 @@
   color: #999;
 }
 
-/* 加载失败状态容器 */
-.script-editor-no-data {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Modal 内的列表样式 */
 .script-editor-modal-list {
   padding-left: 20px;
