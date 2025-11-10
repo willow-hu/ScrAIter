@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Layout } from 'antd';
 import Navigation from './components/workspace/Navigation';
 import ArchiveManager from './components/workspace/ArchiveManager';
+import ProjectManager from './components/workspace/ProjectManager';
 import ScriptEditor from './components/workspace/ScriptEditor';
 
 const { Content } = Layout;
@@ -15,6 +16,8 @@ function App() {
     switch (activeView) {
       case 'data':
         return <ArchiveManager />;
+      case 'project':
+        return <ProjectManager />;
       case 'script':
         return <ScriptEditor />;
       default:

@@ -21,3 +21,6 @@
 @import './file-list.css';
 @import './knowledge-base-builder.css';
 @import './archive-modals.css';
+
+/* 项目管理样式 */
+@import './project-manager.css';

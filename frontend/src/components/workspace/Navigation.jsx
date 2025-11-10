@@ -3,6 +3,7 @@ import { Layout, Menu, Button, Tooltip } from 'antd';
 import {
   DatabaseOutlined,
   EditOutlined,
+  FolderOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined
 } from '../../utils/icons';
@@ -24,6 +25,11 @@ function Navigation({
       key: 'data',
       icon: <DatabaseOutlined />,
       label: '资料管理',
+    },
+    {
+      key: 'project',
+      icon: <FolderOutlined />,
+      label: '项目管理',
     },
     {
       key: 'script',
