@@ -21,9 +21,16 @@ import { Table, Button, Empty, Space, Dropdown, Modal, Input, message } from 'an
 import { EditOutlined, MoreOutlined, DatabaseOutlined } from '../../utils/icons';
 import { deleteProject, updateProject, duplicateProject } from '../../utils/project_manager';
 
-function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onDuplicateSuccess, onRefresh }) {
+function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess, onRenameSuccess, onDuplicateSuccess, onRefresh }) {
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState({});
+
+  // 根据知识库ID获取主题名称
+  const getKnowledgeBaseTheme = (kbId) => {
+    if (!kbId) return null;
+    const kb = knowledgeBases.find(kb => kb.name === kbId);
+    return kb?.theme || kbId;
+  };
 
   // 处理编辑按钮点击
   const handleEdit = (project) => {
@@ -183,20 +190,16 @@ function ProjectsList({ projects, loading, onDeleteSuccess, onRenameSuccess, onD
     },
     {
       title: '知识库',
-      dataIndex: 'kb_id',
-      key: 'kb_id',
+      dataIndex: 'knowledgeBaseId',
+      key: 'knowledgeBaseId',
       width: '25%',
       render: (text, record) => {
-        const kbName = record.kb_name || text || '-';
-        if (!text || text === '-') {
+        const kbId = text || record.kb_id;
+        if (!kbId || kbId === '-') {
           return <span style={{ color: '#999' }}>未关联</span>;
         }
-        return (
-          <Space>
-            <DatabaseOutlined style={{ color: '#1890ff' }} />
-            <span>{kbName}</span>
-          </Space>
-        );
+        const kbTheme = getKnowledgeBaseTheme(kbId);
+        return <span>{kbTheme}</span>;
       },
     },
     {

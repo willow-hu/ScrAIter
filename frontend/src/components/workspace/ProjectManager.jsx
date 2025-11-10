@@ -69,7 +69,6 @@ function ProjectManager() {
 
   // 项目创建成功回调
   const handleCreateSuccess = () => {
-    message.success('项目创建成功');
     setShowCreateModal(false);
     handleRefresh();
   };
@@ -117,6 +116,7 @@ function ProjectManager() {
 
           <ProjectsList
             projects={projects}
+            knowledgeBases={knowledgeBases}
             loading={loading}
             onDeleteSuccess={handleDeleteSuccess}
             onRenameSuccess={handleRenameSuccess}

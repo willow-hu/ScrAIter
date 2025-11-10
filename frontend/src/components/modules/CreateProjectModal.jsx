@@ -28,10 +28,9 @@ function CreateProjectModal({ knowledgeBases, onCreateSuccess, onCancel }) {
     try {
       await createProject({
         name: values.name,
-        kb_id: values.kb_id,
+        knowledgeBaseId: values.kb_id,
       });
       
-      message.success('项目创建成功');
       onCreateSuccess && onCreateSuccess();
       form.resetFields();
       
@@ -86,8 +85,8 @@ function CreateProjectModal({ knowledgeBases, onCreateSuccess, onCancel }) {
           }
         >
           {knowledgeBases.map(kb => (
-            <Option key={kb.id} value={kb.id}>
-              {kb.theme || kb.name || kb.id}
+            <Option key={kb.name} value={kb.name}>
+              {kb.theme || kb.name}
             </Option>
           ))}
         </Select>

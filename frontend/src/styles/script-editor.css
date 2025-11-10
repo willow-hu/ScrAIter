@@ -1,0 +1,76 @@
+/* 脚本编辑器样式 */
+.script-editor {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 加载状态容器 */
+.script-editor-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* 左上角项目信息显示 */
+.script-editor-project-info {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 返回按钮 */
+.script-editor-back-button {
+  padding: 0 4px;
+  height: 24px;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+/* 项目信息文本 */
+.script-editor-project-label {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.script-editor-project-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+.script-editor-divider {
+  color: #d9d9d9;
+}
+
+.script-editor-kb-info {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 加载失败状态容器 */
+.script-editor-no-data {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal 内的列表样式 */
+.script-editor-modal-list {
+  padding-left: 20px;
+  margin: 8px 0;
+}

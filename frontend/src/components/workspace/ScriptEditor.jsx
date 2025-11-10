@@ -12,6 +12,7 @@ import ExportModal from '../modules/ExportModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
+import '../../styles/script-editor.css';
 
 function ScriptEditor() {
   const { projectId } = useParams();
@@ -24,6 +25,7 @@ function ScriptEditor() {
   // 项目相关状态
   const [projectInfo, setProjectInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [knowledgeBaseTheme, setKnowledgeBaseTheme] = useState(null);
   
   // 新增的浮动按钮相关状态
   const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
@@ -63,6 +65,22 @@ function ScriptEditor() {
       if (infoResponse.ok) {
         const info = await infoResponse.json();
         setProjectInfo(info);
+        
+        // 如果有知识库ID，获取知识库主题
+        if (info.knowledgeBaseId) {
+          try {
+            const kbResponse = await fetch('http://localhost:8000/api/v1/knowledge-bases');
+            if (kbResponse.ok) {
+              const kbData = await kbResponse.json();
+              const kb = kbData.knowledge_bases?.find(kb => kb.name === info.knowledgeBaseId);
+              if (kb?.theme) {
+                setKnowledgeBaseTheme(kb.theme);
+              }
+            }
+          } catch (error) {
+            console.error('获取知识库信息失败:', error);
+          }
+        }
       }
       
       // 处理脚本数据
@@ -236,7 +254,7 @@ function ScriptEditor() {
           <div>
             <p>当前图结构不是有效的有向树结构，无法导出。</p>
             <p>请检查以下问题：</p>
-            <ul style={{ paddingLeft: '20px', margin: '8px 0' }}>
+            <ul className="script-editor-modal-list">
               <li>是否有且仅有一个根节点（没有父节点的节点）</li>
               <li>除根节点外，每个节点是否都有且仅有一个父节点</li>
               <li>是否存在环形引用</li>
@@ -416,12 +434,12 @@ function ScriptEditor() {
   // 新增：生成大纲（GraphRAG）
   const handleGenerateOutline = async () => {
     // 检查项目信息
-    if (!projectInfo || !projectInfo.kb_id) {
+    if (!projectInfo || !projectInfo.knowledgeBaseId) {
       message.error('项目未关联知识库，无法生成大纲');
       return;
     }
 
-    const kbName = projectInfo.kb_name || projectInfo.kb_id;
+    const kbName = knowledgeBaseTheme || projectInfo.knowledgeBaseId;
 
     // 显示确认对话框
     Modal.confirm({
@@ -442,7 +460,7 @@ function ScriptEditor() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              kb_name: projectInfo.kb_id
+              kb_name: projectInfo.knowledgeBaseId
             })
           });
           
@@ -598,23 +616,13 @@ function ScriptEditor() {
   };
 
   if (!treeData) {
-    return <div style={{ 
-      height: '100%', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center' 
-    }}>加载中...</div>;
+    return <div className="script-editor-no-data">加载中...</div>;
   }
 
   // 如果正在加载，显示加载状态
   if (loading) {
     return (
-      <div className="script-editor" style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
+      <div className="script-editor script-editor-loading">
         <Spin size="large" tip="加载项目数据中..." />
       </div>
     );
@@ -623,31 +631,25 @@ function ScriptEditor() {
   return (
     <div className="script-editor">
       {/* 左上角项目信息显示 */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        zIndex: 1000,
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '6px 12px',
-        borderRadius: '6px',
-        border: '1px solid #d9d9d9',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <span style={{ fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>
+      <div className="script-editor-project-info">
+        <Button
+          type="text"
+          size="small"
+          icon={<Icons.ArrowLeftOutlined />}
+          onClick={() => navigate('/projects')}
+          className="script-editor-back-button"
+        />
+        <span className="script-editor-project-label">
           项目:
         </span>
-        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
+        <span className="script-editor-project-name">
           {projectInfo?.name || '未命名项目'}
         </span>
-        {projectInfo?.kb_name && (
+        {knowledgeBaseTheme && (
           <>
-            <span style={{ color: '#d9d9d9' }}>|</span>
-            <span style={{ fontSize: '12px', color: '#999' }}>
-              知识库: {projectInfo.kb_name}
+            <span className="script-editor-divider">|</span>
+            <span className="script-editor-kb-info">
+              知识库: {knowledgeBaseTheme}
             </span>
           </>
         )}
