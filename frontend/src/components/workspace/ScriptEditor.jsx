@@ -6,7 +6,7 @@ import * as Icons from '../../utils/icons';
 import TreeCanvas from '../modules/TreeCanvas';
 import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
-import ProjectInfoModal from '../modules/ProjectInfoModal';
+import NPCManageModal from '../modules/NPCManageModal';
 import UsageModal from '../modules/UsageModal';
 import ExportModal from '../modules/ExportModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
@@ -28,7 +28,7 @@ function ScriptEditor() {
   const [knowledgeBaseTheme, setKnowledgeBaseTheme] = useState(null);
   
   // 新增的浮动按钮相关状态
-  const [projectInfoModalVisible, setProjectInfoModalVisible] = useState(false);
+  const [npcManageModalVisible, setNpcManageModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   
@@ -365,7 +365,7 @@ function ScriptEditor() {
 
   // 新增：打开项目信息编辑
   const handleOpenProjectInfo = () => {
-    setProjectInfoModalVisible(true);
+    setNpcManageModalVisible(true);
   };
 
   // 新增：保存项目信息
@@ -373,7 +373,7 @@ function ScriptEditor() {
     try {
       // 更新本地数据
       updateGlobalContext(projectInfoData);
-      setProjectInfoModalVisible(false);
+      setNpcManageModalVisible(false);
       message.success('项目信息已更新');
       
       // 自动保存到服务器
@@ -413,7 +413,7 @@ function ScriptEditor() {
 
   // 新增：取消项目信息编辑
   const handleCancelProjectInfo = () => {
-    setProjectInfoModalVisible(false);
+    setNpcManageModalVisible(false);
   };
 
   // 新增：生成大纲（GraphRAG）
@@ -721,9 +721,9 @@ function ScriptEditor() {
         onSave={updateNode}
       />
 
-      {/* 项目信息编辑模态框 */}
-      <ProjectInfoModal
-        visible={projectInfoModalVisible}
+      {/* NPC角色管理模态框 */}
+      <NPCManageModal
+        visible={npcManageModalVisible}
         projectInfo={treeData?.global_context}
         projectName={projectInfo?.name}
         onSave={handleSaveProjectInfo}

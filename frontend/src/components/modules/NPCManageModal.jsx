@@ -5,7 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 const { Text } = Typography;
 
-function ProjectInfoModal({ 
+function NPCManageModal({ 
   visible, 
   projectInfo, 
   onSave, 
@@ -247,4 +247,4 @@ function ProjectInfoModal({
   );
 }
 
-export default ProjectInfoModal;
+export default NPCManageModal;
