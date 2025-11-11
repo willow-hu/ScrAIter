@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Space, Typography, Input, Button, List, Card, message, Popconfirm, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Modal, Space, Typography, Input, Button, List, Card, message, Popconfirm, Divider, Upload } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -10,13 +10,15 @@ function NPCManageModal({
   projectInfo, 
   onSave, 
   onCancel,
-  projectName
+  projectId
 }) {
   const [form, setForm] = useState({});
   const [characters, setCharacters] = useState([]);
   const [editingCharacter, setEditingCharacter] = useState(null);
-  const [characterForm, setCharacterForm] = useState({ name: '', description: '', tone: '' });
+  const [characterForm, setCharacterForm] = useState({ name: '', description: '', tone: '', avatar: '' });
   const [showCharacterForm, setShowCharacterForm] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [npcPortraits, setNpcPortraits] = useState({});
 
   // 当modal打开时，初始化表单数据和角色列表
   useEffect(() => {
@@ -25,15 +27,19 @@ function NPCManageModal({
       // 从projectInfo中获取角色列表，如果没有则为空数组
       const characterList = projectInfo.character_list || [];
       setCharacters(characterList);
+      // 从projectInfo中获取npc立绘映射
+      const portraits = projectInfo.npc_portraits || {};
+      setNpcPortraits(portraits);
     }
   }, [visible, projectInfo]);
 
   // 处理保存
   const handleSave = () => {
-    // 将角色列表添加到表单数据中
+    // 将角色列表和npc立绘映射添加到表单数据中
     const saveData = {
       ...form,
-      character_list: characters
+      character_list: characters,
+      npc_portraits: npcPortraits
     };
     onSave(saveData);
   };
@@ -43,8 +49,9 @@ function NPCManageModal({
     setForm({});
     setCharacters([]);
     setEditingCharacter(null);
-    setCharacterForm({ name: '', description: '', tone: '' });
+    setCharacterForm({ name: '', description: '', tone: '', avatar: '' });
     setShowCharacterForm(false);
+    setNpcPortraits({});
     onCancel();
   };
 
@@ -56,19 +63,31 @@ function NPCManageModal({
   // 角色管理函数
   const handleAddCharacter = () => {
     setEditingCharacter(null);
-    setCharacterForm({ name: '', description: '', tone: '' });
+    setCharacterForm({ name: '', description: '', tone: '', avatar: '' });
     setShowCharacterForm(true);
   };
 
   const handleEditCharacter = (character, index) => {
     setEditingCharacter(index);
-    setCharacterForm({ ...character });
+    setCharacterForm({ 
+      name: character.name,
+      description: character.description,
+      tone: character.tone,
+      avatar: npcPortraits[character.name] || ''
+    });
     setShowCharacterForm(true);
   };
 
   const handleDeleteCharacter = (index) => {
+    const deletedCharacterName = characters[index].name;
     const newCharacters = characters.filter((_, i) => i !== index);
     setCharacters(newCharacters);
+    
+    // 删除对应的立绘映射
+    const newPortraits = { ...npcPortraits };
+    delete newPortraits[deletedCharacterName];
+    setNpcPortraits(newPortraits);
+    
     message.success('角色删除成功');
   };
 
@@ -100,15 +119,26 @@ function NPCManageModal({
     const newCharacter = {
       name: characterForm.name.trim(),
       description: characterForm.description.trim(),
-      tone: characterForm.tone.trim(),
-      avatar: ''
+      tone: characterForm.tone.trim()
     };
 
     let newCharacters;
     if (editingCharacter !== null) {
       // 编辑现有角色
+      const oldName = characters[editingCharacter].name;
       newCharacters = [...characters];
       newCharacters[editingCharacter] = newCharacter;
+      
+      // 如果名字改变了，需要更新npc_portraits映射
+      if (oldName !== newCharacter.name) {
+        const newPortraits = { ...npcPortraits };
+        if (newPortraits[oldName]) {
+          newPortraits[newCharacter.name] = newPortraits[oldName];
+          delete newPortraits[oldName];
+          setNpcPortraits(newPortraits);
+        }
+      }
+      
       message.success('角色更新成功');
     } else {
       // 添加新角色
@@ -119,13 +149,56 @@ function NPCManageModal({
     setCharacters(newCharacters);
     setShowCharacterForm(false);
     setEditingCharacter(null);
-    setCharacterForm({ name: '', description: '', tone: '' });
+    setCharacterForm({ name: '', description: '', tone: '', avatar: '' });
   };
 
   const handleCancelCharacter = () => {
     setShowCharacterForm(false);
     setEditingCharacter(null);
-    setCharacterForm({ name: '', description: '', tone: '' });
+    setCharacterForm({ name: '', description: '', tone: '', avatar: '' });
+  };
+
+  // 处理立绘上传
+  const handleAvatarUpload = async (file) => {
+    if (!characterForm.name.trim()) {
+      message.error('请先输入角色名称');
+      return false;
+    }
+
+    setUploadingAvatar(true);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`/api/v1/projects/${projectId}/assets/npc/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('上传失败');
+      }
+
+      const result = await response.json();
+      
+      // 更新npc_portraits映射
+      const newPortraits = { ...npcPortraits };
+      newPortraits[characterForm.name.trim()] = result.filename;
+      setNpcPortraits(newPortraits);
+      
+      // 更新characterForm的avatar字段
+      setCharacterForm(prev => ({ ...prev, avatar: result.filename }));
+      
+      message.success('立绘上传成功');
+    } catch (error) {
+      message.error('立绘上传失败');
+      console.error('Upload error:', error);
+    } finally {
+      setUploadingAvatar(false);
+    }
+
+    return false;
   };
 
   return (
@@ -189,6 +262,9 @@ function NPCManageModal({
                       <div>
                         <div><Text type="secondary">描述：</Text>{character.description}</div>
                         <div><Text type="secondary">口吻：</Text>{character.tone}</div>
+                        {npcPortraits[character.name] && (
+                          <div><Text type="secondary">立绘：</Text>{npcPortraits[character.name]}</div>
+                        )}
                       </div>
                     }
                   />
@@ -230,6 +306,35 @@ function NPCManageModal({
                   onChange={(e) => setCharacterForm(prev => ({ ...prev, tone: e.target.value }))}
                   placeholder="输入角色口吻，如：庄重、亲切、幽默等"
                 />
+              </div>
+              <div>
+                <Text strong>上传立绘（可选）</Text>
+                <div style={{ marginTop: 8 }}>
+                  <Upload
+                    beforeUpload={handleAvatarUpload}
+                    showUploadList={false}
+                    accept="image/*"
+                    disabled={!characterForm.name.trim()}
+                  >
+                    <Button 
+                      icon={<UploadOutlined />} 
+                      loading={uploadingAvatar}
+                      disabled={!characterForm.name.trim()}
+                    >
+                      {uploadingAvatar ? '上传中...' : '选择图片'}
+                    </Button>
+                  </Upload>
+                  {!characterForm.name.trim() && (
+                    <div style={{ color: '#999', fontSize: '12px', marginTop: 4 }}>
+                      请先输入角色名称后再上传立绘
+                    </div>
+                  )}
+                  {characterForm.avatar && (
+                    <div style={{ color: '#52c41a', fontSize: '12px', marginTop: 4 }}>
+                      已上传：{characterForm.avatar}
+                    </div>
+                  )}
+                </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <Space>

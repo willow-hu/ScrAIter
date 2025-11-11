@@ -725,7 +725,7 @@ function ScriptEditor() {
       <NPCManageModal
         visible={npcManageModalVisible}
         projectInfo={treeData?.global_context}
-        projectName={projectInfo?.name}
+        projectId={projectId}
         onSave={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}
       />
