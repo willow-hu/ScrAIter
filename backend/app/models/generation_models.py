@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class OutlineGenerationRequest(BaseModel):
     """大纲生成请求"""
+    project_id: str
     kb_name: str
     
 class OutlineGenerationResponse(BaseModel):

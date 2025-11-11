@@ -143,22 +143,24 @@ async def get_rag_sources(generation_id: str):
 async def generate_outline(request: OutlineGenerationRequest):
     """
     生成剧本大纲（基于GraphRAG）
-    输入：知识库名称
+    输入：项目ID和知识库名称
     输出：大纲结构JSON和保存路径
     """
     try:
+        if not request.project_id or not request.project_id.strip():
+            raise HTTPException(status_code=400, detail="项目ID不能为空")
+        
         if not request.kb_name or not request.kb_name.strip():
             raise HTTPException(status_code=400, detail="知识库名称不能为空")
         
-        result = outline_generation_service.generate_outline(request.kb_name.strip())
-        
-        if not result["success"]:
-            raise HTTPException(status_code=400, detail=result["message"])
+        result = outline_generation_service.generate_outline(
+            request.project_id.strip(),
+            request.kb_name.strip()
+        )
         
         return OutlineGenerationResponse(
-            success=result["success"],
-            message=result["message"],
-            outline_path=result.get("outline_path"),
+            success=True,
+            message="大纲生成成功",
             structure=result.get("structure"),
             global_context=result.get("global_context")
         )

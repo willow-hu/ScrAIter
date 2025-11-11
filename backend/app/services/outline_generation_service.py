@@ -174,7 +174,7 @@ class OutlineGenerationService:
             logger.error(f"调用大模型失败: {e}")
             raise
     
-    def parse_llm_response(self, response: str) -> Dict[str, Any]:
+    def parse_llm_response(self, response: str) -> list:
         """
         解析大模型返回的JSON
         
@@ -182,7 +182,7 @@ class OutlineGenerationService:
             response: 大模型返回的文本
             
         Returns:
-            解析后的字典
+            解析后的节点列表
         """
         try:
             # 尝试提取JSON部分（移除可能的markdown代码块标记）
@@ -199,16 +199,18 @@ class OutlineGenerationService:
             
             response = response.strip()
             
-            # 解析JSON
+            # 解析JSON - 现在期望是一个列表
             outline_data = json.loads(response)
             
-            # 验证必要字段
-            if "global_context" not in outline_data:
-                raise ValueError("生成的大纲缺少 'global_context' 字段")
-            if "structure" not in outline_data:
-                raise ValueError("生成的大纲缺少 'structure' 字段")
+            # 验证是列表
+            if not isinstance(outline_data, list):
+                raise ValueError("生成的大纲必须是一个列表")
             
-            logger.info("成功解析大模型返回的JSON")
+            # 验证列表不为空
+            if len(outline_data) == 0:
+                raise ValueError("生成的大纲列表为空")
+            
+            logger.info(f"成功解析大模型返回的JSON，共 {len(outline_data)} 个节点")
             return outline_data
             
         except json.JSONDecodeError as e:
@@ -218,50 +220,62 @@ class OutlineGenerationService:
         except Exception as e:
             logger.error(f"解析响应失败: {e}")
             raise
-    
-    def post_process_outline(self, outline_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    def post_process_outline(self, outline_data: list) -> list:
         """
         LLM生成大纲后的后处理函数
         在保存到文件前对大纲数据进行修改和调整
         
         Args:
-            outline_data: LLM生成的原始大纲数据
+            outline_data: LLM生成的原始大纲数据（节点列表）
             
         Returns:
             处理后的大纲数据
         """
-        for scene in outline_data.get("structure", []):
-            if "role" not in scene:
-                scene["role"] = ""
-            if "npc_pic" not in scene:
-                scene["npc_pic"] = ""
-            if "bg" not in scene:
-                scene["bg"] = ""
-            if "user" not in scene:
-                scene["user"] = ""
+        for node in outline_data:
+            # 添加缺失的字段
+            if "role" not in node:
+                node["role"] = ""
+            if "npc_pic" not in node:
+                node["npc_pic"] = ""
+            if "bg" not in node:
+                node["bg"] = ""
+            if "user" not in node:
+                node["user"] = ""
         return outline_data
     
-    def save_outline(self, kb_name: str, outline_data: Dict[str, Any]) -> str:
+    def save_outline(self, project_id: str, outline_data: list) -> str:
         """
         保存大纲到项目目录
         
         Args:
-            kb_name: 知识库名称
-            outline_data: 大纲数据
+            project_id: 项目ID
+            outline_data: 大纲数据（节点列表）
             
         Returns:
             保存的文件路径
         """
         try:
-            # 创建项目目录
-            project_dir = os.path.join(self.projects_path, kb_name)
-            os.makedirs(project_dir, exist_ok=True)
+            # 检查项目目录是否存在
+            project_dir = os.path.join(self.projects_path, project_id)
+            if not os.path.exists(project_dir):
+                raise FileNotFoundError(f"项目目录不存在: {project_id}")
+            
+            # 构建完整的脚本数据结构
+            script_data = {
+                "global_context": {
+                    "character_list": [],
+                    "site_name": "",
+                    "other_requirements": ""
+                },
+                "structure": outline_data
+            }
             
             # 保存为script.json
             output_path = os.path.join(project_dir, "script.json")
             
             with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(outline_data, f, ensure_ascii=False, indent=2)
+                json.dump(script_data, f, ensure_ascii=False, indent=2)
             
             logger.info(f"大纲已保存到: {output_path}")
             return output_path
@@ -270,18 +284,19 @@ class OutlineGenerationService:
             logger.error(f"保存大纲失败: {e}")
             raise
     
-    def generate_outline(self, kb_name: str) -> Dict[str, Any]:
+    def generate_outline(self, project_id: str, kb_name: str) -> Dict[str, Any]:
         """
         生成剧本大纲的主流程
         
         Args:
+            project_id: 项目ID
             kb_name: 知识库名称
             
         Returns:
             包含成功状态、消息和生成结果的字典
         """
         try:
-            logger.info(f"开始为知识库 '{kb_name}' 生成大纲")
+            logger.info(f"开始为项目 '{project_id}' (知识库: '{kb_name}') 生成大纲")
             
             # 1. 加载提示词模板
             prompt_template = self.load_prompt_template()
@@ -289,27 +304,31 @@ class OutlineGenerationService:
             # 2. 加载图数据
             graph_data = self.load_graph_data(kb_name)
             
-            # 3. 格式化实体和关系数据（分开）
+            # 3. 格式化实体和关系数据
             entities_text = self.format_entities_for_prompt(graph_data['entities'])
             relationships_text = self.format_relationships_for_prompt(graph_data['relationships'])
             
-            # 4. 调用大模型（分三次发送：模板、实体、关系）
+            # 4. 调用大模型
             llm_response = self.call_llm_for_outline(prompt_template, entities_text, relationships_text)
             
-            # 5. 解析响应
-            outline_data = self.parse_llm_response(llm_response)
+            # 5. 解析响应 - 现在返回节点列表
+            outline_nodes = self.parse_llm_response(llm_response)
             
-            # 5+. 后处理大纲（在保存前修改）
-            outline_data = self.post_process_outline(outline_data)
+            # 6. 后处理大纲（在保存前修改）
+            outline_nodes = self.post_process_outline(outline_nodes)
             
-            # 6. 保存大纲
-            output_path = self.save_outline(kb_name, outline_data)
+            # 7. 保存大纲到项目目录
+            output_path = self.save_outline(project_id, outline_nodes)
             
-            logger.info(f"大纲生成成功: {len(outline_data.get('structure', []))} 个节点")
+            logger.info(f"大纲生成成功: {len(outline_nodes)} 个节点")
             
             return {
-                "structure": outline_data.get("structure", []),
-                "global_context": outline_data.get("global_context", {})
+                "structure": outline_nodes,
+                "global_context": {
+                    "character_list": [],
+                    "site_name": "",
+                    "other_requirements": ""
+                }
             }
             
         except FileNotFoundError as e:
