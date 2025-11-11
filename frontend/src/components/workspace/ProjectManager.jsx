@@ -75,19 +75,16 @@ function ProjectManager() {
 
   // 项目删除成功回调
   const handleDeleteSuccess = () => {
-    message.success('项目删除成功');
     handleRefresh();
   };
 
   // 项目重命名成功回调
   const handleRenameSuccess = () => {
-    message.success('项目重命名成功');
     handleRefresh();
   };
 
   // 项目复制成功回调
   const handleDuplicateSuccess = () => {
-    message.success('项目复制成功');
     handleRefresh();
   };
 

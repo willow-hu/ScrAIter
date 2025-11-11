@@ -11,6 +11,8 @@ function NodeEditModal({
   visible, 
   node, 
   treeData, 
+  projectInfo,
+  projectId,
   onClose, 
   onSave 
 }) {
@@ -84,7 +86,9 @@ function NodeEditModal({
           id: node.id,
           character: nodeForm.character // 添加选中的角色
         },
-        global_context: treeData.global_context,
+        global_context: {
+          character_list: projectInfo?.character_list || []
+        },
         word_count: wordCount // 添加字数参数
       };
 
@@ -365,7 +369,7 @@ function NodeEditModal({
                       style={{ width: '100%' }}
                       size="small"
                     >
-                      {(treeData?.global_context?.character_list || []).map(character => (
+                      {(projectInfo?.character_list || []).map(character => (
                         <Select.Option key={character.name} value={character.name}>
                           <span>{character.name}</span>
                         </Select.Option>

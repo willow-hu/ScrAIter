@@ -371,41 +371,40 @@ function ScriptEditor() {
   // 新增：保存项目信息
   const handleSaveProjectInfo = async (projectInfoData) => {
     try {
-      // 更新本地数据
-      updateGlobalContext(projectInfoData);
       setNpcManageModalVisible(false);
       
-      // 自动保存到服务器
+      // 保存到project_info（后端API会更新project_info.json）
       const currentProjectId = getCurrentProjectId();
       if (currentProjectId) {
-        // 构建保存数据
-        const saveData = {
-          global_context: {
-            character_list: projectInfoData.character_list || [],
-            site_name: projectInfoData.site_name || "",
-            other_requirements: projectInfoData.other_requirements || ""
-          },
-          structure: treeData?.structure || []
-        };
-        
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}/script`, {
-          method: 'POST',
+        // 更新project_info
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(saveData)
+          body: JSON.stringify({
+            character_list: projectInfoData.character_list || [],
+            npc_portraits: projectInfoData.npc_portraits || {}
+          })
         });
         
         if (response.ok) {
-          message.success('项目信息已更新并保存');
+          // 重新加载项目信息
+          const infoResponse = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}`);
+          if (infoResponse.ok) {
+            const info = await infoResponse.json();
+            setProjectInfo(info);
+          }
+          message.success('角色信息已保存');
         } else {
-          message.warning('项目信息已更新，但自动保存失败，请手动点击保存按钮');
+          const errorData = await response.json();
+          throw new Error(errorData.detail || '保存失败');
         }
       }
       
     } catch (error) {
       console.error('保存项目信息失败:', error);
-      message.warning('自动保存失败，请手动点击保存按钮');
+      message.error(`保存失败: ${error.message}`);
     }
   };
 
@@ -715,6 +714,8 @@ function ScriptEditor() {
         visible={nodeEditModalVisible}
         node={selectedNode}
         treeData={treeData}
+        projectInfo={projectInfo}
+        projectId={projectId}
         onClose={handleCloseNodeEdit}
         onSave={updateNode}
       />
@@ -722,7 +723,7 @@ function ScriptEditor() {
       {/* NPC角色管理模态框 */}
       <NPCManageModal
         visible={npcManageModalVisible}
-        projectInfo={treeData?.global_context}
+        projectInfo={projectInfo}
         projectId={projectId}
         onSave={handleSaveProjectInfo}
         onCancel={handleCancelProjectInfo}

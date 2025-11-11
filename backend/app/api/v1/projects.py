@@ -74,6 +74,10 @@ async def update_project(project_id: str, request: ProjectUpdate):
             update_data["description"] = request.description
         if request.thumbnail is not None:
             update_data["thumbnail"] = request.thumbnail
+        if request.character_list is not None:
+            update_data["character_list"] = request.character_list
+        if request.npc_portraits is not None:
+            update_data["npc_portraits"] = request.npc_portraits
         
         if not update_data:
             raise HTTPException(status_code=400, detail="没有提供要更新的数据")

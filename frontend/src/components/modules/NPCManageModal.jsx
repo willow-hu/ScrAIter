@@ -23,12 +23,15 @@ function NPCManageModal({
   // 当modal打开时，初始化表单数据和角色列表
   useEffect(() => {
     if (visible && projectInfo) {
+      console.log('NPCManageModal - 初始化数据:', projectInfo);
       setForm({ ...projectInfo });
       // 从projectInfo中获取角色列表，如果没有则为空数组
       const characterList = projectInfo.character_list || [];
+      console.log('NPCManageModal - 角色列表:', characterList);
       setCharacters(characterList);
       // 从projectInfo中获取npc立绘映射
       const portraits = projectInfo.npc_portraits || {};
+      console.log('NPCManageModal - 立绘映射:', portraits);
       setNpcPortraits(portraits);
     }
   }, [visible, projectInfo]);
