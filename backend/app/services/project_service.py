@@ -382,8 +382,11 @@ class ProjectService:
             project_dir = self._get_project_dir(project_id)
             script_file = os.path.join(project_dir, "script.json")
             
+            # 清理数据：移除 position 字段（position 仅用于前端渲染，不应保存到后端）
+            cleaned_data = self._clean_script_data(data)
+            
             with open(script_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
             
             # 更新项目的lastModified时间
             project_info = self.get_project(project_id)
@@ -428,6 +431,34 @@ class ProjectService:
         except Exception as e:
             print(f"获取知识库项目失败: {e}")
             return []
+    
+    def _clean_script_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        清理脚本数据，移除不应保存的字段
+        
+        Args:
+            data: 原始脚本数据
+            
+        Returns:
+            清理后的脚本数据
+        """
+        if not isinstance(data, dict):
+            return data
+        
+        cleaned_data = {}
+        
+        # 复制所有顶层字段
+        for key, value in data.items():
+            if key == "structure" and isinstance(value, list):
+                # 清理 structure 数组中的每个节点
+                cleaned_data["structure"] = [
+                    {k: v for k, v in node.items() if k != "position"}
+                    for node in value
+                ]
+            else:
+                cleaned_data[key] = value
+        
+        return cleaned_data
 
 # 创建全局实例
 project_service = ProjectService()

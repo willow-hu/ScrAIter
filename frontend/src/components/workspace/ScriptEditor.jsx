@@ -129,6 +129,7 @@ function ScriptEditor() {
   };
 
   // 为树数据添加自动布局位置
+  // 注意：position 字段仅用于前端画布渲染，不会保存到后端
   const addAutoLayoutPositions = (data) => {
     if (!data || !data.structure) return data;
     
@@ -175,7 +176,8 @@ function ScriptEditor() {
         return;
       }
       
-      // 过滤掉position字段，只保留需要保存的字段
+      // 【重要】过滤掉 position 字段，只保留需要保存的字段
+      // position 仅用于前端画布渲染，不应保存到后端
       const filteredStructure = (treeData.structure || []).map(node => {
         const { position, ...nodeWithoutPosition } = node;
         return nodeWithoutPosition;
@@ -480,7 +482,8 @@ function ScriptEditor() {
       try {
         const kbName = getCurrentKnowledgeBaseName();
         if (kbName && treeData) {
-          // 过滤掉position字段
+          // 【重要】过滤掉 position 字段
+          // position 仅用于前端画布渲染，不应保存到后端
           const filteredStructure = (treeData.structure || []).map(node => {
             const { position, ...nodeWithoutPosition } = node;
             return nodeWithoutPosition;
