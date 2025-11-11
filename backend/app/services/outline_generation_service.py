@@ -261,13 +261,8 @@ class OutlineGenerationService:
             if not os.path.exists(project_dir):
                 raise FileNotFoundError(f"项目目录不存在: {project_id}")
             
-            # 构建完整的脚本数据结构
+            # 构建完整的脚本数据结构（只包含structure）
             script_data = {
-                "global_context": {
-                    "character_list": [],
-                    "site_name": "",
-                    "other_requirements": ""
-                },
                 "structure": outline_data
             }
             
@@ -323,12 +318,7 @@ class OutlineGenerationService:
             logger.info(f"大纲生成成功: {len(outline_nodes)} 个节点")
             
             return {
-                "structure": outline_nodes,
-                "global_context": {
-                    "character_list": [],
-                    "site_name": "",
-                    "other_requirements": ""
-                }
+                "structure": outline_nodes
             }
             
         except FileNotFoundError as e:

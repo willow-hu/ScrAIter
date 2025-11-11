@@ -41,15 +41,15 @@ class CharacterListResponse(BaseModel):
 async def get_characters(project_id: str):
     """获取项目的角色列表"""
     try:
-        # 加载项目脚本数据
-        script_data = project_service.load_script(project_id)
+        # 加载项目信息
+        project_info = project_service.get_project(project_id)
         
-        if not script_data:
+        if not project_info:
             # 如果项目不存在，返回404
             raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取角色列表
-        character_list = script_data.get("global_context", {}).get("character_list", [])
+        character_list = project_info.get("character_list", [])
         
         # 转换为Character模型
         characters = [Character(**char) for char in character_list]
@@ -68,15 +68,14 @@ async def get_characters(project_id: str):
 async def add_character(project_id: str, request: CharacterCreateRequest):
     """添加新角色"""
     try:
-        # 加载项目脚本数据
-        script_data = project_service.load_script(project_id)
+        # 加载项目信息
+        project_info = project_service.get_project(project_id)
         
-        if not script_data:
+        if not project_info:
             raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取当前角色列表
-        global_context = script_data.get("global_context", {})
-        character_list = global_context.get("character_list", [])
+        character_list = project_info.get("character_list", [])
         
         # 检查角色名称是否已存在
         existing_names = [char.get("name", "") for char in character_list]
@@ -92,13 +91,12 @@ async def add_character(project_id: str, request: CharacterCreateRequest):
         }
         character_list.append(new_character)
         
-        # 更新数据
-        global_context["character_list"] = character_list
-        script_data["global_context"] = global_context
+        # 更新项目信息
+        updated_project = project_service.update_project(project_id, {
+            "character_list": character_list
+        })
         
-        # 保存到文件
-        success = project_service.save_script(project_id, script_data)
-        if not success:
+        if not updated_project:
             raise HTTPException(status_code=500, detail="保存角色数据失败")
         
         return JSONResponse(
@@ -119,15 +117,14 @@ async def add_character(project_id: str, request: CharacterCreateRequest):
 async def update_character(project_id: str, character_name: str, request: CharacterUpdateRequest):
     """更新角色信息"""
     try:
-        # 加载项目脚本数据
-        script_data = project_service.load_script(project_id)
+        # 加载项目信息
+        project_info = project_service.get_project(project_id)
         
-        if not script_data:
+        if not project_info:
             raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取当前角色列表
-        global_context = script_data.get("global_context", {})
-        character_list = global_context.get("character_list", [])
+        character_list = project_info.get("character_list", [])
         
         # 查找要更新的角色
         character_index = -1
@@ -158,12 +155,13 @@ async def update_character(project_id: str, character_name: str, request: Charac
         
         # 更新数据
         character_list[character_index] = character
-        global_context["character_list"] = character_list
-        script_data["global_context"] = global_context
         
-        # 保存到文件
-        success = project_service.save_script(project_id, script_data)
-        if not success:
+        # 更新项目信息
+        updated_project = project_service.update_project(project_id, {
+            "character_list": character_list
+        })
+        
+        if not updated_project:
             raise HTTPException(status_code=500, detail="保存角色数据失败")
         
         return JSONResponse(
@@ -184,15 +182,14 @@ async def update_character(project_id: str, character_name: str, request: Charac
 async def delete_character(project_id: str, character_name: str):
     """删除角色"""
     try:
-        # 加载项目脚本数据
-        script_data = project_service.load_script(project_id)
+        # 加载项目信息
+        project_info = project_service.get_project(project_id)
         
-        if not script_data:
+        if not project_info:
             raise HTTPException(status_code=404, detail=f"项目 '{project_id}' 不存在")
         
         # 获取当前角色列表
-        global_context = script_data.get("global_context", {})
-        character_list = global_context.get("character_list", [])
+        character_list = project_info.get("character_list", [])
         
         # 查找要删除的角色
         character_index = -1
@@ -207,13 +204,12 @@ async def delete_character(project_id: str, character_name: str):
         # 删除角色
         deleted_character = character_list.pop(character_index)
         
-        # 更新数据
-        global_context["character_list"] = character_list
-        script_data["global_context"] = global_context
+        # 更新项目信息
+        updated_project = project_service.update_project(project_id, {
+            "character_list": character_list
+        })
         
-        # 保存到文件
-        success = project_service.save_script(project_id, script_data)
-        if not success:
+        if not updated_project:
             raise HTTPException(status_code=500, detail="保存角色数据失败")
         
         return JSONResponse(

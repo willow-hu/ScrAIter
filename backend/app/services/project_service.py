@@ -104,7 +104,8 @@ class ProjectService:
                 "createdTime": datetime.now().isoformat(),
                 "lastModified": datetime.now().isoformat(),
                 "thumbnail": "",
-                "version": 1
+                "version": 1,
+                "character_list": []  # 添加角色列表字段
             }
             
             # 保存项目信息到 project_info.json
@@ -114,11 +115,6 @@ class ProjectService:
             
             # 创建空的脚本文件
             script_data = {
-                "global_context": {
-                    "character_list": [],
-                    "site_name": "",
-                    "other_requirements": ""
-                },
                 "structure": []
             }
             script_file = os.path.join(project_dir, "script.json")
@@ -134,7 +130,8 @@ class ProjectService:
                 "createdTime": project_info["createdTime"],
                 "lastModified": project_info["lastModified"],
                 "thumbnail": "",
-                "description": description
+                "description": description,
+                "character_list": []
             })
             self._save_metadata(metadata)
             
@@ -188,7 +185,7 @@ class ProjectService:
         
         Args:
             project_id: 项目ID
-            data: 要更新的数据（可包含name, description, thumbnail等）
+            data: 要更新的数据（可包含name, description, thumbnail, character_list等）
             
         Returns:
             更新后的项目信息，如果项目不存在则返回None
@@ -199,7 +196,7 @@ class ProjectService:
                 return None
             
             # 更新允许的字段
-            updatable_fields = ["name", "description", "thumbnail"]
+            updatable_fields = ["name", "description", "thumbnail", "character_list"]
             for field in updatable_fields:
                 if field in data:
                     project_info[field] = data[field]
@@ -218,12 +215,15 @@ class ProjectService:
             metadata = self._load_metadata()
             for i, proj in enumerate(metadata["projects"]):
                 if proj["id"] == project_id:
-                    metadata["projects"][i].update({
-                        "name": project_info["name"],
-                        "description": project_info["description"],
-                        "thumbnail": project_info["thumbnail"],
-                        "lastModified": project_info["lastModified"]
-                    })
+                    if "name" in data:
+                        metadata["projects"][i]["name"] = project_info["name"]
+                    if "description" in data:
+                        metadata["projects"][i]["description"] = project_info["description"]
+                    if "thumbnail" in data:
+                        metadata["projects"][i]["thumbnail"] = project_info["thumbnail"]
+                    if "character_list" in data:
+                        metadata["projects"][i]["character_list"] = project_info["character_list"]
+                    metadata["projects"][i]["lastModified"] = project_info["lastModified"]
                     break
             self._save_metadata(metadata)
             
@@ -293,7 +293,8 @@ class ProjectService:
                 "createdTime": datetime.now().isoformat(),
                 "lastModified": datetime.now().isoformat(),
                 "thumbnail": "",
-                "version": 1
+                "version": 1,
+                "character_list": source_project.get("character_list", [])  # 复制角色列表
             }
             
             # 保存新项目信息
@@ -325,7 +326,8 @@ class ProjectService:
                 "createdTime": new_project_info["createdTime"],
                 "lastModified": new_project_info["lastModified"],
                 "thumbnail": "",
-                "description": new_project_info["description"]
+                "description": new_project_info["description"],
+                "character_list": new_project_info["character_list"]
             })
             self._save_metadata(metadata)
             

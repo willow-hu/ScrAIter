@@ -209,21 +209,18 @@ class RAGService:
                     with open(script_file_path, 'r', encoding='utf-8') as f:
                         existing_data = json.load(f)
                     
-                    # 保留现有的global_context，只更新structure
+                    # 只保留structure，移除global_context
                     script_data = {
-                        "global_context": existing_data.get("global_context", global_context),
                         "structure": []  # 暂时置空，等待GraphRAG实现
                     }
                 except (json.JSONDecodeError, Exception):
                     # 如果文件损坏，创建新的
                     script_data = {
-                        "global_context": global_context,
                         "structure": []  # 暂时置空，等待GraphRAG实现
                     }
             else:
                 # 文件不存在，创建新的
                 script_data = {
-                    "global_context": global_context,
                     "structure": []  # 暂时置空，等待GraphRAG实现
                 }
             
@@ -243,7 +240,6 @@ class RAGService:
             return {
                 "generation_id": generation_id,
                 "structure": script_data["structure"],
-                "global_context": script_data["global_context"],
                 "message": f"已在 shared/projects/{kb_name}/ 目录下创建/更新 {script_file_name} 文件",
                 "file_path": script_file_path
             }
