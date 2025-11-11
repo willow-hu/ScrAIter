@@ -176,11 +176,23 @@ function NPCManageModal({
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error('上传失败');
+      // 检查响应是否有内容
+      const text = await response.text();
+      if (!text) {
+        throw new Error('服务器返回空响应');
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (e) {
+        console.error('JSON解析失败:', text);
+        throw new Error('服务器返回了无效的响应格式');
+      }
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || `上传失败 (状态码: ${response.status})`);
+      }
       
       // 更新npc_portraits映射
       const newPortraits = { ...npcPortraits };
@@ -192,7 +204,7 @@ function NPCManageModal({
       
       message.success('立绘上传成功');
     } catch (error) {
-      message.error('立绘上传失败');
+      message.error(`立绘上传失败: ${error.message}`);
       console.error('Upload error:', error);
     } finally {
       setUploadingAvatar(false);
@@ -308,7 +320,7 @@ function NPCManageModal({
                 />
               </div>
               <div>
-                <Text strong>上传立绘（可选）</Text>
+                <Text strong>上传立绘（可稍后上传）</Text>
                 <div style={{ marginTop: 8 }}>
                   <Upload
                     beforeUpload={handleAvatarUpload}
