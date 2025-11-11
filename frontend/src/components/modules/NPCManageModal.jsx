@@ -10,7 +10,7 @@ function NPCManageModal({
   projectInfo, 
   onSave, 
   onCancel,
-  projectName // 新增：项目名称，用于调用角色管理API
+  projectName
 }) {
   const [form, setForm] = useState({});
   const [characters, setCharacters] = useState([]);

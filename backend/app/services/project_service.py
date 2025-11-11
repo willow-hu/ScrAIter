@@ -68,6 +68,12 @@ class ProjectService:
         assets_dir = os.path.join(project_dir, "assets")
         os.makedirs(assets_dir, exist_ok=True)
         
+        # 创建npc和bg子目录
+        npc_dir = os.path.join(assets_dir, "npc")
+        bg_dir = os.path.join(assets_dir, "bg")
+        os.makedirs(npc_dir, exist_ok=True)
+        os.makedirs(bg_dir, exist_ok=True)
+        
         return project_dir
     
     def create_project(self, name: str, kb_id: str, description: str = "") -> Dict[str, Any]:
