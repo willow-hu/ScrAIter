@@ -130,7 +130,7 @@ function ProjectInfoModal({
 
   return (
     <Modal
-      title="项目信息"
+      title="角色管理"
       open={visible}
       onOk={handleSave}
       onCancel={handleCancel}
@@ -140,32 +140,8 @@ function ProjectInfoModal({
       destroyOnHidden={true}
     >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
-        {/* 基本信息 */}
-        {/* <div>
-          <Typography.Text strong>景点名称</Typography.Text>
-          <Input
-            value={form.site_name || ''}
-            onChange={(e) => handleFieldChange('site_name', e.target.value)}
-            placeholder="输入景点名称"
-          />
-        </div> */}
-        
-        {/* <div>
-          <Typography.Text strong>其他要求</Typography.Text>
-          <TextArea
-            value={form.other_requirements || ''}
-            onChange={(e) => handleFieldChange('other_requirements', e.target.value)}
-            placeholder="（非必填）可添加您对大纲的要求，这些要求将添加进系统预设的提示词中。"
-            rows={3}
-          />
-        </div> */}
-
-        <Divider />
-
-        {/* 角色管理 */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Typography.Text strong>角色管理</Typography.Text>
             <Button 
               type="primary" 
               icon={<PlusOutlined />} 
