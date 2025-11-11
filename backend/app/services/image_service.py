@@ -5,6 +5,7 @@ import os
 import json
 import uuid
 import shutil
+import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from PIL import Image
@@ -12,6 +13,8 @@ from fastapi import UploadFile
 
 from app.core.config import settings
 from app.models.image_models import ImageInfo, ImageListResponse, DeleteImageResponse, ImageUploadResponse
+
+logger = logging.getLogger(__name__)
 
 class ImageService:
     def __init__(self):
@@ -240,7 +243,10 @@ class ImageService:
     async def upload_npc_image(self, project_id: str, file: UploadFile) -> ImageUploadResponse:
         """上传NPC立绘"""
         try:
+            logger.info(f"开始上传NPC立绘 - 项目ID: {project_id}, 文件名: {file.filename}")
+            
             if not file.filename:
+                logger.warning(f"NPC立绘上传失败 - 项目ID: {project_id}, 原因: 文件名为空")
                 return ImageUploadResponse(
                     success=False,
                     filename="",
@@ -250,6 +256,7 @@ class ImageService:
             # 验证文件类型
             file_extension = os.path.splitext(file.filename.lower())[1]
             if file_extension not in self.supported_formats:
+                logger.warning(f"NPC立绘上传失败 - 项目ID: {project_id}, 文件: {file.filename}, 原因: 不支持的文件格式 {file_extension}")
                 return ImageUploadResponse(
                     success=False,
                     filename="",
@@ -258,6 +265,7 @@ class ImageService:
             
             # 读取文件内容
             contents = await file.read()
+            logger.info(f"读取文件内容成功 - 项目ID: {project_id}, 文件: {file.filename}, 大小: {len(contents)} 字节")
             
             # 验证是否为有效图片
             try:
@@ -265,7 +273,9 @@ class ImageService:
                 image = Image.open(file.file)
                 width, height = image.size
                 image.verify()
-            except Exception:
+                logger.info(f"图片验证成功 - 项目ID: {project_id}, 文件: {file.filename}, 尺寸: {width}x{height}")
+            except Exception as e:
+                logger.error(f"图片验证失败 - 项目ID: {project_id}, 文件: {file.filename}, 错误: {str(e)}")
                 return ImageUploadResponse(
                     success=False,
                     filename="",
@@ -278,6 +288,7 @@ class ImageService:
             # 保存文件
             npc_dir = self.get_npc_dir(project_id)
             file_path = os.path.join(npc_dir, filename)
+            logger.info(f"保存NPC立绘文件 - 路径: {file_path}")
             
             file.file.seek(0)
             with open(file_path, 'wb') as f:
@@ -292,6 +303,7 @@ class ImageService:
                 "dimensions": {"width": width, "height": height}
             }
             self.save_asset_metadata(project_id, "npc", metadata)
+            logger.info(f"NPC立绘上传成功 - 项目ID: {project_id}, 文件名: {filename}, 大小: {len(contents)} 字节")
             
             return ImageUploadResponse(
                 success=True,
@@ -301,6 +313,7 @@ class ImageService:
             )
             
         except Exception as e:
+            logger.error(f"NPC立绘上传异常 - 项目ID: {project_id}, 文件: {file.filename if file.filename else 'Unknown'}, 错误: {str(e)}", exc_info=True)
             return ImageUploadResponse(
                 success=False,
                 filename="",
@@ -395,7 +408,10 @@ class ImageService:
     async def upload_bg_image(self, project_id: str, file: UploadFile) -> ImageUploadResponse:
         """上传背景图片"""
         try:
+            logger.info(f"开始上传背景图片 - 项目ID: {project_id}, 文件名: {file.filename}")
+            
             if not file.filename:
+                logger.warning(f"背景图片上传失败 - 项目ID: {project_id}, 原因: 文件名为空")
                 return ImageUploadResponse(
                     success=False,
                     filename="",
@@ -405,6 +421,7 @@ class ImageService:
             # 验证文件类型
             file_extension = os.path.splitext(file.filename.lower())[1]
             if file_extension not in self.supported_formats:
+                logger.warning(f"背景图片上传失败 - 项目ID: {project_id}, 文件: {file.filename}, 原因: 不支持的文件格式 {file_extension}")
                 return ImageUploadResponse(
                     success=False,
                     filename="",
@@ -413,6 +430,7 @@ class ImageService:
             
             # 读取文件内容
             contents = await file.read()
+            logger.info(f"读取文件内容成功 - 项目ID: {project_id}, 文件: {file.filename}, 大小: {len(contents)} 字节")
             
             # 验证是否为有效图片
             try:
@@ -420,7 +438,9 @@ class ImageService:
                 image = Image.open(file.file)
                 width, height = image.size
                 image.verify()
-            except Exception:
+                logger.info(f"图片验证成功 - 项目ID: {project_id}, 文件: {file.filename}, 尺寸: {width}x{height}")
+            except Exception as e:
+                logger.error(f"图片验证失败 - 项目ID: {project_id}, 文件: {file.filename}, 错误: {str(e)}")
                 return ImageUploadResponse(
                     success=False,
                     filename="",
@@ -429,10 +449,12 @@ class ImageService:
             
             # 生成唯一文件名
             filename = self.generate_bg_filename(project_id, file_extension)
+            logger.info(f"生成背景图片文件名 - 项目ID: {project_id}, 生成的文件名: {filename}")
             
             # 保存文件
             bg_dir = self.get_bg_dir(project_id)
             file_path = os.path.join(bg_dir, filename)
+            logger.info(f"保存背景图片文件 - 路径: {file_path}")
             
             file.file.seek(0)
             with open(file_path, 'wb') as f:
@@ -447,6 +469,7 @@ class ImageService:
                 "dimensions": {"width": width, "height": height}
             }
             self.save_asset_metadata(project_id, "bg", metadata)
+            logger.info(f"背景图片上传成功 - 项目ID: {project_id}, 文件名: {filename}, 大小: {len(contents)} 字节")
             
             return ImageUploadResponse(
                 success=True,
@@ -456,6 +479,7 @@ class ImageService:
             )
             
         except Exception as e:
+            logger.error(f"背景图片上传异常 - 项目ID: {project_id}, 文件: {file.filename if file.filename else 'Unknown'}, 错误: {str(e)}", exc_info=True)
             return ImageUploadResponse(
                 success=False,
                 filename="",

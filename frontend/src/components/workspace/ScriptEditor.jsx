@@ -374,7 +374,6 @@ function ScriptEditor() {
       // 更新本地数据
       updateGlobalContext(projectInfoData);
       setNpcManageModalVisible(false);
-      message.success('项目信息已更新');
       
       // 自动保存到服务器
       const currentProjectId = getCurrentProjectId();
@@ -406,7 +405,6 @@ function ScriptEditor() {
       
     } catch (error) {
       console.error('保存项目信息失败:', error);
-      message.success('项目信息已更新');
       message.warning('自动保存失败，请手动点击保存按钮');
     }
   };

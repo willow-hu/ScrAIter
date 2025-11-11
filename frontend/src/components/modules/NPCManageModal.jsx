@@ -87,8 +87,6 @@ function NPCManageModal({
     const newPortraits = { ...npcPortraits };
     delete newPortraits[deletedCharacterName];
     setNpcPortraits(newPortraits);
-    
-    message.success('角色删除成功');
   };
 
   const handleSaveCharacter = () => {
@@ -139,11 +137,9 @@ function NPCManageModal({
         }
       }
       
-      message.success('角色更新成功');
     } else {
       // 添加新角色
       newCharacters = [...characters, newCharacter];
-      message.success('角色添加成功');
     }
 
     setCharacters(newCharacters);
