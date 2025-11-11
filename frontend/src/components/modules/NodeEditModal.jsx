@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider, Select } from 'antd';
 import { SaveOutlined, RobotOutlined, PictureOutlined, UserOutlined } from '../../utils/icons';
 import ReferencePanel from './ReferencePanel';
-import BackgroundImageModal from './BackgroundImageModal';
-
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
@@ -485,15 +483,6 @@ function NodeEditModal({
           />
         </Col>
       </Row>
-
-      {/* 背景图选择弹窗 */}
-      <BackgroundImageModal
-        visible={backgroundModalVisible}
-        onClose={() => setBackgroundModalVisible(false)}
-        onSelect={handleBackgroundImageSelect}
-        knowledgeBaseName={getCurrentKnowledgeBaseName()}
-        currentBackgroundImage={backgroundImage}
-      />
     </Modal>
   );
 }
