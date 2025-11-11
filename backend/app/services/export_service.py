@@ -26,9 +26,10 @@ class ExportService:
         def extract_from_node(node):
             """递归提取节点中的背景图"""
             if isinstance(node, dict):
-                # 检查当前节点的背景图
-                if 'background_image' in node and node['background_image']:
-                    used_images.add(node['background_image'])
+                # 检查当前节点的背景图 - 支持bg字段和旧的background_image字段
+                bg_field = node.get('bg') or node.get('background_image')
+                if bg_field:
+                    used_images.add(bg_field)
                 
                 # 递归检查子节点
                 if 'child_ids' in node and isinstance(node['child_ids'], list):
@@ -57,17 +58,22 @@ class ExportService:
         return project_service.load_script(project_id)
     
     def get_available_images(self, project_id: str) -> List[str]:
-        """获取项目中所有可用的图片"""
-        images_dir = os.path.join(self.projects_path, project_id, "assets")
+        """获取项目中所有可用的图片（包括npc和bg子目录）"""
+        assets_dir = os.path.join(self.projects_path, project_id, "assets")
         
-        if not os.path.exists(images_dir):
+        if not os.path.exists(assets_dir):
             return []
         
         images = []
-        for filename in os.listdir(images_dir):
-            file_path = os.path.join(images_dir, filename)
-            if os.path.isfile(file_path) and filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-                images.append(filename)
+        
+        # 扫描npc和bg子目录
+        for subdir in ['npc', 'bg']:
+            subdir_path = os.path.join(assets_dir, subdir)
+            if os.path.exists(subdir_path):
+                for filename in os.listdir(subdir_path):
+                    file_path = os.path.join(subdir_path, filename)
+                    if os.path.isfile(file_path) and filename.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.webp')):
+                        images.append(filename)
         
         return images
     
@@ -143,15 +149,20 @@ class ExportService:
                             # 策略：包含所有图片（简化实现）
                             images_to_include = available_images
                             
-                            # 添加图片到ZIP
-                            images_dir = os.path.join(self.projects_path, project_id, "assets")
+                            # 添加图片到ZIP（从npc和bg子目录中读取）
+                            assets_dir = os.path.join(self.projects_path, project_id, "assets")
                             
                             for image_filename in images_to_include:
-                                image_path = os.path.join(images_dir, image_filename)
-                                if os.path.exists(image_path):
-                                    # 在ZIP中创建images目录
-                                    zipf.write(image_path, f"images/{image_filename}")
-                                    included_images.append(image_filename)
+                                # 尝试从npc和bg子目录中查找图片
+                                image_found = False
+                                for subdir in ['npc', 'bg']:
+                                    image_path = os.path.join(assets_dir, subdir, image_filename)
+                                    if os.path.exists(image_path):
+                                        # 在ZIP中创建images目录
+                                        zipf.write(image_path, f"images/{image_filename}")
+                                        included_images.append(image_filename)
+                                        image_found = True
+                                        break
                         
                         # 添加说明文件
                         readme_content = f"""# {project_name} 导出包
@@ -160,12 +171,13 @@ class ExportService:
 导出时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 包含文件:
 - {project_name}_script.json: 脚本内容
-- images/: 背景图片目录 ({len(included_images)} 个文件)
+- images/: 图片资源目录 ({len(included_images)} 个文件)
 
 使用说明:
 1. 脚本内容在JSON文件中
-2. 背景图片在images目录中
-3. 脚本中的background_image字段对应images目录中的文件名
+2. 图片资源在images目录中
+3. 脚本中的bg字段对应images目录中的背景图文件名
+4. 脚本中的npc_pic字段对应images目录中的NPC立绘文件名
 """
                         zipf.writestr("README.txt", readme_content)
                     

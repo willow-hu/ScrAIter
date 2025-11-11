@@ -95,11 +95,6 @@ function ScriptEditor() {
       message.error('加载项目数据失败');
       // 出错时创建空白数据
       const emptyData = {
-        global_context: {
-          character_list: [],
-          site_name: "",
-          other_requirements: ""
-        },
         structure: []
       };
       
@@ -120,10 +115,6 @@ function ScriptEditor() {
   const validateDataIntegrity = (data) => {
     if (!data) {
       return { valid: false, message: '数据为空' };
-    }
-    
-    if (!data.global_context) {
-      return { valid: false, message: '缺少项目信息(global_context)' };
     }
     
     if (!data.structure) {
@@ -184,14 +175,15 @@ function ScriptEditor() {
         return;
       }
       
-      // 构建完整的保存数据
+      // 过滤掉position字段，只保留需要保存的字段
+      const filteredStructure = (treeData.structure || []).map(node => {
+        const { position, ...nodeWithoutPosition } = node;
+        return nodeWithoutPosition;
+      });
+      
+      // 构建完整的保存数据（不包含global_context）
       const saveData = {
-        global_context: {
-          character_list: treeData.global_context.character_list || [],
-          site_name: treeData.global_context.site_name || "",
-          other_requirements: treeData.global_context.other_requirements || ""
-        },
-        structure: treeData.structure || []
+        structure: filteredStructure
       };
       
       // 保存为script数据
@@ -330,18 +322,6 @@ function ScriptEditor() {
     }
     
     const defaultData = {
-      global_context: {
-        character_list: [
-          {
-            name: "讲述者",
-            description: "默认角色设定",
-            tone: "友好、知识渊博",
-            avatar: ""
-          }
-        ],
-        site_name: "景点名称",
-        other_requirements: ""
-      },
       structure: [
         {
           id: 'root',
@@ -350,7 +330,6 @@ function ScriptEditor() {
           abstract: '这是根节点的摘要',
           user: '用户选项',
           content: '',
-          position: { x: 400, y: 50 },
           child_ids: []
         }
       ]
@@ -463,11 +442,6 @@ function ScriptEditor() {
           // 更新当前树结构为生成的结构
           if (result.structure && result.structure.length > 0) {
             const newTreeData = {
-              global_context: result.global_context || {
-                character_list: [],
-                site_name: "",
-                other_requirements: ""
-              },
               structure: result.structure
             };
             
@@ -506,13 +480,14 @@ function ScriptEditor() {
       try {
         const kbName = getCurrentKnowledgeBaseName();
         if (kbName && treeData) {
+          // 过滤掉position字段
+          const filteredStructure = (treeData.structure || []).map(node => {
+            const { position, ...nodeWithoutPosition } = node;
+            return nodeWithoutPosition;
+          });
+          
           const saveData = {
-            global_context: {
-              character_list: treeData.global_context.character_list || [],
-              site_name: treeData.global_context.site_name || "",
-              other_requirements: treeData.global_context.other_requirements || ""
-            },
-            structure: treeData.structure || []
+            structure: filteredStructure
           };
           
           const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {

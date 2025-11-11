@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider, Select } from 'antd';
 import { SaveOutlined, RobotOutlined, PictureOutlined, UserOutlined } from '../../utils/icons';
 import ReferencePanel from './ReferencePanel';
+import BackgroundImageModal from './BackgroundImageModal';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
@@ -42,7 +43,7 @@ function NodeEditModal({
       });
       
       // 加载背景图
-      setBackgroundImage(node.background_image || null);
+      setBackgroundImage(node.bg || null);
       
       // 加载已保存的参考资料 - 添加调试日志
       if (node.ragSources && Array.isArray(node.ragSources)) {
@@ -173,6 +174,7 @@ function NodeEditModal({
                         user: nodeForm.user,
                         content: fullContent,
                         character: nodeForm.character || undefined, // 保存角色选择
+                        bg: backgroundImage || undefined, // 保存背景图
                         ragSources: currentRagSources.length > 0 ? currentRagSources : undefined,
                         lastGenerationId: currentGenerationId
                       };
@@ -260,7 +262,7 @@ function NodeEditModal({
     const updateData = {
       ...nodeForm,
       character: nodeForm.character || undefined, // 保存角色选择
-      background_image: backgroundImage || undefined, // 只在有背景图时保存
+      bg: backgroundImage || undefined, // 保存背景图文件名到bg字段
       ragSources: ragSources.length > 0 ? ragSources : undefined, // 只在有参考资料时保存
       lastGenerationId: lastGenerationId || undefined // 只在有生成ID时保存
     };
@@ -284,9 +286,10 @@ function NodeEditModal({
     if (node) {
       const updateData = {
         ...nodeForm,
-        background_image: filename || undefined
+        bg: filename || undefined // 使用bg字段
       };
       onSave(node.id, updateData);
+      message.success(filename ? '背景图已设置' : '背景图已清除');
     }
   };
 
@@ -483,6 +486,15 @@ function NodeEditModal({
           />
         </Col>
       </Row>
+
+      {/* 背景图选择弹窗 */}
+      <BackgroundImageModal
+        visible={backgroundModalVisible}
+        projectId={projectId}
+        currentBackground={backgroundImage}
+        onClose={() => setBackgroundModalVisible(false)}
+        onSelect={handleBackgroundImageSelect}
+      />
     </Modal>
   );
 }

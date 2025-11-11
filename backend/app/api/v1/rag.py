@@ -161,8 +161,7 @@ async def generate_outline(request: OutlineGenerationRequest):
         return OutlineGenerationResponse(
             success=True,
             message="大纲生成成功",
-            structure=result.get("structure"),
-            global_context=result.get("global_context")
+            structure=result.get("structure")
         )
         
     except HTTPException:

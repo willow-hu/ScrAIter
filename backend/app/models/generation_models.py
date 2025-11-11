@@ -15,4 +15,3 @@ class OutlineGenerationResponse(BaseModel):
     message: str
     outline_path: Optional[str] = None
     structure: Optional[List[Dict[str, Any]]] = None
-    global_context: Optional[Dict[str, Any]] = None
