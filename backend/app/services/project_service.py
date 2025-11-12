@@ -105,7 +105,9 @@ class ProjectService:
                 "lastModified": datetime.now().isoformat(),
                 "thumbnail": "",
                 "version": 1,
-                "character_list": []  # 添加角色列表字段
+                "character_list": [],  # 角色列表字段
+                "background_pool": [],  # 背景图资源池
+                "default_background": ""  # 默认背景图ID
             }
             
             # 保存项目信息到 project_info.json
@@ -196,7 +198,7 @@ class ProjectService:
                 return None
             
             # 更新允许的字段
-            updatable_fields = ["name", "description", "thumbnail", "character_list"]
+            updatable_fields = ["name", "description", "thumbnail", "character_list", "background_pool", "default_background"]
             for field in updatable_fields:
                 if field in data:
                     project_info[field] = data[field]

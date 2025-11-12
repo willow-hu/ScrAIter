@@ -174,7 +174,6 @@ function NodeEditModal({
                         user: nodeForm.user,
                         content: fullContent,
                         role: nodeForm.role || undefined, // 保存角色选择到role字段
-                        bg: backgroundImage || undefined, // 保存背景图
                         ragSources: currentRagSources.length > 0 ? currentRagSources : undefined,
                         lastGenerationId: currentGenerationId
                       };
@@ -258,11 +257,10 @@ function NodeEditModal({
   const handleSave = () => {
     if (!node) return;
     
-    // 构建更新数据，包含参考资料和背景图
+    // 构建更新数据，包含参考资料
     const updateData = {
       ...nodeForm,
       role: nodeForm.role || undefined, // 保存角色选择到role字段
-      bg: backgroundImage || undefined, // 保存背景图文件名到bg字段
       ragSources: ragSources.length > 0 ? ragSources : undefined, // 只在有参考资料时保存
       lastGenerationId: lastGenerationId || undefined // 只在有生成ID时保存
     };

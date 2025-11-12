@@ -16,21 +16,21 @@ class Character(BaseModel):
     name: str
     description: str
     tone: str
-    avatar: str = ""
+    portrait: str = ""
 
 class CharacterCreateRequest(BaseModel):
     """创建角色请求"""
     name: str
     description: str
     tone: str
-    avatar: str = ""
+    portrait: str = ""
 
 class CharacterUpdateRequest(BaseModel):
     """更新角色请求"""
     name: Optional[str] = None
     description: Optional[str] = None
     tone: Optional[str] = None
-    avatar: Optional[str] = None
+    portrait: Optional[str] = None
 
 class CharacterListResponse(BaseModel):
     """角色列表响应"""
@@ -87,7 +87,7 @@ async def add_character(project_id: str, request: CharacterCreateRequest):
             "name": request.name,
             "description": request.description,
             "tone": request.tone,
-            "avatar": request.avatar
+            "portrait": request.portrait
         }
         character_list.append(new_character)
         
@@ -150,8 +150,8 @@ async def update_character(project_id: str, character_name: str, request: Charac
             character["description"] = request.description
         if request.tone is not None:
             character["tone"] = request.tone
-        if request.avatar is not None:
-            character["avatar"] = request.avatar
+        if request.portrait is not None:
+            character["portrait"] = request.portrait
         
         # 更新数据
         character_list[character_index] = character

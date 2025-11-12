@@ -236,8 +236,6 @@ class OutlineGenerationService:
             # 添加缺失的字段
             if "role" not in node:
                 node["role"] = ""
-            if "npc_pic" not in node:
-                node["npc_pic"] = ""
             if "bg" not in node:
                 node["bg"] = ""
             if "user" not in node:

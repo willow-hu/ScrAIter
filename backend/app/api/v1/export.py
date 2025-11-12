@@ -4,6 +4,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import os
+import tempfile
 
 from app.models.export_models import ExportRequest, ExportResponse
 from app.services.export_service import export_service
@@ -47,8 +48,9 @@ async def download_export_file(project_id: str, file_path: str):
         if not file_path or not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="文件不存在")
         
-        # 安全检查：确保文件路径是合法的
-        if not os.path.abspath(file_path).startswith(os.path.abspath("/tmp")):
+        # 安全检查：确保文件路径在临时目录中
+        temp_dir = tempfile.gettempdir()
+        if not os.path.abspath(file_path).startswith(os.path.abspath(temp_dir)):
             raise HTTPException(status_code=403, detail="文件路径不合法")
         
         filename = os.path.basename(file_path)
