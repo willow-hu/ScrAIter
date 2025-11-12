@@ -20,7 +20,7 @@ function NodeEditModal({
     abstract: '',
     user: '',
     content: '',
-    character: '' // 新增：选中的角色名称
+    role: '' // 角色名称存储在role字段
   });
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -39,7 +39,7 @@ function NodeEditModal({
         abstract: node.abstract || '',
         user: node.user || '',
         content: node.content || '',
-        character: node.character || '' // 加载节点的角色选择
+        role: node.role || ''
       });
       
       // 加载背景图
@@ -83,7 +83,7 @@ function NodeEditModal({
           abstract: nodeForm.abstract,
           user: nodeForm.user,
           id: node.id,
-          character: nodeForm.character // 添加选中的角色
+          role: nodeForm.role // 使用role字段
         },
         global_context: {
           character_list: projectInfo?.character_list || []
@@ -173,7 +173,7 @@ function NodeEditModal({
                         abstract: nodeForm.abstract,
                         user: nodeForm.user,
                         content: fullContent,
-                        character: nodeForm.character || undefined, // 保存角色选择
+                        role: nodeForm.role || undefined, // 保存角色选择到role字段
                         bg: backgroundImage || undefined, // 保存背景图
                         ragSources: currentRagSources.length > 0 ? currentRagSources : undefined,
                         lastGenerationId: currentGenerationId
@@ -261,7 +261,7 @@ function NodeEditModal({
     // 构建更新数据，包含参考资料和背景图
     const updateData = {
       ...nodeForm,
-      character: nodeForm.character || undefined, // 保存角色选择
+      role: nodeForm.role || undefined, // 保存角色选择到role字段
       bg: backgroundImage || undefined, // 保存背景图文件名到bg字段
       ragSources: ragSources.length > 0 ? ragSources : undefined, // 只在有参考资料时保存
       lastGenerationId: lastGenerationId || undefined // 只在有生成ID时保存
@@ -357,8 +357,8 @@ function NodeEditModal({
                   <div style={{ flex: '1', minWidth: '200px' }}>
                     <Text className="node-edit-form-label" strong>讲述者角色</Text>
                     <Select
-                      value={nodeForm.character}
-                      onChange={(value) => setNodeForm(prev => ({ ...prev, character: value }))}
+                      value={nodeForm.role}
+                      onChange={(value) => setNodeForm(prev => ({ ...prev, role: value }))}
                       placeholder="选择角色（可选）"
                       allowClear
                       style={{ width: '100%' }}

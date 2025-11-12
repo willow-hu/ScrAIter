@@ -91,15 +91,15 @@ class RAGService:
         filled_template = filled_template.replace("{user}", node_info.get("user", ""))
         filled_template = filled_template.replace("{context}", context)
         
-        # 处理角色信息
-        character_name = node_info.get("character", "")
-        if character_name:
+        # 处理角色信息 - 使用role字段
+        role_name = node_info.get("role", "")
+        if role_name:
             # 从角色列表中查找对应角色
             character_list = global_context.get("character_list", [])
             selected_character = None
             
             for character in character_list:
-                if character.get("name") == character_name:
+                if character.get("name") == role_name:
                     selected_character = character
                     break
             
@@ -109,7 +109,7 @@ class RAGService:
                 filled_template = filled_template.replace("{tone}", selected_character.get("tone", ""))
             else:
                 # 如果找不到对应角色，抛出错误
-                raise ValueError(f"找不到指定的角色: '{character_name}'。请检查角色列表中是否存在该角色。")
+                raise ValueError(f"找不到指定的角色: '{role_name}'。请检查角色列表中是否存在该角色。")
         else:
             # 如果没有指定角色，使用默认值
             filled_template = filled_template.replace("{character_name}", "讲述者")
