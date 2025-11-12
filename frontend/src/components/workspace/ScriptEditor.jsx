@@ -8,7 +8,6 @@ import NodeEditModal from '../modules/NodeEditModal';
 import NodeTooltip from '../modules/NodeTooltip';
 import NPCManageModal from '../modules/NPCManageModal';
 import UsageModal from '../modules/UsageModal';
-import ExportModal from '../modules/ExportModal';
 import BackgroundManagerModal from '../modules/BackgroundManagerModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
@@ -31,7 +30,6 @@ function ScriptEditor() {
   // 新增的浮动按钮相关状态
   const [npcManageModalVisible, setNpcManageModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
-  const [exportModalVisible, setExportModalVisible] = useState(false);
   const [backgroundManagerVisible, setBackgroundManagerVisible] = useState(false);
   
   // 悬停提示框状态
@@ -237,46 +235,15 @@ function ScriptEditor() {
   };
 
   // 新增：处理导出脚本（带验证）
-  const handleExportWithValidation = () => {
+  const handleExportWithValidation = async () => {
     if (isValidTree(treeData)) {
-      // 如果是有效树结构，显示导出选项对话框
-      setExportModalVisible(true);
-    } else {
-      // 如果不是有效树结构，显示警告对话框
-      Modal.warning({
-        title: '无法导出',
-        icon: <Icons.ExclamationCircleOutlined />,
-        content: (
-          <div>
-            <p>当前图结构不是有效的有向树结构，无法导出。</p>
-            <p>请检查以下问题：</p>
-            <ul className="script-editor-modal-list">
-              <li>是否有且仅有一个根节点（没有父节点的节点）</li>
-              <li>除根节点外，每个节点是否都有且仅有一个父节点</li>
-              <li>是否存在环形引用</li>
-              <li>是否所有节点都连通</li>
-            </ul>
-          </div>
-        ),
-        okText: '知道了',
-        width: 480,
-      });
-    }
-  };
+      // 如果是有效树结构，直接导出完整包
+      const currentProjectId = getCurrentProjectId();
+      if (!currentProjectId) {
+        message.error('项目ID不存在');
+        return;
+      }
 
-  // 处理导出（根据格式选择）
-  const handleExportByFormat = async (format) => {
-    const currentProjectId = getCurrentProjectId();
-    if (!currentProjectId) {
-      message.error('项目ID不存在');
-      return;
-    }
-
-    if (format === 'json_only') {
-      // 仅导出JSON（原有逻辑）
-      handleExport();
-    } else if (format === 'full_package') {
-      // 导出完整包
       try {
         message.info('正在创建导出包，请稍候...');
         
@@ -313,6 +280,26 @@ function ScriptEditor() {
         console.error('导出失败:', error);
         message.error(error.message || '导出失败');
       }
+    } else {
+      // 如果不是有效树结构，显示警告对话框
+      Modal.warning({
+        title: '无法导出',
+        icon: <Icons.ExclamationCircleOutlined />,
+        content: (
+          <div>
+            <p>当前图结构不是有效的有向树结构，无法导出。</p>
+            <p>请检查以下问题：</p>
+            <ul className="script-editor-modal-list">
+              <li>是否有且仅有一个根节点（没有父节点的节点）</li>
+              <li>除根节点外，每个节点是否都有且仅有一个父节点</li>
+              <li>是否存在环形引用</li>
+              <li>是否所有节点都连通</li>
+            </ul>
+          </div>
+        ),
+        okText: '知道了',
+        width: 480,
+      });
     }
   };
 
@@ -720,13 +707,6 @@ function ScriptEditor() {
       <UsageModal
         visible={usageModalVisible}
         onClose={() => setUsageModalVisible(false)}
-      />
-
-      {/* 导出选项模态框 */}
-      <ExportModal
-        visible={exportModalVisible}
-        onClose={() => setExportModalVisible(false)}
-        onExport={handleExportByFormat}
       />
 
       {/* 背景图管理模态框 */}
