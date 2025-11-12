@@ -45,7 +45,6 @@ class SetDefaultBackgroundRequest(BaseModel):
 
 class AssignScenesRequest(BaseModel):
     """分配场景请求"""
-    bg_id: str
     node_ids: List[str]
 
 

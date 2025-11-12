@@ -280,17 +280,11 @@ function NodeEditModal({
   };
 
   // 处理背景图选择
-  const handleBackgroundImageSelect = (filename) => {
-    setBackgroundImage(filename);
-    // 自动保存背景图设置
-    if (node) {
-      const updateData = {
-        ...nodeForm,
-        bg: filename || undefined // 使用bg字段
-      };
-      onSave(node.id, updateData);
-      message.success(filename ? '背景图已设置' : '背景图已清除');
-    }
+  const handleBackgroundImageSelect = (bgId) => {
+    // 只更新本地UI状态，不修改script.json
+    // 实际的used_by更新已在BackgroundImageModal中完成
+    setBackgroundImage(bgId);
+    message.success(bgId ? '背景图已设置' : '背景图已清除');
   };
 
   // 获取当前知识库名称
@@ -491,6 +485,7 @@ function NodeEditModal({
       <BackgroundImageModal
         visible={backgroundModalVisible}
         projectId={projectId}
+        nodeId={node?.id}
         currentBackground={backgroundImage}
         onClose={() => setBackgroundModalVisible(false)}
         onSelect={handleBackgroundImageSelect}

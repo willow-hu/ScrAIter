@@ -207,7 +207,6 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          bg_id: selectedBg.id,
           node_ids: selectedNodes
         })
       });
