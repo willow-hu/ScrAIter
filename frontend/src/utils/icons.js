@@ -9,6 +9,7 @@
 // 导出所有常用图标，按字母顺序排列便于查找
 export {
   // A
+  AimOutlined,
   AppstoreOutlined,
   ArrowLeftOutlined,
   ArrowRightOutlined,
@@ -89,12 +90,16 @@ export {
   SearchOutlined,
   SettingOutlined,
   ShareAltOutlined,
+  StarOutlined,
+  StarFilled,
   StopOutlined,
+  SwapOutlined,
   SyncOutlined,
   
   // T
   TagOutlined,
   ToolOutlined,
+  TeamOutlined,
   
   // U
   UndoOutlined,

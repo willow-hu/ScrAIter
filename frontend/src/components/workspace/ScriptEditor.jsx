@@ -9,6 +9,7 @@ import NodeTooltip from '../modules/NodeTooltip';
 import NPCManageModal from '../modules/NPCManageModal';
 import UsageModal from '../modules/UsageModal';
 import ExportModal from '../modules/ExportModal';
+import BackgroundManagerModal from '../modules/BackgroundManagerModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
@@ -31,6 +32,7 @@ function ScriptEditor() {
   const [npcManageModalVisible, setNpcManageModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [backgroundManagerVisible, setBackgroundManagerVisible] = useState(false);
   
   // 悬停提示框状态
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -663,9 +665,17 @@ function ScriptEditor() {
 
         <Button
           shape="circle"
-          icon={<Icons.FileTextOutlined />}
-          title="项目信息"
+          icon={<Icons.TeamOutlined />}
+          title="角色管理"
           onClick={handleOpenProjectInfo}
+          className="floating-button"
+        />
+
+        <Button
+          shape="circle"
+          icon={<Icons.PictureOutlined />}
+          title="背景图管理"
+          onClick={() => setBackgroundManagerVisible(true)}
           className="floating-button"
         />
         
@@ -718,6 +728,15 @@ function ScriptEditor() {
         visible={exportModalVisible}
         onClose={() => setExportModalVisible(false)}
         onExport={handleExportByFormat}
+      />
+
+      {/* 背景图管理模态框 */}
+      <BackgroundManagerModal
+        visible={backgroundManagerVisible}
+        projectId={projectId}
+        treeData={treeData}
+        onClose={() => setBackgroundManagerVisible(false)}
+        onRefresh={loadProjectData}
       />
     </div>
   );

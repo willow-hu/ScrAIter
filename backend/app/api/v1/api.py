@@ -3,7 +3,7 @@ API路由汇总
 """
 from fastapi import APIRouter
 
-from app.api.v1 import files, knowledge_base, rag, projects, images, export, characters, graph
+from app.api.v1 import files, knowledge_base, rag, projects, images, export, characters, graph, backgrounds
 
 api_router = APIRouter()
 
@@ -16,3 +16,4 @@ api_router.include_router(images.router, tags=["images"])
 api_router.include_router(export.router, tags=["export"])
 api_router.include_router(characters.router, tags=["characters"])
 api_router.include_router(graph.router, tags=["graph"])
+api_router.include_router(backgrounds.router, tags=["backgrounds"])
