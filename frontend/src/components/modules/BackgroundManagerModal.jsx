@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Card, Row, Col, Button, Dropdown, Image, Empty, message, Input, Upload, List, Checkbox, Space, Tag } from 'antd';
+import { Modal, Card, Row, Col, Button, Dropdown, Image, Empty, message, Input, Upload, Space, Tag } from 'antd';
 import { PlusOutlined, MoreOutlined, CheckOutlined, DeleteOutlined, SwapOutlined, StarOutlined, StarFilled, AimOutlined } from '../../utils/icons';
 import '../../styles/background-manager.css';
 
@@ -224,8 +224,44 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
   // 打开分配场景对话框
   const handleOpenAssign = (bg) => {
     setSelectedBg(bg);
-    setSelectedNodes(bg.used_by || []);
+    // 将used_by中的ID转换为数字（如果需要）
+    setSelectedNodes((bg.used_by || []).map(id => Number(id) || id));
     setAssignModalVisible(true);
+  };
+
+  // 切换场景选择状态
+  const handleToggleNode = (nodeId) => {
+    setSelectedNodes(prev => {
+      if (prev.includes(nodeId)) {
+        // 从已选择中移除
+        return prev.filter(id => id !== nodeId);
+      } else {
+        // 添加到已选择
+        return [...prev, nodeId];
+      }
+    });
+  };
+
+  // 获取未被其他背景图使用的场景
+  const getUnassignedNodes = () => {
+    if (!scriptNodes || !backgrounds) return [];
+    
+    // 找出所有已被分配的节点ID（排除当前选中的背景图）
+    const assignedNodeIds = backgrounds
+      .filter(bg => bg.id !== selectedBg?.id)
+      .flatMap(bg => bg.used_by || [])
+      .map(id => String(id));
+    
+    // 返回未被分配的节点
+    return scriptNodes.filter(node => 
+      !assignedNodeIds.includes(String(node.id)) && 
+      !selectedNodes.includes(node.id)
+    );
+  };
+
+  // 获取已选择的场景节点
+  const getSelectedNodeObjects = () => {
+    return scriptNodes.filter(node => selectedNodes.includes(node.id));
   };
 
   // 分配场景
@@ -237,7 +273,7 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          node_ids: selectedNodes
+          node_ids: selectedNodes.map(id => String(id))
         })
       });
 
@@ -477,28 +513,92 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
         onOk={handleAssignScenes}
         okText="确定"
         cancelText="取消"
-        width={600}
+        width={700}
       >
         <div style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 8 }}>为背景图 <Tag>{selectedBg?.id}</Tag> 选择场景：</div>
+          <div style={{ marginBottom: 8 }}>为背景图 <Tag color="blue">{selectedBg?.id}</Tag> 选择场景：</div>
+          <div style={{ fontSize: '12px', color: '#999' }}>点击场景标签进行选择或取消</div>
         </div>
-        <Checkbox.Group
-          style={{ width: '100%' }}
-          value={selectedNodes}
-          onChange={setSelectedNodes}
-        >
-          <List
-            dataSource={treeData?.structure || []}
-            renderItem={(node) => (
-              <List.Item>
-                <Checkbox value={node.id}>
-                  {node.name || node.id}
-                </Checkbox>
-              </List.Item>
+
+        {/* 已选择的场景 */}
+        <div style={{ 
+          marginBottom: 24, 
+          padding: '12px', 
+          backgroundColor: '#f0f7ff', 
+          borderRadius: '8px',
+          border: '1px solid #91d5ff',
+          minHeight: '80px'
+        }}>
+          <div style={{ 
+            fontSize: '14px', 
+            fontWeight: 500, 
+            marginBottom: 8,
+            color: '#1890ff'
+          }}>
+            已选择的场景 ({getSelectedNodeObjects().length})
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {getSelectedNodeObjects().length > 0 ? (
+              getSelectedNodeObjects().map(node => (
+                <Tag
+                  key={node.id}
+                  color="blue"
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '13px',
+                    padding: '4px 12px',
+                    borderRadius: '4px'
+                  }}
+                  onClick={() => handleToggleNode(node.id)}
+                >
+                  {node.name}
+                </Tag>
+              ))
+            ) : (
+              <div style={{ color: '#999', fontSize: '13px' }}>暂无选择</div>
             )}
-            style={{ maxHeight: 400, overflowY: 'auto', width: '100%' }}
-          />
-        </Checkbox.Group>
+          </div>
+        </div>
+
+        {/* 未选择的场景 */}
+        <div style={{ 
+          padding: '12px', 
+          backgroundColor: '#fafafa', 
+          borderRadius: '8px',
+          border: '1px solid #d9d9d9',
+          minHeight: '80px'
+        }}>
+          <div style={{ 
+            fontSize: '14px', 
+            fontWeight: 500, 
+            marginBottom: 8,
+            color: '#666'
+          }}>
+            可用场景 ({getUnassignedNodes().length})
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+            {getUnassignedNodes().length > 0 ? (
+              getUnassignedNodes().map(node => (
+                <Tag
+                  key={node.id}
+                  style={{ 
+                    cursor: 'pointer', 
+                    fontSize: '13px',
+                    padding: '4px 12px',
+                    borderRadius: '4px',
+                    border: '1px dashed #d9d9d9',
+                    backgroundColor: '#fff'
+                  }}
+                  onClick={() => handleToggleNode(node.id)}
+                >
+                  {node.name}
+                </Tag>
+              ))
+            ) : (
+              <div style={{ color: '#999', fontSize: '13px' }}>暂无可用场景</div>
+            )}
+          </div>
+        </div>
       </Modal>
     </>
   );
