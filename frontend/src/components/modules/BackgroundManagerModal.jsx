@@ -16,12 +16,42 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
   const [newBgId, setNewBgId] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
   const [selectedNodes, setSelectedNodes] = useState([]);
+  const [scriptNodes, setScriptNodes] = useState([]);
 
   useEffect(() => {
     if (visible && projectId) {
       loadBackgrounds();
+      loadScriptNodes();
     }
   }, [visible, projectId]);
+
+  // 加载脚本节点信息
+  const loadScriptNodes = async () => {
+    if (!projectId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/script`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('加载的脚本数据:', data);
+        // script.json的结构是 { structure: [...] }
+        if (data && Array.isArray(data.structure)) {
+          console.log('节点列表:', data.structure);
+          setScriptNodes(data.structure);
+        } else if (Array.isArray(data.nodes)) {
+          console.log('节点列表(nodes):', data.nodes);
+          setScriptNodes(data.nodes);
+        } else if (Array.isArray(data)) {
+          console.log('节点列表(数组):', data);
+          setScriptNodes(data);
+        } else {
+          console.warn('未知的脚本数据格式:', data);
+        }
+      }
+    } catch (error) {
+      console.error('加载脚本节点失败:', error);
+    }
+  };
 
   // 加载背景图列表
   const loadBackgrounds = async () => {
@@ -230,9 +260,14 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
 
   // 获取节点名称
   const getNodeName = (nodeId) => {
-    if (!treeData || !treeData.structure) return nodeId;
-    const node = treeData.structure.find(n => n.id === nodeId);
-    return node ? node.name || nodeId : nodeId;
+    console.log('查找节点ID:', nodeId, '类型:', typeof nodeId);
+    console.log('当前scriptNodes:', scriptNodes);
+    const node = scriptNodes.find(n => {
+      console.log('比较节点:', n.id, '类型:', typeof n.id, '与', nodeId);
+      return String(n.id) === String(nodeId);
+    });
+    console.log('找到的节点:', node);
+    return node ? node.name : `场景${nodeId}`;
   };
 
   // 构建下拉菜单
@@ -332,8 +367,20 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
                       title={bg.id}
                       description={
                         <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                          <div>文件名: {bg.filename}</div>
-                          <div>使用场景: {bg.used_by?.length || 0} 个</div>
+                          {bg.used_by && bg.used_by.length > 0 ? (
+                            <div>
+                              <div style={{ marginBottom: 4, color: '#666' }}>使用场景:</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {bg.used_by.map(nodeId => (
+                                  <Tag key={nodeId} color="blue">
+                                    {getNodeName(nodeId)}
+                                  </Tag>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ color: '#999' }}>未使用</div>
+                          )}
                         </Space>
                       }
                     />

@@ -214,32 +214,6 @@ class ImageService:
         os.makedirs(npc_dir, exist_ok=True)
         return npc_dir
     
-    def get_asset_metadata_path(self, project_id: str, asset_type: str) -> str:
-        """获取资产元数据文件路径"""
-        if asset_type == "npc":
-            return os.path.join(self.get_npc_dir(project_id), "metadata.json")
-        elif asset_type == "bg":
-            return os.path.join(self.get_bg_dir(project_id), "metadata.json")
-        else:
-            raise ValueError(f"不支持的资产类型: {asset_type}")
-    
-    def load_asset_metadata(self, project_id: str, asset_type: str) -> Dict[str, Any]:
-        """加载资产元数据"""
-        metadata_path = self.get_asset_metadata_path(project_id, asset_type)
-        if os.path.exists(metadata_path):
-            try:
-                with open(metadata_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except Exception:
-                pass
-        return {"images": {}}
-    
-    def save_asset_metadata(self, project_id: str, asset_type: str, metadata: Dict[str, Any]):
-        """保存资产元数据"""
-        metadata_path = self.get_asset_metadata_path(project_id, asset_type)
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, ensure_ascii=False, indent=2, default=str)
-    
     async def upload_npc_image(self, project_id: str, file: UploadFile) -> ImageUploadResponse:
         """上传NPC立绘"""
         try:
@@ -294,15 +268,6 @@ class ImageService:
             with open(file_path, 'wb') as f:
                 f.write(contents)
             
-            # 更新元数据
-            metadata = self.load_asset_metadata(project_id, "npc")
-            metadata["images"][filename] = {
-                "original_name": file.filename,
-                "file_size": len(contents),
-                "upload_time": datetime.now().isoformat(),
-                "dimensions": {"width": width, "height": height}
-            }
-            self.save_asset_metadata(project_id, "npc", metadata)
             logger.info(f"NPC立绘上传成功 - 项目ID: {project_id}, 文件名: {filename}, 大小: {len(contents)} 字节")
             
             return ImageUploadResponse(
@@ -323,19 +288,34 @@ class ImageService:
     def list_npc_images(self, project_id: str) -> ImageListResponse:
         """获取NPC立绘列表"""
         try:
-            metadata = self.load_asset_metadata(project_id, "npc")
+            npc_dir = self.get_npc_dir(project_id)
             images = []
             
-            for filename, info in metadata.get("images", {}).items():
-                file_path = os.path.join(self.get_npc_dir(project_id), filename)
-                if os.path.exists(file_path):
-                    images.append(ImageInfo(
-                        filename=filename,
-                        original_name=info.get("original_name", filename),
-                        file_size=info.get("file_size", 0),
-                        upload_time=datetime.fromisoformat(info.get("upload_time", datetime.now().isoformat())),
-                        dimensions=info.get("dimensions")
-                    ))
+            # 直接读取目录中的文件
+            if os.path.exists(npc_dir):
+                for filename in os.listdir(npc_dir):
+                    file_path = os.path.join(npc_dir, filename)
+                    if os.path.isfile(file_path):
+                        # 获取文件信息
+                        file_stat = os.stat(file_path)
+                        file_size = file_stat.st_size
+                        upload_time = datetime.fromtimestamp(file_stat.st_mtime)
+                        
+                        # 尝试获取图片尺寸
+                        dimensions = None
+                        try:
+                            with Image.open(file_path) as img:
+                                dimensions = {"width": img.width, "height": img.height}
+                        except Exception:
+                            pass
+                        
+                        images.append(ImageInfo(
+                            filename=filename,
+                            original_name=filename,
+                            file_size=file_size,
+                            upload_time=upload_time,
+                            dimensions=dimensions
+                        ))
             
             images.sort(key=lambda x: x.upload_time, reverse=True)
             
@@ -369,11 +349,6 @@ class ImageService:
                 )
             
             os.remove(file_path)
-            
-            metadata = self.load_asset_metadata(project_id, "npc")
-            if filename in metadata.get("images", {}):
-                del metadata["images"][filename]
-                self.save_asset_metadata(project_id, "npc", metadata)
             
             return DeleteImageResponse(
                 success=True,
@@ -460,15 +435,6 @@ class ImageService:
             with open(file_path, 'wb') as f:
                 f.write(contents)
             
-            # 更新元数据
-            metadata = self.load_asset_metadata(project_id, "bg")
-            metadata["images"][filename] = {
-                "original_name": file.filename,
-                "file_size": len(contents),
-                "upload_time": datetime.now().isoformat(),
-                "dimensions": {"width": width, "height": height}
-            }
-            self.save_asset_metadata(project_id, "bg", metadata)
             logger.info(f"背景图片上传成功 - 项目ID: {project_id}, 文件名: {filename}, 大小: {len(contents)} 字节")
             
             return ImageUploadResponse(
@@ -489,19 +455,34 @@ class ImageService:
     def list_bg_images(self, project_id: str) -> ImageListResponse:
         """获取背景图片列表"""
         try:
-            metadata = self.load_asset_metadata(project_id, "bg")
+            bg_dir = self.get_bg_dir(project_id)
             images = []
             
-            for filename, info in metadata.get("images", {}).items():
-                file_path = os.path.join(self.get_bg_dir(project_id), filename)
-                if os.path.exists(file_path):
-                    images.append(ImageInfo(
-                        filename=filename,
-                        original_name=info.get("original_name", filename),
-                        file_size=info.get("file_size", 0),
-                        upload_time=datetime.fromisoformat(info.get("upload_time", datetime.now().isoformat())),
-                        dimensions=info.get("dimensions")
-                    ))
+            # 直接读取目录中的文件
+            if os.path.exists(bg_dir):
+                for filename in os.listdir(bg_dir):
+                    file_path = os.path.join(bg_dir, filename)
+                    if os.path.isfile(file_path):
+                        # 获取文件信息
+                        file_stat = os.stat(file_path)
+                        file_size = file_stat.st_size
+                        upload_time = datetime.fromtimestamp(file_stat.st_mtime)
+                        
+                        # 尝试获取图片尺寸
+                        dimensions = None
+                        try:
+                            with Image.open(file_path) as img:
+                                dimensions = {"width": img.width, "height": img.height}
+                        except Exception:
+                            pass
+                        
+                        images.append(ImageInfo(
+                            filename=filename,
+                            original_name=filename,
+                            file_size=file_size,
+                            upload_time=upload_time,
+                            dimensions=dimensions
+                        ))
             
             images.sort(key=lambda x: x.upload_time, reverse=True)
             
@@ -535,11 +516,6 @@ class ImageService:
                 )
             
             os.remove(file_path)
-            
-            metadata = self.load_asset_metadata(project_id, "bg")
-            if filename in metadata.get("images", {}):
-                del metadata["images"][filename]
-                self.save_asset_metadata(project_id, "bg", metadata)
             
             return DeleteImageResponse(
                 success=True,

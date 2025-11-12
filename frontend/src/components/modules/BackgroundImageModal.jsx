@@ -31,10 +31,11 @@ function BackgroundImageModal({
         setBackgroundList(data.backgrounds || []);
         setDefaultBackground(data.default_background);
         
-        // 查找当前节点使用的背景图
+        // 查找当前节点使用的背景图（确保类型匹配）
         if (nodeId) {
+          const nodeIdStr = String(nodeId);
           const usedBg = (data.backgrounds || []).find(bg => 
-            bg.used_by && bg.used_by.includes(nodeId)
+            bg.used_by && bg.used_by.some(id => String(id) === nodeIdStr)
           );
           setSelectedBgId(usedBg ? usedBg.id : null);
         }
@@ -285,15 +286,6 @@ function BackgroundImageModal({
                         </Button>
                       ]}
                     >
-                      <Card.Meta
-                        title={bg.id}
-                        description={
-                          <div style={{ fontSize: '12px', color: '#999' }}>
-                            <div>文件: {bg.filename}</div>
-                            <div>使用场景: {bg.used_by?.length || 0} 个</div>
-                          </div>
-                        }
-                      />
                     </Card>
                   </List.Item>
                 )}
