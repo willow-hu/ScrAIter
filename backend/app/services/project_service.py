@@ -105,8 +105,7 @@ class ProjectService:
                 "lastModified": datetime.now().isoformat(),
                 "thumbnail": "",
                 "version": 1,
-                "character_list": [],  # 添加角色列表字段
-                "npc_portraits": {}  # 添加NPC立绘映射字段
+                "character_list": []  # 添加角色列表字段
             }
             
             # 保存项目信息到 project_info.json
@@ -132,8 +131,7 @@ class ProjectService:
                 "lastModified": project_info["lastModified"],
                 "thumbnail": "",
                 "description": description,
-                "character_list": [],
-                "npc_portraits": {}
+                "character_list": []
             })
             self._save_metadata(metadata)
             
@@ -198,7 +196,7 @@ class ProjectService:
                 return None
             
             # 更新允许的字段
-            updatable_fields = ["name", "description", "thumbnail", "character_list", "npc_portraits"]
+            updatable_fields = ["name", "description", "thumbnail", "character_list"]
             for field in updatable_fields:
                 if field in data:
                     project_info[field] = data[field]
@@ -225,8 +223,6 @@ class ProjectService:
                         metadata["projects"][i]["thumbnail"] = project_info["thumbnail"]
                     if "character_list" in data:
                         metadata["projects"][i]["character_list"] = project_info["character_list"]
-                    if "npc_portraits" in data:
-                        metadata["projects"][i]["npc_portraits"] = project_info["npc_portraits"]
                     metadata["projects"][i]["lastModified"] = project_info["lastModified"]
                     break
             self._save_metadata(metadata)
@@ -298,8 +294,7 @@ class ProjectService:
                 "lastModified": datetime.now().isoformat(),
                 "thumbnail": "",
                 "version": 1,
-                "character_list": source_project.get("character_list", []),  # 复制角色列表
-                "npc_portraits": source_project.get("npc_portraits", {})  # 复制NPC立绘映射
+                "character_list": source_project.get("character_list", [])  # 复制角色列表
             }
             
             # 保存新项目信息
@@ -332,8 +327,7 @@ class ProjectService:
                 "lastModified": new_project_info["lastModified"],
                 "thumbnail": "",
                 "description": new_project_info["description"],
-                "character_list": new_project_info["character_list"],
-                "npc_portraits": new_project_info["npc_portraits"]
+                "character_list": new_project_info["character_list"]
             })
             self._save_metadata(metadata)
             

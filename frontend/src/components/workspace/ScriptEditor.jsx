@@ -366,8 +366,7 @@ function ScriptEditor() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            character_list: projectInfoData.character_list || [],
-            npc_portraits: projectInfoData.npc_portraits || {}
+            character_list: projectInfoData.character_list || []
           })
         });
         

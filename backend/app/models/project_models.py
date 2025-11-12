@@ -17,7 +17,6 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = Field(None, description="项目描述")
     thumbnail: Optional[str] = Field(None, description="缩略图路径")
     character_list: Optional[List[Dict[str, Any]]] = Field(None, description="角色列表")
-    npc_portraits: Optional[Dict[str, str]] = Field(None, description="NPC立绘映射")
 
 class ProjectDuplicate(BaseModel):
     """复制项目请求"""
@@ -34,7 +33,6 @@ class ProjectInfo(BaseModel):
     thumbnail: str = Field(default="", description="缩略图路径")
     version: int = Field(default=1, description="版本号")
     character_list: List[Dict[str, Any]] = Field(default_factory=list, description="角色列表")
-    npc_portraits: Dict[str, str] = Field(default_factory=dict, description="NPC立绘映射")
 
 class ProjectList(BaseModel):
     """项目列表响应"""
