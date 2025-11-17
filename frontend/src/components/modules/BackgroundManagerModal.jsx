@@ -224,8 +224,8 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
   // 打开分配场景对话框
   const handleOpenAssign = (bg) => {
     setSelectedBg(bg);
-    // 将used_by中的ID转换为数字（如果需要）
-    setSelectedNodes((bg.used_by || []).map(id => Number(id) || id));
+    // 将used_by中的ID转换为数字（如果需要），并过滤掉无法转换的值
+    setSelectedNodes((bg.used_by || []).map(id => Number(id)).filter(id => !Number.isNaN(id)));
     setAssignModalVisible(true);
   };
 
@@ -250,11 +250,12 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
     const assignedNodeIds = backgrounds
       .filter(bg => bg.id !== selectedBg?.id)
       .flatMap(bg => bg.used_by || [])
-      .map(id => String(id));
+      .map(id => Number(id))
+      .filter(id => !Number.isNaN(id));
     
     // 返回未被分配的节点
     return scriptNodes.filter(node => 
-      !assignedNodeIds.includes(String(node.id)) && 
+      !assignedNodeIds.includes(Number(node.id)) && 
       !selectedNodes.includes(node.id)
     );
   };
@@ -273,7 +274,7 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          node_ids: selectedNodes.map(id => String(id))
+            node_ids: selectedNodes.map(id => Number(id))
         })
       });
 
@@ -300,7 +301,7 @@ function BackgroundManagerModal({ visible, projectId, treeData, onClose, onRefre
     console.log('当前scriptNodes:', scriptNodes);
     const node = scriptNodes.find(n => {
       console.log('比较节点:', n.id, '类型:', typeof n.id, '与', nodeId);
-      return String(n.id) === String(nodeId);
+      return Number(n.id) === Number(nodeId);
     });
     console.log('找到的节点:', node);
     return node ? node.name : `场景${nodeId}`;

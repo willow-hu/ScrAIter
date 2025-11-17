@@ -298,7 +298,7 @@ class BackgroundService:
         except Exception as e:
             raise Exception(f"删除背景图失败: {str(e)}")
     
-    def assign_scenes(self, project_id: str, bg_id: str, node_ids: List[str]) -> Dict[str, Any]:
+    def assign_scenes(self, project_id: str, bg_id: str, node_ids: List) -> Dict[str, Any]:
         """
         分配场景（设置哪些节点使用该背景图）
         
@@ -328,18 +328,26 @@ class BackgroundService:
                     "message": f"背景图 '{bg_id}' 不存在"
                 }
             
-            # 更新used_by字段
-            background_pool[bg_index]["used_by"] = node_ids
+            # 将传入的 node_ids 强制转换为整数列表后更新 used_by 字段
+            processed_ids: List[int] = []
+            for nid in node_ids or []:
+                try:
+                    processed_ids.append(int(nid))
+                except Exception:
+                    # 忽略无法转换的值
+                    continue
+
+            background_pool[bg_index]["used_by"] = processed_ids
             
             # 保存项目信息
             self._save_project_info(project_id, project_info)
             
             return {
                 "success": True,
-                "message": f"已为背景图 '{bg_id}' 分配 {len(node_ids)} 个场景",
+                "message": f"已为背景图 '{bg_id}' 分配 {len(processed_ids)} 个场景",
                 "data": {
                     "bg_id": bg_id,
-                    "node_ids": node_ids
+                    "node_ids": processed_ids
                 }
             }
             

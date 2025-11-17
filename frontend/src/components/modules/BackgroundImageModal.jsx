@@ -31,11 +31,11 @@ function BackgroundImageModal({
         setBackgroundList(data.backgrounds || []);
         setDefaultBackground(data.default_background);
         
-        // 查找当前节点使用的背景图（确保类型匹配）
-        if (nodeId) {
-          const nodeIdStr = String(nodeId);
+        // 查找当前节点使用的背景图（确保类型匹配，转换为数字比较）
+        if (nodeId !== undefined && nodeId !== null) {
+          const nodeIdNum = Number(nodeId);
           const usedBg = (data.backgrounds || []).find(bg => 
-            bg.used_by && bg.used_by.some(id => String(id) === nodeIdStr)
+            bg.used_by && bg.used_by.some(id => Number(id) === nodeIdNum)
           );
           setSelectedBgId(usedBg ? usedBg.id : null);
         }
@@ -110,8 +110,8 @@ function BackgroundImageModal({
       return;
     }
 
-    // 确保nodeId是字符串类型
-    const nodeIdStr = String(nodeId);
+    // 确保nodeId是数字类型
+    const nodeIdNum = Number(nodeId);
 
     try {
       if (selectedBgId) {
@@ -123,13 +123,13 @@ function BackgroundImageModal({
           return;
         }
 
-        // 构建新的used_by列表（确保都是字符串）
-        let newUsedBy = [...(selectedBg.used_by || [])].map(id => String(id));
-        
-        // 先从所有背景图的used_by中移除当前节点
+        // 构建新的used_by列表（转换为数字）
+        let newUsedBy = [...(selectedBg.used_by || [])].map(id => Number(id)).filter(id => !Number.isNaN(id));
+
+        // 先从所有背景图的used_by中移除当前节点（确保使用数字比较）
         for (const bg of backgroundList) {
-          if (bg.id !== selectedBgId && bg.used_by && bg.used_by.includes(nodeIdStr)) {
-            const updatedUsedBy = bg.used_by.filter(id => String(id) !== nodeIdStr).map(id => String(id));
+          if (bg.id !== selectedBgId && bg.used_by && bg.used_by.some(id => Number(id) === nodeIdNum)) {
+            const updatedUsedBy = bg.used_by.filter(id => Number(id) !== nodeIdNum).map(id => Number(id)).filter(id => !Number.isNaN(id));
             await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${bg.id}/assign`, {
               method: 'POST',
               headers: {
@@ -142,9 +142,9 @@ function BackgroundImageModal({
           }
         }
 
-        // 添加当前节点到选中背景图的used_by
-        if (!newUsedBy.includes(nodeIdStr)) {
-          newUsedBy.push(nodeIdStr);
+        // 添加当前节点到选中背景图的used_by（确保整数）
+        if (!newUsedBy.includes(nodeIdNum)) {
+          newUsedBy.push(nodeIdNum);
         }
 
         const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${selectedBgId}/assign`, {
@@ -165,10 +165,10 @@ function BackgroundImageModal({
           message.error(errorData.detail || '设置背景图失败');
         }
       } else {
-        // 清除背景图 - 从所有背景图的used_by中移除当前节点
+        // 清除背景图 - 从所有背景图的used_by中移除当前节点（数字比较）
         for (const bg of backgroundList) {
-          if (bg.used_by && bg.used_by.some(id => String(id) === nodeIdStr)) {
-            const updatedUsedBy = bg.used_by.filter(id => String(id) !== nodeIdStr).map(id => String(id));
+          if (bg.used_by && bg.used_by.some(id => Number(id) === nodeIdNum)) {
+            const updatedUsedBy = bg.used_by.filter(id => Number(id) !== nodeIdNum).map(id => Number(id)).filter(id => !Number.isNaN(id));
             await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${bg.id}/assign`, {
               method: 'POST',
               headers: {

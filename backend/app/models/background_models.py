@@ -11,7 +11,7 @@ class BackgroundInfo(BaseModel):
     id: str
     filename: str
     upload_time: str
-    used_by: List[str] = []
+    used_by: List[int] = []
 
 
 class BackgroundListResponse(BaseModel):
@@ -45,7 +45,7 @@ class SetDefaultBackgroundRequest(BaseModel):
 
 class AssignScenesRequest(BaseModel):
     """分配场景请求"""
-    node_ids: List[str]
+    node_ids: List[int]
 
 
 class BackgroundResponse(BaseModel):
