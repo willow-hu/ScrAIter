@@ -55,7 +55,7 @@ class FileService:
         """获取所有类目列表"""
         categories = set()
         
-        # 从实际文件夹扫描
+        # 从实际文件夹扫描（只返回实际存在的目录）
         for base_path in [self.unstructured_path, self.structured_path]:
             if os.path.exists(base_path):
                 for item in os.listdir(base_path):
@@ -63,13 +63,10 @@ class FileService:
                     if os.path.isdir(item_path):
                         categories.add(item)
         
-        # 从元数据加载
-        metadata = self._load_metadata()
-        categories.update(metadata.get("categories", []))
-        
         category_list = sorted(list(categories))
         
-        # 更新元数据中的类目列表
+        # 更新元数据中的类目列表（只保存实际存在的类目）
+        metadata = self._load_metadata()
         metadata["categories"] = category_list
         self._save_metadata(metadata)
         

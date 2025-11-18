@@ -56,7 +56,6 @@ function FileUploader({ categories, onUploadSuccess, onRefresh }) {
     setSelectedCategory(newCategoryName.trim());
     setShowNewCategoryModal(false);
     setNewCategoryName('');
-    message.success('类目创建成功');
     
     // 刷新类目列表
     onRefresh();

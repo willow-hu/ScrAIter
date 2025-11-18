@@ -86,14 +86,12 @@ function ArchiveManager() {
 
   // 文件上传成功回调
   const handleUploadSuccess = () => {
-    message.success('文件上传成功');
     setShowUploadModal(false);
     handleRefresh();
   };
 
   // 文件删除成功回调
   const handleDeleteSuccess = () => {
-    message.success('文件删除成功');
     handleRefresh();
   };
 
@@ -104,7 +102,6 @@ function ArchiveManager() {
 
   // 知识库删除成功回调
   const handleKBDeleteSuccess = () => {
-    message.success('知识库删除成功');
     handleRefresh();
   };
 

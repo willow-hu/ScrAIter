@@ -63,7 +63,6 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
         setActionLoading(prev => ({ ...prev, [project.id]: true }));
         try {
           await updateProject(project.id, { name: newName });
-          message.success('重命名成功');
           onRenameSuccess && onRenameSuccess();
         } catch (error) {
           console.error('重命名失败:', error);
@@ -106,7 +105,6 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
         setActionLoading(prev => ({ ...prev, [project.id]: true }));
         try {
           await duplicateProject(project.id, newName);
-          message.success('复制成功');
           onDuplicateSuccess && onDuplicateSuccess();
         } catch (error) {
           console.error('复制失败:', error);
@@ -135,7 +133,6 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
         setActionLoading(prev => ({ ...prev, [project.id]: true }));
         try {
           await deleteProject(project.id);
-          message.success('删除成功');
           onDeleteSuccess && onDeleteSuccess();
         } catch (error) {
           console.error('删除失败:', error);

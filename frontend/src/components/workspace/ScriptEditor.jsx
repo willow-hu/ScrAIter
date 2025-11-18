@@ -198,7 +198,7 @@ function ScriptEditor() {
       });
       
       if (response.ok) {
-        message.success('保存成功！');
+        message.success('项目保存成功');
       } else {
         const errorData = await response.json();
         message.error(`保存失败: ${errorData.detail || '未知错误'}`);
@@ -301,36 +301,6 @@ function ScriptEditor() {
         width: 480,
       });
     }
-  };
-
-  // 新增：重置到默认状态
-  const handleReset = () => {
-    const currentProjectId = getCurrentProjectId();
-    
-    if (!currentProjectId) {
-      message.error('项目ID不存在');
-      return;
-    }
-    
-    const defaultData = {
-      structure: [
-        {
-          id: 'root',
-          type: 'root',
-          name: '根节点',
-          abstract: '这是根节点的摘要',
-          user: '用户选项',
-          content: '',
-          child_ids: []
-        }
-      ]
-    };
-    
-    const defaultDataWithPositions = addAutoLayoutPositions(defaultData);
-    setTreeData(defaultDataWithPositions);
-    treeManager.setData(defaultDataWithPositions);
-    setSelectedNode(null);
-    message.success('已重置到初始状态');
   };
 
   // 新增：打开项目信息编辑
