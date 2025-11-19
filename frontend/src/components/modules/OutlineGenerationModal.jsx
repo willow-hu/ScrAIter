@@ -119,6 +119,9 @@ function OutlineGenerationModal({
         onSuccess(result.structure);
       }
       
+      // 关闭模态框
+      onCancel();
+      
     } catch (error) {
       console.error('生成大纲失败:', error);
       message.error({ 
