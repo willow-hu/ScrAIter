@@ -105,19 +105,16 @@ function OutlineGenerationModal({
       
       message.success({ content: result.message, key: 'outline-gen' });
       
-      // 生成成功后清空缓存和状态
-      setUserRequirements('');
+      // 生成成功后保留缓存，以便用户下次打开时可以基于上次的要求进行修改
       setConfirmVisible(false);
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch (error) {
-        console.error('清除缓存失败:', error);
-      }
       
       // 调用成功回调，传递生成的结构数据
       if (onSuccess && result.structure) {
         onSuccess(result.structure);
       }
+      
+      // 关闭模态框
+      onCancel();
       
     } catch (error) {
       console.error('生成大纲失败:', error);
