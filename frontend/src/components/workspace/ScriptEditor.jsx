@@ -377,7 +377,6 @@ function ScriptEditor() {
       setTreeData(newDataWithPositions);
       treeManager.setData(newDataWithPositions);
       setSelectedNode(null);
-      message.info('已加载生成的大纲结构');
     }
   };
 
