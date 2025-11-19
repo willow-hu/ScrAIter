@@ -9,6 +9,7 @@ import NodeTooltip from '../modules/NodeTooltip';
 import NPCManageModal from '../modules/NPCManageModal';
 import UsageModal from '../modules/UsageModal';
 import BackgroundManagerModal from '../modules/BackgroundManagerModal';
+import OutlineGenerationModal from '../modules/OutlineGenerationModal';
 import { isValidTree } from '../../utils/script_editor/treeValidator';
 import { createTreeStructureManager } from '../../utils/script_editor/treeStructureManager';
 import { TreeLayoutManager } from '../../utils/script_editor/index.js';
@@ -31,6 +32,7 @@ function ScriptEditor() {
   const [npcManageModalVisible, setNpcManageModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   const [backgroundManagerVisible, setBackgroundManagerVisible] = useState(false);
+  const [outlineModalVisible, setOutlineModalVisible] = useState(false);
   
   // 悬停提示框状态
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -353,71 +355,30 @@ function ScriptEditor() {
   };
 
   // 新增：生成大纲（GraphRAG）
-  const handleGenerateOutline = async () => {
+  const handleGenerateOutline = () => {
     // 检查项目信息
     if (!projectInfo || !projectInfo.knowledgeBaseId) {
       message.error('项目未关联知识库，无法生成大纲');
       return;
     }
 
-    const kbName = knowledgeBaseTheme || projectInfo.knowledgeBaseId;
+    // 打开大纲生成模态框
+    setOutlineModalVisible(true);
+  };
 
-    // 显示确认对话框
-    Modal.confirm({
-      title: '生成大纲',
-      icon: <Icons.ExclamationCircleOutlined />,
-      content: `此操作将基于知识库「${kbName}」的知识图谱生成新的大纲，会覆盖现有的内容。确定要继续吗？`,
-      okText: '确定生成',
-      cancelText: '取消',
-      okType: 'primary',
-      onOk: async () => {
-        try {
-          message.loading({ content: `正在为「${kbName}」生成大纲，请稍候...`, key: 'outline-gen', duration: 0 });
-          
-          // 调用后端API生成大纲
-          const response = await fetch('http://localhost:8000/api/v1/generate/outline', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              project_id: projectId,
-              kb_name: projectInfo.knowledgeBaseId
-            })
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || '生成大纲失败');
-          }
-          
-          const result = await response.json();
-          
-          if (!result.success) {
-            throw new Error(result.message || '生成大纲失败');
-          }
-          
-          message.success({ content: result.message, key: 'outline-gen' });
-          
-          // 更新当前树结构为生成的结构
-          if (result.structure && result.structure.length > 0) {
-            const newTreeData = {
-              structure: result.structure
-            };
-            
-            const newDataWithPositions = addAutoLayoutPositions(newTreeData);
-            setTreeData(newDataWithPositions);
-            treeManager.setData(newDataWithPositions);
-            setSelectedNode(null);
-            message.info('已加载生成的大纲结构');
-          }
-          
-        } catch (error) {
-          console.error('生成大纲失败:', error);
-          message.error({ content: error.message || '生成大纲失败', key: 'outline-gen' });
-        }
-      }
-    });
+  // 大纲生成成功回调
+  const handleOutlineGenerateSuccess = (structure) => {
+    if (structure && structure.length > 0) {
+      const newTreeData = {
+        structure: structure
+      };
+      
+      const newDataWithPositions = addAutoLayoutPositions(newTreeData);
+      setTreeData(newDataWithPositions);
+      treeManager.setData(newDataWithPositions);
+      setSelectedNode(null);
+      message.info('已加载生成的大纲结构');
+    }
   };
 
   // 新增：显示使用说明
@@ -686,6 +647,16 @@ function ScriptEditor() {
         treeData={treeData}
         onClose={() => setBackgroundManagerVisible(false)}
         onRefresh={loadProjectData}
+      />
+
+      {/* 大纲生成模态框 */}
+      <OutlineGenerationModal
+        visible={outlineModalVisible}
+        kbName={knowledgeBaseTheme || projectInfo?.knowledgeBaseId}
+        projectId={projectId}
+        knowledgeBaseId={projectInfo?.knowledgeBaseId}
+        onSuccess={handleOutlineGenerateSuccess}
+        onCancel={() => setOutlineModalVisible(false)}
       />
     </div>
   );

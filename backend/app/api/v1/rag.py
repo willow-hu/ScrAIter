@@ -155,7 +155,8 @@ async def generate_outline(request: OutlineGenerationRequest):
         
         result = outline_generation_service.generate_outline(
             request.project_id.strip(),
-            request.kb_name.strip()
+            request.kb_name.strip(),
+            request.user_requirements or ""
         )
         
         return OutlineGenerationResponse(

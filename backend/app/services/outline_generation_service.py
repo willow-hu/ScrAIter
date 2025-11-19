@@ -36,7 +36,7 @@ class OutlineGenerationService:
     def load_prompt_template(self) -> str:
         """加载大纲生成提示词模板"""
         try:
-            prompt_file = os.path.join(self.prompts_path, "outline_generation.prompt.md")
+            prompt_file = os.path.join(self.prompts_path, "outline_generation_free.prompt.md")
             
             if not os.path.exists(prompt_file):
                 raise FileNotFoundError(f"提示词文件不存在: {prompt_file}")
@@ -135,7 +135,7 @@ class OutlineGenerationService:
             logger.error(f"格式化关系数据失败: {e}")
             raise
     
-    def call_llm_for_outline(self, prompt_template: str, entities_text: str, relationships_text: str) -> str:
+    def call_llm_for_outline(self, prompt_template: str, entities_text: str, relationships_text: str, user_requirements: str = "") -> str:
         """
         调用大模型生成大纲
         
@@ -143,6 +143,7 @@ class OutlineGenerationService:
             prompt_template: 提示词模板
             entities_text: 格式化后的实体数据文本
             relationships_text: 格式化后的关系数据文本
+            user_requirements: 用户自定义要求
             
         Returns:
             生成的JSON字符串
@@ -150,8 +151,11 @@ class OutlineGenerationService:
         try:
             logger.info("开始调用大模型生成大纲...")
             
+            # 填充用户要求
+            filled_prompt = prompt_template.replace("{user_requirements}", user_requirements if user_requirements else "无特殊要求，请根据知识库内容自由发挥。")
+            
             # 将提示词模板和数据组合成完整的提示词
-            full_prompt = f"{prompt_template}\n\n{entities_text}\n{relationships_text}"
+            full_prompt = f"{filled_prompt}\n\n{entities_text}\n{relationships_text}"
 
             completion = self.client.chat.completions.create(
                 model=settings.RAG_MODEL,
@@ -277,19 +281,22 @@ class OutlineGenerationService:
             logger.error(f"保存大纲失败: {e}")
             raise
     
-    def generate_outline(self, project_id: str, kb_name: str) -> Dict[str, Any]:
+    def generate_outline(self, project_id: str, kb_name: str, user_requirements: str = "") -> Dict[str, Any]:
         """
         生成剧本大纲的主流程
         
         Args:
             project_id: 项目ID
             kb_name: 知识库名称
+            user_requirements: 用户自定义要求
             
         Returns:
             包含成功状态、消息和生成结果的字典
         """
         try:
             logger.info(f"开始为项目 '{project_id}' (知识库: '{kb_name}') 生成大纲")
+            if user_requirements:
+                logger.info(f"用户要求: {user_requirements}")
             
             # 1. 加载提示词模板
             prompt_template = self.load_prompt_template()
@@ -302,7 +309,7 @@ class OutlineGenerationService:
             relationships_text = self.format_relationships_for_prompt(graph_data['relationships'])
             
             # 4. 调用大模型
-            llm_response = self.call_llm_for_outline(prompt_template, entities_text, relationships_text)
+            llm_response = self.call_llm_for_outline(prompt_template, entities_text, relationships_text, user_requirements)
             
             # 5. 解析响应 - 现在返回节点列表
             outline_nodes = self.parse_llm_response(llm_response)

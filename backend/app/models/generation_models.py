@@ -8,6 +8,7 @@ class OutlineGenerationRequest(BaseModel):
     """大纲生成请求"""
     project_id: str
     kb_name: str
+    user_requirements: Optional[str] = ""
     
 class OutlineGenerationResponse(BaseModel):
     """大纲生成响应"""
