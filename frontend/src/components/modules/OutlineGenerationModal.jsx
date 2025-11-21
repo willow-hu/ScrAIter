@@ -154,7 +154,7 @@ function OutlineGenerationModal({
           </p>
           <TextArea
             rows={4}
-            maxLength={500}
+            maxLength={800}
             showCount
             value={userRequirements}
             onChange={handleRequirementsChange}
