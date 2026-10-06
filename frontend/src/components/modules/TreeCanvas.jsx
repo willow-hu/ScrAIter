@@ -9,6 +9,7 @@ import {
 } from '../../utils/script_editor/index.js';
 
 const TreeCanvas = forwardRef(({ 
+  readOnly = false,
   treeData, 
   selectedNode, 
   onNodeSelect, 
@@ -67,7 +68,11 @@ const TreeCanvas = forwardRef(({
 
   // 设置事件处理回调
   useEffect(() => {
-    eventHandler.on('nodeSelect', onNodeSelect);
+    eventHandler.readOnly = readOnly;
+    eventHandler.on('nodeSelect', node => {
+      onNodeSelect(node);
+      if (readOnly && node) onNodeEdit(node);
+    });
     eventHandler.on('nodeEdit', onNodeEdit);
     eventHandler.on('addEdge', ({ parentId, childId }) => onAddEdge(parentId, childId));
     eventHandler.on('deleteEdge', ({ nodeId1, nodeId2 }) => {
@@ -92,7 +97,7 @@ const TreeCanvas = forwardRef(({
     if (onNodeHoverEnd) {
       eventHandler.on('nodeHoverEnd', onNodeHoverEnd);
     }
-  }, [onNodeSelect, onNodeEdit, onAddEdge, onDeleteEdge, onUpdateNodePosition, onNodeHoverStart, onNodeHoverEnd, scale, translate]);
+  }, [readOnly, onNodeSelect, onNodeEdit, onAddEdge, onDeleteEdge, onUpdateNodePosition, onNodeHoverStart, onNodeHoverEnd, scale, translate]);
 
   // 自动布局
   const layoutNodes = () => {
@@ -209,7 +214,8 @@ const TreeCanvas = forwardRef(({
         >
           {contextMenu.node ? (
             <>
-              <div className="context-menu-item" onClick={() => {
+              <div className="context-menu-item" aria-disabled={readOnly} style={readOnly ? { opacity: 0.4, cursor: 'not-allowed' } : undefined} onClick={() => {
+                if (readOnly) return;
                 const nodeOptions = {
                   position: { 
                     x: contextMenu.node.position.x, 
@@ -221,19 +227,22 @@ const TreeCanvas = forwardRef(({
               }}>
                 添加子节点
               </div>
-              <div className="context-menu-item" onClick={() => {
+              <div className="context-menu-item" aria-disabled={readOnly} style={readOnly ? { opacity: 0.4, cursor: 'not-allowed' } : undefined} onClick={() => {
+                if (readOnly) return;
                 eventHandler.startAddingEdge(contextMenu.node);
                 eventHandler.closeContextMenu();
               }}>
                 添加边
               </div>
-              <div className="context-menu-item" onClick={() => {
+              <div className="context-menu-item" aria-disabled={readOnly} style={readOnly ? { opacity: 0.4, cursor: 'not-allowed' } : undefined} onClick={() => {
+                if (readOnly) return;
                 eventHandler.startDeletingEdge(contextMenu.node);
                 eventHandler.closeContextMenu();
               }}>
                 删除边
               </div>
-              <div className="context-menu-item" onClick={() => {
+              <div className="context-menu-item" aria-disabled={readOnly} style={readOnly ? { opacity: 0.4, cursor: 'not-allowed' } : undefined} onClick={() => {
+                if (readOnly) return;
                 onDeleteNode(contextMenu.node.id);
                 eventHandler.closeContextMenu();
               }}>
@@ -242,13 +251,15 @@ const TreeCanvas = forwardRef(({
             </>
           ) : (
             <>
-              <div className="context-menu-item" onClick={() => {
+              <div className="context-menu-item" aria-disabled={readOnly} style={readOnly ? { opacity: 0.4, cursor: 'not-allowed' } : undefined} onClick={() => {
+                if (readOnly) return;
                 onAddNode(contextMenu.canvasPosition);
                 eventHandler.closeContextMenu();
               }}>
                 添加节点
               </div>
-              <div className="context-menu-item" onClick={() => {
+              <div className="context-menu-item" aria-disabled={readOnly} style={readOnly ? { opacity: 0.4, cursor: 'not-allowed' } : undefined} onClick={() => {
+                if (readOnly) return;
                 layoutNodes();
                 eventHandler.closeContextMenu();
               }}>

@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, Empty, Tag } from 'antd';
@@ -29,7 +30,7 @@ function ReferencePanel({ sources = [], loading = false }) {
   useEffect(() => {
     const loadFilesMetadata = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/files');
+        const response = await fetch('/api/v1/files');
         if (response.ok) {
           const filesData = await response.json();
           const metadata = {};

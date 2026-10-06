@@ -1,3 +1,5 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { message, Button, Modal, Select, Spin } from 'antd';
@@ -56,14 +58,14 @@ function ScriptEditor() {
     setLoading(true);
     try {
       // 加载项目脚本数据
-      const scriptResponse = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/script`);
+      const scriptResponse = await fetch(`/api/v1/projects/${projectId}/script`);
       if (!scriptResponse.ok) {
         throw new Error('获取项目数据失败');
       }
       const scriptData = await scriptResponse.json();
       
       // 加载项目基本信息
-      const infoResponse = await fetch(`http://localhost:8000/api/v1/projects/${projectId}`);
+      const infoResponse = await fetch(`/api/v1/projects/${projectId}`);
       if (infoResponse.ok) {
         const info = await infoResponse.json();
         setProjectInfo(info);
@@ -71,7 +73,7 @@ function ScriptEditor() {
         // 如果有知识库ID，获取知识库主题
         if (info.knowledgeBaseId) {
           try {
-            const kbResponse = await fetch('http://localhost:8000/api/v1/knowledge-bases');
+            const kbResponse = await fetch('/api/v1/knowledge-bases');
             if (kbResponse.ok) {
               const kbData = await kbResponse.json();
               const kb = kbData.knowledge_bases?.find(kb => kb.name === info.knowledgeBaseId);
@@ -158,6 +160,7 @@ function ScriptEditor() {
 
   // 保存修改
   const handleSave = async () => {
+    if (SHOWCASE_READ_ONLY) return;
     if (!treeData) {
       message.error('没有数据可以保存');
       return;
@@ -191,7 +194,7 @@ function ScriptEditor() {
       };
       
       // 保存为script数据
-      const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}/script`, {
+      const response = await fetch(`/api/v1/projects/${currentProjectId}/script`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,6 +241,7 @@ function ScriptEditor() {
 
   // 新增：处理导出脚本（带验证）
   const handleExportWithValidation = async () => {
+    if (SHOWCASE_READ_ONLY) return;
     if (isValidTree(treeData)) {
       // 如果是有效树结构，直接导出完整包
       const currentProjectId = getCurrentProjectId();
@@ -249,7 +253,7 @@ function ScriptEditor() {
       try {
         message.info('正在创建导出包，请稍候...');
         
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}/export`, {
+        const response = await fetch(`/api/v1/projects/${currentProjectId}/export`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -270,7 +274,7 @@ function ScriptEditor() {
         if (result.success && result.download_url) {
           // 创建下载链接
           const link = document.createElement('a');
-          link.href = `http://localhost:8000/api/v1/projects/${currentProjectId}/download?file_path=${encodeURIComponent(result.download_url)}`;
+          link.href = `/api/v1/projects/${currentProjectId}/download?file_path=${encodeURIComponent(result.download_url)}`;
           link.download = '';
           link.click();
           
@@ -312,6 +316,7 @@ function ScriptEditor() {
 
   // 新增：保存项目信息
   const handleSaveProjectInfo = async (projectInfoData) => {
+    if (SHOWCASE_READ_ONLY) return;
     try {
       setNpcManageModalVisible(false);
       
@@ -319,7 +324,7 @@ function ScriptEditor() {
       const currentProjectId = getCurrentProjectId();
       if (currentProjectId) {
         // 更新project_info
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}`, {
+        const response = await fetch(`/api/v1/projects/${currentProjectId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -331,7 +336,7 @@ function ScriptEditor() {
         
         if (response.ok) {
           // 重新加载项目信息
-          const infoResponse = await fetch(`http://localhost:8000/api/v1/projects/${currentProjectId}`);
+          const infoResponse = await fetch(`/api/v1/projects/${currentProjectId}`);
           if (infoResponse.ok) {
             const info = await infoResponse.json();
             setProjectInfo(info);
@@ -356,6 +361,7 @@ function ScriptEditor() {
 
   // 新增：生成大纲（GraphRAG）
   const handleGenerateOutline = () => {
+    if (SHOWCASE_READ_ONLY) return;
     // 检查项目信息
     if (!projectInfo || !projectInfo.knowledgeBaseId) {
       message.error('项目未关联知识库，无法生成大纲');
@@ -387,6 +393,7 @@ function ScriptEditor() {
 
   // 更新节点
   const updateNode = async (nodeId, updates) => {
+    if (SHOWCASE_READ_ONLY) return;
     const result = treeManager.updateNode(nodeId, updates);
     if (!result.success) {
       message.error(result.message);
@@ -411,7 +418,7 @@ function ScriptEditor() {
             structure: filteredStructure
           };
           
-          const response = await fetch(`http://localhost:8000/api/v1/projects/${kbName}/script`, {
+          const response = await fetch(`/api/v1/projects/${kbName}/script`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -431,6 +438,7 @@ function ScriptEditor() {
 
   // 添加节点
   const addNode = (position) => {
+    if (SHOWCASE_READ_ONLY) return;
     const result = treeManager.addNode({ position });
     if (!result.success) {
       message.error(result.message);
@@ -439,6 +447,7 @@ function ScriptEditor() {
 
   // 添加子节点（原子操作）
   const addChildNode = (parentId, nodeOptions) => {
+    if (SHOWCASE_READ_ONLY) return { success: false };
     const result = treeManager.addChildNode(parentId, nodeOptions);
     if (!result.success) {
       message.error(result.message);
@@ -448,6 +457,7 @@ function ScriptEditor() {
 
   // 删除节点
   const deleteNode = (nodeId) => {
+    if (SHOWCASE_READ_ONLY) return;
     const result = treeManager.deleteNode(nodeId);
     if (result.success) {
       if (selectedNode && selectedNode.id === nodeId) {
@@ -460,6 +470,7 @@ function ScriptEditor() {
 
   // 添加边
   const addEdge = (parentId, childId) => {
+    if (SHOWCASE_READ_ONLY) return;
     const result = treeManager.addEdge(parentId, childId);
     if (!result.success) {
       message.error(result.message);
@@ -468,6 +479,7 @@ function ScriptEditor() {
 
   // 删除边
   const deleteEdge = (nodeId1, nodeId2) => {
+    if (SHOWCASE_READ_ONLY) return;
     const result = treeManager.deleteEdge(nodeId1, nodeId2);
     if (!result.success) {
       message.error(result.message);
@@ -531,6 +543,7 @@ function ScriptEditor() {
       </div>
 
       <TreeCanvas
+        readOnly={SHOWCASE_READ_ONLY}
         ref={treeCanvasRef}
         treeData={treeData}
         selectedNode={selectedNode}
@@ -574,6 +587,7 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.NodeIndexOutlined />}
+          disabled={SHOWCASE_READ_ONLY}
           title="生成大纲"
           onClick={handleGenerateOutline}
           className="floating-button"
@@ -582,6 +596,7 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.TeamOutlined />}
+          disabled={SHOWCASE_READ_ONLY}
           title="角色管理"
           onClick={handleOpenProjectInfo}
           className="floating-button"
@@ -590,6 +605,7 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.PictureOutlined />}
+          disabled={SHOWCASE_READ_ONLY}
           title="背景图管理"
           onClick={() => setBackgroundManagerVisible(true)}
           className="floating-button"
@@ -598,6 +614,7 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.SaveOutlined />}
+          disabled={SHOWCASE_READ_ONLY}
           title="保存修改"
           onClick={handleSave}
           className="floating-button"
@@ -606,6 +623,7 @@ function ScriptEditor() {
         <Button
           shape="circle"
           icon={<Icons.DownloadOutlined />}
+          disabled={SHOWCASE_READ_ONLY}
           title="导出素材"
           onClick={handleExportWithValidation}
           className="floating-button"

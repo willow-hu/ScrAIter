@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 /**
  * 文件上传相关工具函数
  */
@@ -55,7 +56,7 @@ export const uploadFilesToServer = async (fileList, selectedCategory, fileType) 
   formData.append('category', selectedCategory);
   formData.append('file_type', fileType);
 
-  const response = await fetch('http://localhost:8000/api/v1/files/upload', {
+  const response = await fetch('/api/v1/files/upload', {
     method: 'POST',
     body: formData,
   });

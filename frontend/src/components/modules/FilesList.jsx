@@ -1,3 +1,4 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Select, message, Collapse, Empty, Tooltip, Space, Modal } from 'antd';
 import { DeleteOutlined, FolderOutlined, FileTextOutlined, FileExcelOutlined } from '../../utils/icons';
@@ -137,7 +138,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
             style={{ width: '100%' }}
             size="small"
             loading={isUpdating}
-            disabled={isUpdating}
+            disabled={SHOWCASE_READ_ONLY || isUpdating}
             onChange={(newTag) => handleTagChange(record, newTag)}
             popupMatchSelectWidth={false}
           >
@@ -159,6 +160,7 @@ function FilesList({ files, loading, onDeleteSuccess, onTagUpdateSuccess, onRefr
       render: (_, record) => (
         <Tooltip title="删除文件">
           <Button
+            disabled={SHOWCASE_READ_ONLY}
             size="small"
             danger
             icon={<DeleteOutlined />}

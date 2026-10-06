@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 /**
  * 脚本保存相关工具函数
  */
@@ -38,7 +39,7 @@ export async function saveScriptToServer(knowledgeBaseName, treeData, showMessag
     };
 
     // 保存为script数据
-    const response = await fetch(`http://localhost:8000/api/v1/projects/${knowledgeBaseName.trim()}/script`, {
+    const response = await fetch(`/api/v1/projects/${knowledgeBaseName.trim()}/script`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

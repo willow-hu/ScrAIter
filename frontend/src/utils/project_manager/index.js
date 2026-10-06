@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 /**
  * 项目管理相关工具函数
  */
@@ -7,7 +8,7 @@
  */
 export const fetchProjects = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/projects');
+    const response = await fetch('/api/v1/projects');
     
     if (!response.ok) {
       throw new Error('获取项目列表失败');
@@ -26,7 +27,7 @@ export const fetchProjects = async () => {
  */
 export const fetchKnowledgeBases = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/knowledge-bases');
+    const response = await fetch('/api/v1/knowledge-bases');
     
     if (!response.ok) {
       throw new Error('获取知识库列表失败');
@@ -45,7 +46,7 @@ export const fetchKnowledgeBases = async () => {
  */
 export const createProject = async (projectData) => {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/projects', {
+    const response = await fetch('/api/v1/projects', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ export const createProject = async (projectData) => {
  */
 export const deleteProject = async (projectId) => {
   try {
-    const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}`, {
+    const response = await fetch(`/api/v1/projects/${projectId}`, {
       method: 'DELETE',
     });
     
@@ -93,7 +94,7 @@ export const deleteProject = async (projectId) => {
  */
 export const updateProject = async (projectId, updateData) => {
   try {
-    const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}`, {
+    const response = await fetch(`/api/v1/projects/${projectId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export const updateProject = async (projectId, updateData) => {
  */
 export const duplicateProject = async (projectId, newName) => {
   try {
-    const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/duplicate`, {
+    const response = await fetch(`/api/v1/projects/${projectId}/duplicate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

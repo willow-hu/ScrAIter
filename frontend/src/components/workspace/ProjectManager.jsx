@@ -1,3 +1,4 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
 /**
  * 项目管理页面
  * 
@@ -103,6 +104,7 @@ function ProjectManager() {
           <div className="project-section-header">
             <Title level={4} style={{ margin: 0 }}>剧本项目</Title>
             <Button
+              disabled={SHOWCASE_READ_ONLY}
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setShowCreateModal(true)}

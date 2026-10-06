@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, message } from 'antd';
 import { EditOutlined, ExclamationCircleOutlined } from '../../utils/icons';
@@ -80,7 +81,7 @@ function OutlineGenerationModal({
       });
       
       // 调用后端API生成大纲
-      const response = await fetch('http://localhost:8000/api/v1/generate/outline', {
+      const response = await fetch('/api/v1/generate/outline', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

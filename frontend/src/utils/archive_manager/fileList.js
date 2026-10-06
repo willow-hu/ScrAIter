@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 /**
  * 文件列表相关工具函数
  */
@@ -8,7 +9,7 @@
  */
 export const fetchSourceTags = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/source-tags');
+    const response = await fetch('/api/v1/source-tags');
     if (response.ok) {
       const config = await response.json();
       return config.tags || [];
@@ -85,7 +86,7 @@ export const calculateFileStats = (files, groupedFiles) => {
  * @returns {Promise<Object>} 删除结果
  */
 export const deleteFileFromServer = async (file) => {
-  const response = await fetch(`http://localhost:8000/api/v1/files/${file.relative_path}`, {
+  const response = await fetch(`/api/v1/files/${file.relative_path}`, {
     method: 'DELETE'
   });
 
@@ -104,7 +105,7 @@ export const deleteFileFromServer = async (file) => {
  * @returns {Promise<Object>} 更新结果
  */
 export const updateFileTag = async (file, newTag) => {
-  const response = await fetch(`http://localhost:8000/api/v1/files/${file.relative_path}/tags`, {
+  const response = await fetch(`/api/v1/files/${file.relative_path}/tags`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

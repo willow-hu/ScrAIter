@@ -1,3 +1,4 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Modal, message, Space, Divider } from 'antd';
 import { UploadOutlined, PlusOutlined } from '../../utils/icons';
@@ -123,6 +124,7 @@ function ArchiveManager() {
           <div className="archive-section-header">
             <Title level={4} style={{ margin: 0 }}>知识库管理</Title>
             <Button
+              disabled={SHOWCASE_READ_ONLY}
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setShowKBBuildModal(true)}
@@ -146,6 +148,7 @@ function ArchiveManager() {
           <div className="archive-section-header">
             <Title level={4} style={{ margin: 0 }}>文件管理</Title>
             <Button
+              disabled={SHOWCASE_READ_ONLY}
               type="primary"
               icon={<UploadOutlined />}
               onClick={() => setShowUploadModal(true)}

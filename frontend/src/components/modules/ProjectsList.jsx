@@ -1,3 +1,4 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
 /**
  * 项目列表组件
  * 
@@ -153,11 +154,13 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
   const getMenuItems = (project) => [
     {
       key: 'rename',
+      disabled: SHOWCASE_READ_ONLY,
       label: '重命名',
       onClick: () => handleRename(project),
     },
     {
       key: 'duplicate',
+      disabled: SHOWCASE_READ_ONLY,
       label: '复制',
       onClick: () => handleDuplicate(project),
     },
@@ -166,6 +169,7 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
     },
     {
       key: 'delete',
+      disabled: SHOWCASE_READ_ONLY,
       label: '删除',
       danger: true,
       onClick: () => handleDelete(project),
@@ -200,7 +204,7 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
       },
     },
     {
-      title: '开始编辑',
+      title: '开始查看',
       key: 'edit',
       width: '15%',
       render: (_, record) => (
@@ -211,7 +215,7 @@ function ProjectsList({ projects, knowledgeBases = [], loading, onDeleteSuccess,
           onClick={() => handleEdit(record)}
           loading={actionLoading[record.id]}
         >
-          编辑
+          查看
         </Button>
       ),
     },

@@ -61,6 +61,7 @@ export class EventHandler {
    * @param {Function} getNodeScreenPosition - 获取节点屏幕位置的函数
    */
   handleMouseDown(e, getNodeAtPosition, getNodeScreenPosition) {
+    if (e.button !== 0) return;
     // 设置鼠标按下状态
     this.isMouseDown = true;
     
@@ -93,7 +94,7 @@ export class EventHandler {
       }
       
       this.emit('nodeSelect', node);
-      this.draggedNode = node;
+      this.draggedNode = this.readOnly ? null : node;
       const nodePos = getNodeScreenPosition(node);
       this.dragOffset = {
         x: x - nodePos.x,

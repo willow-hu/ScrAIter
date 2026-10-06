@@ -1,6 +1,6 @@
 const appConfig = {
   default_project: "twin_pagoda",
-  api_base_url: "http://localhost:8000/api/v1",
+  api_base_url: "/api/v1",
   supported_file_formats: [".pdf", ".docx", ".txt", ".xlsx", ".csv"],
   max_file_size: 52428800,
   project_workflow: {

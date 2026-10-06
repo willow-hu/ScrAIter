@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 /**
  * 知识库相关工具函数
  */
@@ -35,7 +36,7 @@ export const canBuildKnowledgeBase = (selectedCategories, selectedStats) => {
  */
 export const fetchKnowledgeBases = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/knowledge-base/list');
+    const response = await fetch('/api/v1/knowledge-base/list');
     if (response.ok) {
       const result = await response.json();
       return result.knowledge_bases || [];
@@ -67,7 +68,7 @@ export const isKnowledgeBaseNameExists = (kbName, existingKBs) => {
  * @returns {Promise<Object>} 构建结果
  */
 export const startKnowledgeBaseBuild = async (kbName, selectedCategories, buildConfig) => {
-  const response = await fetch('http://localhost:8000/api/v1/knowledge-base/build', {
+  const response = await fetch('/api/v1/knowledge-base/build', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -93,7 +94,7 @@ export const startKnowledgeBaseBuild = async (kbName, selectedCategories, buildC
  * @returns {Promise<Object>} 构建状态
  */
 export const fetchBuildProgress = async (taskId) => {
-  const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/build-status/${taskId}`);
+  const response = await fetch(`/api/v1/knowledge-base/build-status/${taskId}`);
   
   if (!response.ok) {
     throw new Error('无法获取构建进度');
@@ -108,7 +109,7 @@ export const fetchBuildProgress = async (taskId) => {
  * @returns {Promise<Object>} 删除结果
  */
 export const deleteKnowledgeBase = async (kbName) => {
-  const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kbName}`, {
+  const response = await fetch(`/api/v1/knowledge-base/${kbName}`, {
     method: 'DELETE'
   });
 

@@ -1,3 +1,5 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Tag, Button, Empty, Tooltip, Space, Modal, message } from 'antd';
 import { DeleteOutlined, NodeIndexOutlined, DatabaseOutlined, LoadingOutlined } from '../../utils/icons';
@@ -119,7 +121,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
         
         try {
           // 调用后端API开始构建图谱
-          const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kb.name}/build-graph`, {
+          const response = await fetch(`/api/v1/knowledge-base/${kb.name}/build-graph`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -156,7 +158,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
   const pollGraphBuildProgress = async (kbName, taskId) => {
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/knowledge-base/${kbName}/graph-status/${taskId}`);
+        const response = await fetch(`/api/v1/knowledge-base/${kbName}/graph-status/${taskId}`);
         
         if (!response.ok) {
           throw new Error('无法获取构建进度');
@@ -272,7 +274,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
               size="small"
               icon={getGraphButtonIcon(record)}
               onClick={() => handleExtractGraph(record)}
-              disabled={!record.exists || buildingGraph[record.name]}
+              disabled={SHOWCASE_READ_ONLY || !record.exists || buildingGraph[record.name]}
               loading={buildingGraph[record.name]}
             >
               {getGraphButtonText(record)}
@@ -282,6 +284,7 @@ function KnowledgeBasesList({ onDeleteSuccess, onRefresh, loading }) {
             <Button
               size="small"
               danger
+              disabled={SHOWCASE_READ_ONLY}
               icon={<DeleteOutlined />}
               onClick={() => handleDelete(record)}
               loading={deleting[record.name]}

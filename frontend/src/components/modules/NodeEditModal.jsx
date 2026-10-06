@@ -1,3 +1,5 @@
+import { SHOWCASE_READ_ONLY } from '../../showcase/api.js';
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 import React, { useState, useEffect } from 'react';
 import { Modal, Row, Col, Card, Button, Input, Typography, Space, message, Slider, Select } from 'antd';
 import { SaveOutlined, RobotOutlined, PictureOutlined, UserOutlined } from '../../utils/icons';
@@ -92,7 +94,7 @@ function NodeEditModal({
       };
 
       // 使用fetch进行流式接收
-      const response = await fetch('http://localhost:8000/api/v1/generate/node-content-stream', {
+      const response = await fetch('/api/v1/generate/node-content-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -236,7 +238,7 @@ function NodeEditModal({
     if (!generationId) return [];
     
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/rag/sources/${generationId}`);
+      const response = await fetch(`/api/v1/rag/sources/${generationId}`);
       
       if (!response.ok) {
         throw new Error(`获取参考资料失败: ${response.status} ${response.statusText}`);
@@ -320,6 +322,7 @@ function NodeEditModal({
               <div className="node-edit-form-item">
                 <Text className="node-edit-form-label" strong>关键词</Text>
                 <Input
+                  readOnly={SHOWCASE_READ_ONLY}
                   className="node-edit-form-input"
                   value={nodeForm.name}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, name: e.target.value }))}
@@ -330,6 +333,7 @@ function NodeEditModal({
               <div className="node-edit-form-item">
                 <Text className="node-edit-form-label" strong>用户选项</Text>
                 <Input
+                  readOnly={SHOWCASE_READ_ONLY}
                   className="node-edit-form-input"
                   value={nodeForm.user}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, user: e.target.value }))}
@@ -340,6 +344,7 @@ function NodeEditModal({
               <div className="node-edit-form-item">
                 <Text className="node-edit-form-label" strong>摘要</Text>
                 <TextArea
+                  readOnly={SHOWCASE_READ_ONLY}
                   className="node-edit-form-input"
                   value={nodeForm.abstract}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, abstract: e.target.value }))}
@@ -355,6 +360,7 @@ function NodeEditModal({
                   <div style={{ flex: '1', minWidth: '200px' }}>
                     <Text className="node-edit-form-label" strong>讲述者角色</Text>
                     <Select
+                      disabled={SHOWCASE_READ_ONLY}
                       value={nodeForm.role}
                       onChange={(value) => setNodeForm(prev => ({ ...prev, role: value }))}
                       placeholder="选择角色（可选）"
@@ -382,6 +388,7 @@ function NodeEditModal({
                       <Text style={{ fontSize: '12px', color: '#999', minWidth: '25px' }}>50</Text>
                       <div style={{ flex: 1 }}>
                         <Slider
+                          disabled={SHOWCASE_READ_ONLY}
                           min={50}
                           max={300}
                           step={10}
@@ -413,6 +420,7 @@ function NodeEditModal({
               <div className="node-edit-form-item" style={{ flex: 1 }}>
                 <Text className="node-edit-form-label" strong>内容</Text>
                 <TextArea
+                  readOnly={SHOWCASE_READ_ONLY}
                   className="node-edit-form-input"
                   value={nodeForm.content}
                   onChange={(e) => setNodeForm(prev => ({ ...prev, content: e.target.value }))}
@@ -440,6 +448,7 @@ function NodeEditModal({
                         type="primary"
                         className="node-edit-generate-btn"
                         icon={<RobotOutlined />}
+                        disabled={SHOWCASE_READ_ONLY}
                         onClick={generateContent}
                         loading={generating}
                       >
@@ -450,7 +459,7 @@ function NodeEditModal({
                     <Button 
                       icon={<SaveOutlined />}
                       onClick={handleSave}
-                      disabled={generating}
+                      disabled={SHOWCASE_READ_ONLY || generating}
                     >
                       保存
                     </Button>
@@ -459,7 +468,7 @@ function NodeEditModal({
                   <Button 
                     icon={<PictureOutlined />}
                     onClick={() => setBackgroundModalVisible(true)}
-                    disabled={generating}
+                    disabled={SHOWCASE_READ_ONLY || generating}
                     title={backgroundImage ? `当前背景：${backgroundImage}` : '设置背景图'}
                   >
                     设置背景图

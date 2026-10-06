@@ -1,3 +1,4 @@
+import { showcaseFetch as fetch } from '../../showcase/api.js';
 import React, { useState, useEffect } from 'react';
 import { Modal, Upload, Button, List, Card, Image, message, Space, Empty, Input } from 'antd';
 import { UploadOutlined, CheckOutlined, PlusOutlined } from '../../utils/icons';
@@ -25,7 +26,7 @@ function BackgroundImageModal({
     
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds`);
+      const response = await fetch(`/api/v1/projects/${projectId}/backgrounds`);
       if (response.ok) {
         const data = await response.json();
         setBackgroundList(data.backgrounds || []);
@@ -74,7 +75,7 @@ function BackgroundImageModal({
       formData.append('bg_id', newBgId.trim());
       formData.append('file', uploadFile);
 
-      const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/upload`, {
+      const response = await fetch(`/api/v1/projects/${projectId}/backgrounds/upload`, {
         method: 'POST',
         body: formData
       });
@@ -130,7 +131,7 @@ function BackgroundImageModal({
         for (const bg of backgroundList) {
           if (bg.id !== selectedBgId && bg.used_by && bg.used_by.some(id => Number(id) === nodeIdNum)) {
             const updatedUsedBy = bg.used_by.filter(id => Number(id) !== nodeIdNum).map(id => Number(id)).filter(id => !Number.isNaN(id));
-            await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${bg.id}/assign`, {
+            await fetch(`/api/v1/projects/${projectId}/backgrounds/${bg.id}/assign`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -147,7 +148,7 @@ function BackgroundImageModal({
           newUsedBy.push(nodeIdNum);
         }
 
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${selectedBgId}/assign`, {
+        const response = await fetch(`/api/v1/projects/${projectId}/backgrounds/${selectedBgId}/assign`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ function BackgroundImageModal({
         for (const bg of backgroundList) {
           if (bg.used_by && bg.used_by.some(id => Number(id) === nodeIdNum)) {
             const updatedUsedBy = bg.used_by.filter(id => Number(id) !== nodeIdNum).map(id => Number(id)).filter(id => !Number.isNaN(id));
-            await fetch(`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${bg.id}/assign`, {
+            await fetch(`/api/v1/projects/${projectId}/backgrounds/${bg.id}/assign`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -249,7 +250,7 @@ function BackgroundImageModal({
                           position: 'relative'
                         }}>
                           <Image
-                            src={`http://localhost:8000/api/v1/projects/${projectId}/backgrounds/${bg.id}/thumbnail`}
+                            src={`/api/v1/projects/${projectId}/backgrounds/${bg.id}/thumbnail`}
                             alt={bg.id}
                             preview={true}
                             style={{ 
